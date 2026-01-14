@@ -1,6 +1,10 @@
 backend:
   name: git-gateway
   branch: main
+local_backend: false
+
+auth:
+  allow_registration: true
 
 media_folder: "assets"
 public_folder: "/assets"
@@ -36,9 +40,3 @@ collections:
               - { label: "Title (TH)", name: "titleTH", widget: "string", required: false }
               - { label: "Category Image", name: "image", widget: "image", required: false }
               - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }
-
-local_backend: false
-
-auth:
-  allow_registration: true
-

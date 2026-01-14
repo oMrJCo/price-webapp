@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LEEPLUS | Price</title>
+
+  <style>
+    body{
+      margin:0;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#f6f7f9;
+      color:#111;
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:#fff;
+      border-bottom:1px solid #eee;
+      padding:10px 12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+
+    .btn, button{
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:10px 12px;
+      background:#fff;
+      cursor:pointer;
+      text-decoration:none;
+      color:#111;
+      font-size:13px;
+      line-height:1;
+      white-space:nowrap;
+    }
+
+    .title{
+      font-weight:800;
+      font-size:14px;
+      margin-right:6px;
+    }
+
+    .search{
+      flex:1;
+      min-width:240px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    input{
+      width:100%;
+      border:1px solid #ddd;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      background:#fff;
+    }
+
+    #status{
+      margin-left:auto;
+      font-size:12px;
+      color:#666;
+      white-space:nowrap;
+    }
+
+    .wrap{
+      max-width:1100px;
+      margin:12px auto;
+      padding:0 12px;
+    }
+
+    .hint{
+      font-size:12px;
+      color:#666;
+      margin:10px 2px 8px;
+    }
+
+    .results{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:14px;
+      padding:10px;
+      margin:10px 0 12px;
+      display:none;
+    }
+
+    .resultsHeader{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:8px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid #e5e5e5;
+      background:#fafafa;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:#333;
+    }
+
+    .resultList{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .resultBtn{
+      border:1px solid #ddd;
+      background:#fff;
+      border-radius:999px;
+      padding:8px 10px;
+      cursor:pointer;
+      font-size:13px;
+    }
+
+    .page{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:14px;
+      overflow:hidden;
+      margin:12px 0;
+      box-shadow:0 1px 0 rgba(0,0,0,.03);
+    }
+
+    .pageInner{
+      position:relative;
+      margin:0 auto;
+    }
+
+    canvas{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    /* ✅ ปิด text layer แบบถาวร (กันซ้อน/กันเหลื่อม) */
+    .textLayer{
+      display:none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <button class="btn" onclick="location.href='index.html'">← กลับหน้าหมวด</button>
+
+    <div class="title" id="pageTitle">ราคาสินค้า</div>
+
+    <div class="search">
+      <input id="q" placeholder="ค้นหา เช่น iPhone 14 Pro / BMS / จอ / ราคา..." />
+      <button id="findBtn" class="btn">ค้นหา</button>
+      <button id="clearBtn" class="btn" title="ล้างคำค้นหา">ล้าง</button>
+    </div>
+
+    <a class="btn" id="downloadBtn" href="#" target="_blank" rel="noopener">ดาวน์โหลด PDF</a>
+    <a class="btn" id="openBtn" href="#" target="_blank" rel="noopener">เปิดเต็มหน้า</a>
+
+    <div id="status">กำลังโหลด…</div>
+  </header>
+
+  <div class="wrap">
+    <div class="hint">
+      ทิป: ระบบจะค้นหา “ข้อความใน PDF” แล้วสรุปผลเป็นหน้าให้กดไปดูทันที (ไม่มีตัวหนังสือซ้อน)
+    </div>
+
+    <!-- ผลลัพธ์ค้นหา -->
+    <div class="results" id="resultsBox">
+      <div class="resultsHeader">
+        <span class="pill" id="resultsSummary">ผลลัพธ์</span>
+        <span class="pill" id="resultsQuery">คำค้นหา</span>
+      </div>
+      <div class="resultList" id="resultList"></div>
+    </div>
+
+    <!-- แสดง PDF -->
+    <div id="viewer"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<h2 style="font-family: Arial, sans-serif; margin: 0 0 12px;">ตั้งรหัสผ่านใหม่</h2>
+
+<p style="font-family: Arial, sans-serif; margin: 0 0 12px; color: #444; line-height: 1.5;">
+คุณได้ขอรีเซ็ตรหัสผ่านสำหรับ <b>{{ .SiteURL }}</b>
+</p>
+
+<p style="font-family: Arial, sans-serif; margin: 0 0 18px;">
+<a
+  href="{{ .SiteURL }}/reset-password.html#recovery_token={{ .Token }}"
+  style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 16px;border-radius:10px;font-weight:700;"
+>
+ตั้งรหัสผ่านใหม่
+</a>
+</p>
+
+<p style="font-family: Arial, sans-serif; margin: 0; color: #666; font-size: 12px; line-height: 1.5;">
+ถ้าปุ่มกดไม่ได้ ให้คัดลอกลิงก์นี้ไปเปิดในเบราว์เซอร์:<br/>
+<span style="word-break: break-all;">
+{{ .SiteURL }}/reset-password.html#recovery_token={{ .Token }}
+</span>
+</p>

@@ -1,0 +1,27 @@
+{
+  "siteTitle": "📦 ราคาสินค้า LEEPLUS",
+  "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด",
+
+  "coverImage": "assets/cover.jpg",
+  "coverHeadline": "ศูนย์รวมอะไหล่มือถือ",
+  "coverSubtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบในที่เดียว",
+
+  "lineUrl": "https://line.me/R/ti/p/@leeplus",
+  "lineIcon": "assets/line-icon.png",
+  "lineQr": "assets/line-qr.png",
+
+  "categories": [
+    {
+      "titleEN": "Battery",
+      "titleTH": "แบตเตอรี่",
+      "image": "assets/battery.jpg",
+      "pdf": "pdf/battery.pdf"
+    },
+    {
+      "titleEN": "Film Protector",
+      "titleTH": "ฟิล์มกระจกกันรอย",
+      "image": "assets/film-back-premium.jpg",
+      "pdf": "pdf/film-protector.pdf"
+    }
+  ]
+}

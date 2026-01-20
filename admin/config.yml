@@ -1,43 +1,26 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: runmaster/repo-name
   branch: main
-  
-local_backend: false
-
-auth:
-  allow_registration: true
+  use_graphql: true
 
 media_folder: "assets"
 public_folder: "/assets"
 
-publish_mode: editorial_workflow
-
 collections:
-  - name: "site"
-    label: "Site Settings"
+  - name: "categories_config"
+    label: "Categories"
     files:
-      - name: "categories"
-        label: "Main Config"
-        file: "data/categories.json"
-        format: "json"
+      - file: "categories.json"
+        label: "All Categories"
+        name: "all"
         fields:
-          - { label: "Site Title", name: "siteTitle", widget: "string" }
-          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string" }
-
-          - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
-          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
-          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
-
-          - { label: "LINE URL", name: "lineUrl", widget: "string", required: false }
-          - { label: "LINE Icon", name: "lineIcon", widget: "image", required: false }
-          - { label: "LINE QR", name: "lineQr", widget: "image", required: false }
-
           - label: "Categories"
             name: "categories"
             widget: "list"
-            summary: "{{fields.titleEN}}"
+            summary: "{{fields.titleEN}} — {{fields.titleTH}}"
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
-              - { label: "Title (TH)", name: "titleTH", widget: "string", required: false }
-              - { label: "Category Image", name: "image", widget: "image", required: false }
+              - { label: "Title (TH)", name: "titleTH", widget: "string" }
+              - { label: "Image", name: "image", widget: "image", required: false }
               - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }

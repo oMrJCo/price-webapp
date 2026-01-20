@@ -5,6 +5,12 @@
       "titleTH": "แบตเตอรี่ รวมรุ่น",
       "image": "/assets/pattern1.jpg",
       "pdf": "pdf/battery.pdf"
+    },
+    {
+      "titleEN": "Film Protector",
+      "titleTH": "ฟิล์มกระจกกันรอย",
+      "image": "/assets/flim-back-premium.jpg",
+      "pdf": "pdf/film-protector.pdf"
     }
   ]
 }

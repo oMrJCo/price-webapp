@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: runmaster/repo-name
+  repo: oMrJCo/price-webapp
   branch: main
   use_graphql: true
 

@@ -3,60 +3,141 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LEEPLUS ราคาสินค้า</title>
+  <title>LEEPLUS • ราคา</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto; margin:0; background:#f6f7f9;}
-    .top{display:flex; gap:10px; align-items:center; padding:14px 16px; background:#fff; position:sticky; top:0; border-bottom:1px solid #eee; z-index:10;}
-    .btn{border:1px solid #ddd; background:#fff; padding:8px 12px; border-radius:999px; cursor:pointer; text-decoration:none; color:#111; font-size:14px;}
-    .title{font-weight:700;}
+    :root{
+      --bg:#f6f7f9; --card:#fff; --text:#111; --muted:#6b7280;
+      --line:#e5e7eb; --shadow:0 12px 28px rgba(0,0,0,.06);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto; background:var(--bg); color:var(--text);}
+    a{color:inherit; text-decoration:none}
+    .top{
+      position:sticky; top:0; z-index:20;
+      background:rgba(246,247,249,.92); backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar{
+      max-width:1200px; margin:0 auto; padding:12px 14px;
+      display:flex; gap:10px; align-items:center;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background:var(--card);
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:14px;
+      cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px;
+      box-shadow:0 6px 16px rgba(0,0,0,.04);
+    }
+    .btn.primary{
+      background:#111; color:#fff; border-color:#111;
+    }
+    .titlewrap{display:flex; flex-direction:column; gap:2px; min-width:0}
+    .title{font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .sub{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
     .sp{flex:1}
-    .wrap{padding:14px 16px;}
-    .card{background:#fff; border:1px solid #eee; border-radius:14px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,.04);}
-    .hint{color:#666; font-size:13px; margin:6px 0 10px}
-    iframe{width:100%; height:78vh; border:0; border-radius:12px; background:#fafafa;}
-    .err{padding:12px; background:#fff0f0; border:1px solid #ffd0d0; border-radius:12px; color:#b00020}
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    input{flex:1; min-width:180px; padding:10px 12px; border-radius:10px; border:1px solid #ddd; font-size:14px;}
-    .small{font-size:12px; color:#777}
+
+    .container{max-width:1200px; margin:0 auto; padding:14px;}
+    .panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .controls{
+      padding:12px;
+      border-bottom:1px solid var(--line);
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+    .input{
+      flex:1; min-width:220px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:14px;
+      background:#fafafa;
+    }
+    .hint{font-size:12px; color:var(--muted);}
+    .viewer{
+      height:78vh;
+      background:#111;
+    }
+    iframe{
+      width:100%; height:100%;
+      border:0;
+      display:block;
+      background:#111;
+    }
+    .err{
+      margin:12px;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid #ffd1d1;
+      background:#fff1f1;
+      color:#b00020;
+      display:none;
+      white-space:pre-wrap;
+    }
+
+    /* Mobile tweaks */
+    @media (max-width:560px){
+      .viewer{height:72vh}
+      .btn{padding:9px 11px}
+      .title{font-size:15px}
+    }
   </style>
 </head>
 <body>
 
   <div class="top">
-    <a class="btn" href="index.html">← กลับหน้าหมวด</a>
-    <div class="title" id="pageTitle">Category</div>
-    <div class="sp"></div>
-    <a class="btn" id="openNew" target="_blank" rel="noopener">เปิด PDF</a>
+    <div class="topbar">
+      <a class="btn" href="index.html">← กลับหน้าหมวด</a>
+
+      <div class="titlewrap">
+        <div class="title" id="pageTitle">หมวดสินค้า</div>
+        <div class="sub" id="pageSub">ดูราคา PDF ล่าสุด</div>
+      </div>
+
+      <div class="sp"></div>
+
+      <a class="btn" id="openNew" target="_blank" rel="noopener">เปิดเต็มจอ</a>
+      <a class="btn primary" id="downloadBtn" download>ดาวน์โหลด PDF</a>
+    </div>
   </div>
 
-  <div class="wrap">
-    <div class="card">
-      <div class="row">
-        <input id="pdfInput" placeholder="พาธ PDF เช่น pdf/battery.pdf" />
+  <div class="container">
+    <div class="panel">
+
+      <div class="controls">
+        <input id="pdfInput" class="input" placeholder="พาธ PDF เช่น pdf/battery.pdf" />
         <button class="btn" id="reloadBtn" type="button">โหลด</button>
-      </div>
-      <div class="hint">
-        ถ้า PDF ไม่ขึ้น ให้ลองเปิด “เปิด PDF” มุมขวาบนก่อน เพื่อเช็กว่าไฟล์มีจริง/ไม่ 404
+        <div class="hint">Tip: ถ้าแก้จาก CMS แล้วไม่เปลี่ยน กด Ctrl + F5</div>
       </div>
 
-      <div id="errorBox" class="err" style="display:none"></div>
-      <iframe id="pdfFrame" title="PDF Viewer"></iframe>
+      <div id="errorBox" class="err"></div>
 
-      <div class="small" style="margin-top:10px">
-        Tip: ถ้าอัปเดตจาก CMS แล้วไม่เปลี่ยน กด Ctrl + F5 หรือรอ Netlify deploy ให้เสร็จก่อน
+      <div class="viewer">
+        <iframe id="pdfFrame" title="PDF Viewer"></iframe>
       </div>
+
     </div>
   </div>
 
 <script>
   const qs = new URLSearchParams(location.search);
-  const title = qs.get("title") || "Category";
-  const pdf = qs.get("pdf") || "";
+  const title = qs.get("title") || "หมวดสินค้า";
+  const pdf = (qs.get("pdf") || "").trim();
 
   const pageTitle = document.getElementById("pageTitle");
+  const pageSub = document.getElementById("pageSub");
   const pdfFrame = document.getElementById("pdfFrame");
   const pdfInput = document.getElementById("pdfInput");
   const openNew = document.getElementById("openNew");
+  const downloadBtn = document.getElementById("downloadBtn");
   const errorBox = document.getElementById("errorBox");
 
   pageTitle.textContent = title;
@@ -71,30 +152,39 @@
     errorBox.textContent = "";
   }
 
+  function beautifyEmbedUrl(path){
+    // ซ่อน sidebar/toolbar + fit width
+    // หมายเหตุ: พฤติกรรมขึ้นกับ browser แต่โดยรวม Chrome/Edge ดี
+    return `${path}#toolbar=0&navpanes=0&view=FitH`;
+  }
+
   async function loadPdf(path){
     clearError();
     if(!path){
       showError("ยังไม่ได้ระบุ PDF path (เช่น pdf/battery.pdf)");
       pdfFrame.src = "";
       openNew.href = "#";
+      downloadBtn.href = "#";
       return;
     }
 
-    // เช็ก 404 แบบชัวร์ก่อนโหลด iframe
+    // เช็กว่าไฟล์มีจริงไหม (ถ้า server บล็อก HEAD จะข้าม)
     try{
-      const res = await fetch(path, {method:"HEAD", cache:"no-store"});
+      const res = await fetch(path, { method:"HEAD", cache:"no-store" });
       if(!res.ok){
         showError(`หาไฟล์ไม่เจอ (${res.status}) → ${path}\nเช็กชื่อไฟล์ในโฟลเดอร์ pdf/ ให้ตรงเป๊ะ`);
         pdfFrame.src = "";
         openNew.href = path;
+        downloadBtn.href = path;
         return;
       }
-    }catch(e){
-      // ถ้า HEAD ถูกบล็อก ก็ยังลองเปิดใน iframe ต่อ
-    }
+    }catch(e){ /* ignore */ }
 
     openNew.href = path;
-    pdfFrame.src = path;
+    downloadBtn.href = path;
+
+    pdfFrame.src = beautifyEmbedUrl(path);
+    pageSub.textContent = path;
   }
 
   document.getElementById("reloadBtn").addEventListener("click", ()=>{
@@ -103,5 +193,6 @@
 
   loadPdf(pdf);
 </script>
+
 </body>
 </html>

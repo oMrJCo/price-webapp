@@ -13,6 +13,7 @@ function normalizeList(json) {
 
 function normalizePath(p) {
   if (!p) return "";
+
   // ถ้าเป็น URL เต็ม
   if (/^https?:\/\//i.test(p)) return p;
 
@@ -43,8 +44,8 @@ async function loadCategories() {
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-    const json = await res.json();
 
+    const json = await res.json();
     const items = normalizeList(json);
 
     if (!items.length) {
@@ -65,7 +66,6 @@ async function loadCategories() {
         const pdf = normalizePath(item.pdf || "");
         const img = normalizePath(item.image || "");
 
-        // เผื่อไม่มีรูป จะใช้ placeholder div แทน
         const thumbHtml = img
           ? `<img src="${img}" alt="${title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">`
           : ``;

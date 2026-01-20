@@ -1,188 +1,100 @@
-// ========= Helpers =========
-function getParam(name, fallback = "") {
-  const params = new URLSearchParams(location.search);
-  return params.get(name) || fallback;
+// app.js — LEEPLUS Price Webapp
+// รองรับ categories.json ได้ทั้งแบบ Array และแบบ { categories: [...] }
+// + กัน cache เพื่อให้แก้จาก CMS แล้วหน้าเว็บอัปเดตทันที
+
+function normalizeList(json) {
+  if (Array.isArray(json)) return json;
+  if (json && Array.isArray(json.categories)) return json.categories;
+
+  // เผื่ออนาคต / กันพลาด
+  if (json && json.data && Array.isArray(json.data.categories)) return json.data.categories;
+  return [];
 }
 
-// ========= Read params from index.html =========
-const pdfPathRaw = getParam("pdf", "");
-const title = getParam("title", "ราคาสินค้า");
+function normalizePath(p) {
+  if (!p) return "";
+  // ถ้าเป็น URL เต็ม
+  if (/^https?:\/\//i.test(p)) return p;
 
-const pageTitleEl = document.getElementById("pageTitle");
-const statusEl = document.getElementById("status");
-const viewerEl = document.getElementById("viewer");
+  // กันเผื่อมี "./assets/xx"
+  if (p.startsWith("./")) return p.slice(2);
 
-const qEl = document.getElementById("q");
-const findBtn = document.getElementById("findBtn");
-const clearBtn = document.getElementById("clearBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const openBtn = document.getElementById("openBtn");
+  // ถ้าเริ่มด้วย "/" ถือว่าเป็น absolute ของเว็บ
+  if (p.startsWith("/")) return p;
 
-const resultsBox = document.getElementById("resultsBox");
-const resultsSummary = document.getElementById("resultsSummary");
-const resultsQuery = document.getElementById("resultsQuery");
-const resultList = document.getElementById("resultList");
-
-pageTitleEl.textContent = title;
-
-// ถ้าเข้าหน้าโดยไม่มี pdf param ให้แจ้งชัด ๆ
-if (!pdfPathRaw) {
-  statusEl.textContent = "ไม่พบไฟล์ PDF (กลับไปเลือกหมวดใหม่)";
-  downloadBtn.href = "#";
-  openBtn.href = "#";
+  // ค่าเริ่มต้นเป็น relative
+  return p;
 }
 
-// ตั้งปุ่มลิงก์
-downloadBtn.href = pdfPathRaw || "#";
-openBtn.href = pdfPathRaw || "#";
-
-// ========= PDF.js setup =========
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
-
-// กันแคชเวลาอัปเดตไฟล์ pdf
-const pdfUrl = pdfPathRaw
-  ? pdfPathRaw + (pdfPathRaw.includes("?") ? "&" : "?") + "v=" + Date.now()
-  : "";
-
-// เก็บข้อมูลหน้าไว้สำหรับกระโดดไปหน้า
-let pageBoxes = [];      // [HTMLElement]
-let pageTexts = [];      // [string]
-let pdfRef = null;
-
-function hideResults() {
-  resultsBox.style.display = "none";
-  resultList.innerHTML = "";
+function makeTitle(item) {
+  const en = (item.titleEN || "").trim();
+  const th = (item.titleTH || "").trim();
+  if (en && th) return `${en} (${th})`;
+  return en || th || "Category";
 }
 
-function showResults(query, pages) {
-  resultsBox.style.display = "block";
-  resultsQuery.textContent = `คำค้นหา: ${query}`;
-  resultsSummary.textContent = pages.length
-    ? `พบ ${pages.length} หน้า`
-    : "ไม่พบผลลัพธ์";
+async function loadCategories() {
+  const grid = document.getElementById("categoriesGrid");
+  if (!grid) return;
 
-  resultList.innerHTML = "";
-
-  if (!pages.length) return;
-
-  // ทำปุ่มเป็นหน้า (Page 1, 2, 3...) ให้กดกระโดดไปหน้าได้
-  pages.forEach((p) => {
-    const btn = document.createElement("button");
-    btn.className = "resultBtn";
-    btn.textContent = `หน้า ${p}`;
-    btn.addEventListener("click", () => {
-      const box = pageBoxes[p - 1];
-      if (box) box.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    resultList.appendChild(btn);
-  });
-}
-
-async function renderAllPages(pdf) {
-  viewerEl.innerHTML = "";
-  pageBoxes = [];
-  pageTexts = [];
-  pdfRef = pdf;
-
-  const wrapWidth = Math.min(1100, viewerEl.clientWidth || window.innerWidth) - 24;
-
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    statusEl.textContent = `กำลังโหลดหน้า ${pageNum}/${pdf.numPages}…`;
-
-    const page = await pdf.getPage(pageNum);
-
-    const viewport1 = page.getViewport({ scale: 1 });
-    const scale = wrapWidth / viewport1.width;
-    const viewport = page.getViewport({ scale });
-
-    const pageBox = document.createElement("div");
-    pageBox.className = "page";
-
-    const inner = document.createElement("div");
-    inner.className = "pageInner";
-    inner.style.width = Math.floor(viewport.width) + "px";
-    inner.style.height = Math.floor(viewport.height) + "px";
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
-
-    inner.appendChild(canvas);
-    pageBox.appendChild(inner);
-    viewerEl.appendChild(pageBox);
-
-    // Render ภาพ PDF (สวย/นิ่ง ไม่มีตัวซ้อน)
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    // ดึงข้อความของหน้านี้ไว้สำหรับค้นหา (ไม่ต้องแสดง)
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map(it => it.str).join(" ").toLowerCase();
-
-    pageBoxes.push(pageBox);
-    pageTexts.push(pageText);
-  }
-
-  statusEl.textContent = "โหลดเสร็จแล้ว (ค้นหาได้เลย)";
-}
-
-async function loadPdf() {
-  if (!pdfUrl) return;
+  // กัน cache ของ Netlify/Browser
+  const url = `categories.json?v=${Date.now()}`;
 
   try {
-    statusEl.textContent = "กำลังโหลดไฟล์ PDF…";
-    const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-    await renderAllPages(pdf);
-    hideResults();
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+    const json = await res.json();
+
+    const items = normalizeList(json);
+
+    if (!items.length) {
+      grid.innerHTML = `
+        <div class="empty">
+          ไม่พบข้อมูลหมวดสินค้าใน <b>categories.json</b><br/>
+          ลองเข้า CMS แล้วกด Save อีกครั้ง หรือเช็กว่าไฟล์มี key <code>categories</code>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = items
+      .map((item) => {
+        const title = makeTitle(item);
+        const titleEN = (item.titleEN || "").trim();
+        const titleTH = (item.titleTH || "").trim();
+        const pdf = normalizePath(item.pdf || "");
+        const img = normalizePath(item.image || "");
+
+        // เผื่อไม่มีรูป จะใช้ placeholder div แทน
+        const thumbHtml = img
+          ? `<img src="${img}" alt="${title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">`
+          : ``;
+
+        const href = `price.html?title=${encodeURIComponent(title)}&pdf=${encodeURIComponent(pdf)}`;
+
+        return `
+          <a class="card" href="${href}">
+            <div class="thumb ${img ? "" : "noimg"}">
+              ${thumbHtml}
+              ${img ? "" : `<div class="ph">LEEPLUS</div>`}
+            </div>
+            <div class="content">
+              <p class="title">${titleEN || titleTH || "Category"}</p>
+              <p class="sub">${titleTH ? titleTH : ""}</p>
+            </div>
+          </a>
+        `;
+      })
+      .join("");
   } catch (err) {
     console.error(err);
-    statusEl.textContent = "โหลด PDF ไม่สำเร็จ (เช็กชื่อไฟล์/ตำแหน่งไฟล์)";
+    grid.innerHTML = `
+      <div class="empty">
+        โหลดข้อมูลหมวดสินค้าไม่สำเร็จ<br/>
+        <small>${String(err.message || err)}</small>
+      </div>
+    `;
   }
 }
 
-function doSearch() {
-  const queryRaw = (qEl.value || "").trim();
-  const query = queryRaw.toLowerCase();
-
-  if (!query) {
-    statusEl.textContent = "พิมพ์คำค้นหาได้เลย";
-    hideResults();
-    return;
-  }
-
-  // ค้นหาแบบง่าย/เร็ว: เช็กว่าหน้าไหนมีคำค้น (case-insensitive)
-  const matchedPages = [];
-  for (let i = 0; i < pageTexts.length; i++) {
-    if (pageTexts[i].includes(query)) matchedPages.push(i + 1);
-  }
-
-  if (!matchedPages.length) {
-    statusEl.textContent = `ไม่พบคำว่า “${queryRaw}”`;
-    showResults(queryRaw, []);
-    return;
-  }
-
-  statusEl.textContent = `พบใน ${matchedPages.length} หน้า`;
-  showResults(queryRaw, matchedPages);
-
-  // กระโดดไปหน้าที่เจอครั้งแรก
-  const firstBox = pageBoxes[matchedPages[0] - 1];
-  if (firstBox) firstBox.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function clearSearch() {
-  qEl.value = "";
-  hideResults();
-  statusEl.textContent = "พร้อมค้นหา";
-}
-
-// Events
-findBtn.addEventListener("click", doSearch);
-clearBtn.addEventListener("click", clearSearch);
-qEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") doSearch();
-});
-
-// Start
-loadPdf();
+document.addEventListener("DOMContentLoaded", loadCategories);

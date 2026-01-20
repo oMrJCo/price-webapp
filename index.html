@@ -3,155 +3,119 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LEEPLUS | Price List</title>
+  <title>ราคาสินค้า LEEPLUS</title>
 
   <style>
-    body{ margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#f6f7f9; color:#111; }
-    .wrap{ max-width:1100px; margin:0 auto; padding:20px; }
+    :root{
+      --bg:#f6f7f9;
+      --card:#fff;
+      --text:#111;
+      --muted:#666;
+      --line:#e9eaee;
+      --radius:16px;
+    }
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);}
+    .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 80px;}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+    .brand .logo{font-size:18px}
+    h1{font-size:22px;margin:0;font-weight:900}
+    .subhead{margin:4px 0 16px;color:var(--muted);font-size:13px}
 
-    header{ margin-bottom:12px; }
-    header h1{ font-size:22px; margin:0 0 6px; font-weight:800; }
-    header p{ margin:0; font-size:13px; color:#555; }
+    .cover{
+      border-radius:22px;
+      background:linear-gradient(90deg,#7d7d7d,#bfbfbf);
+      padding:30px 28px;
+      color:#fff;
+      min-height:140px;
+      display:flex;
+      align-items:center;
+      margin:14px 0 20px;
+      box-shadow:0 10px 24px rgba(0,0,0,.06);
+      position:relative;
+      overflow:hidden;
+    }
+    .cover h2{margin:0;font-size:34px;letter-spacing:.2px}
+    .cover p{margin:6px 0 0;font-size:14px;opacity:.9;max-width:520px}
 
-    .cover{ position:relative; width:100%; height:240px; border-radius:18px; overflow:hidden; margin:14px 0 22px; background:#d9d9d9; }
-    .cover img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .cover::after{ content:""; position:absolute; inset:0; background:linear-gradient(to right, rgba(0,0,0,.45), rgba(0,0,0,.10)); pointer-events:none; }
-    .cover-content{ position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; justify-content:center; padding:24px 28px; color:#fff; }
-    .cover-content h2{ margin:0 0 6px; font-size:28px; font-weight:800; }
-    .cover-content p{ margin:0; font-size:14px; max-width:420px; opacity:.95; }
-    @media (max-width:600px){ .cover{height:180px;} .cover-content h2{font-size:20px;} }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:16px;
+    }
+    @media (max-width:980px){ .grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media (max-width:720px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+    @media (max-width:420px){ .grid{grid-template-columns:1fr;} }
 
-    .grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-    @media (min-width:900px){ .grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      text-decoration:none;
+      color:inherit;
+      box-shadow:0 10px 24px rgba(0,0,0,.04);
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(0,0,0,.08);}
 
-    .card{ background:#fff; border:1px solid #eee; border-radius:16px; text-decoration:none; color:#111; overflow:hidden; transition:transform .15s ease, box-shadow .15s ease; }
-    .card:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.06); }
+    .thumb{
+      height:140px;
+      background:#f0f1f3;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      position:relative;
+    }
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .thumb.noimg{background:linear-gradient(135deg,#ececec,#f8f8f8);}
+    .thumb .ph{
+      font-weight:900;
+      letter-spacing:.8px;
+      color:#999;
+      font-size:18px;
+    }
 
-    .thumb{ height:130px; background:#ededed; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#777; font-weight:800; font-size:12px; letter-spacing:.5px; }
-    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .content{padding:12px 14px 14px;}
+    .title{margin:0;font-size:14px;font-weight:900}
+    .sub{margin:3px 0 0;font-size:12px;color:var(--muted)}
 
-    .content{ padding:12px 14px 14px; }
-    .title{ font-size:14px; font-weight:800; margin:0 0 2px; }
-    .sub{ font-size:12px; color:#666; margin:0; }
-
-    /* Floating LINE */
-    .line-float{ position:fixed; right:18px; bottom:18px; z-index:999; display:flex; flex-direction:column; gap:10px; align-items:center; }
-    .line-btn,.qr-btn{ width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,.25); cursor:pointer; text-decoration:none; }
-    .line-btn{ background:#06c755; }
-    .qr-btn{ background:#fff; border:1px solid #e8e8e8; }
-    .line-btn img,.qr-btn img{ width:30px; height:30px; display:block; }
-
-    .qr-popup{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px; }
-    .qr-box{ background:#fff; border-radius:16px; padding:18px; text-align:center; max-width:280px; width:100%; }
-    .qr-box img{ width:220px; height:220px; object-fit:contain; }
-    .qr-box p{ margin:10px 0 0; font-size:13px; color:#333; }
-    .qr-close{ margin-top:12px; width:100%; border:1px solid #ddd; background:#fff; border-radius:12px; padding:10px 12px; cursor:pointer; font-size:13px; }
+    .empty{
+      grid-column:1 / -1;
+      background:#fff;
+      border:1px dashed #d8dbe3;
+      border-radius:16px;
+      padding:16px;
+      color:#333;
+      font-size:13px;
+      line-height:1.45;
+    }
+    code{background:#f1f3f7;padding:2px 6px;border-radius:8px}
+    small{color:#777}
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <header>
-      <h1 id="siteTitle">📦 ราคาสินค้า LEEPLUS</h1>
-      <p id="siteSubtitle">เลือกหมวดสินค้าเพื่อดูราคาล่าสุด</p>
-    </header>
+    <div class="brand">
+      <div class="logo">📦</div>
+      <h1>ราคาสินค้า LEEPLUS</h1>
+    </div>
+    <div class="subhead">เลือกหมวดสินค้าเพื่อดูราคาล่าสุด</div>
 
     <div class="cover">
-      <img id="coverImg" src="assets/cover.jpg" alt="LEEPLUS Cover" onerror="this.style.display='none'">
-      <div class="cover-content">
-        <h2 id="coverHeadline">ศูนย์รวมอะไหล่มือถือ</h2>
-        <p id="coverSubtext">แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว</p>
+      <div>
+        <h2>ศูนย์รวมอะไหล่มือถือ</h2>
+        <p>แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว</p>
       </div>
     </div>
 
-    <!-- ✅ Fallback menu (ไม่หายแน่นอน) -->
-    <div class="grid" id="grid">
-      <a class="card" href="price.html?title=Battery%20(แบตเตอรี่)&pdf=pdf/battery.pdf">
-        <div class="thumb">
-          <img src="assets/battery.jpg" alt="Battery"
-               onerror="this.remove(); this.parentElement.textContent='BATTERY';">
-        </div>
-        <div class="content">
-          <p class="title">Battery</p>
-          <p class="sub">แบตเตอรี่</p>
-        </div>
-      </a>
+    <!-- ✅ ตรงนี้คือ grid ที่ app.js จะ render หมวดทั้งหมด -->
+    <div id="categoriesGrid" class="grid">
+      <div class="empty">กำลังโหลดหมวดสินค้า...</div>
     </div>
   </div>
 
-  <div class="line-float">
-    <a class="line-btn" id="lineBtn" href="https://line.me/R/ti/p/@leeplus" target="_blank" rel="noopener">
-      <img id="lineIcon" src="assets/line-icon.png" alt="Add LINE" onerror="this.style.display='none'">
-    </a>
-    <div class="qr-btn" onclick="document.getElementById('qrPopup').style.display='flex'">
-      <img id="qrIcon" src="assets/line-icon.png" alt="QR" onerror="this.style.display='none'">
-    </div>
-  </div>
-
-  <div class="qr-popup" id="qrPopup" onclick="this.style.display='none'">
-    <div class="qr-box" onclick="event.stopPropagation()">
-      <img id="lineQr" src="assets/line-qr.png" alt="LINE QR" onerror="this.style.display='none'">
-      <p>สแกนเพื่อแอด LINE</p>
-      <button class="qr-close" onclick="document.getElementById('qrPopup').style.display='none'">ปิดหน้าต่าง</button>
-    </div>
-  </div>
-
-  <script>
-    // โหลด JSON จาก Backoffice ถ้าโหลดได้ -> สร้างเมนูใหม่ทับ fallback
-    async function loadFromBackoffice(){
-      try{
-        const res = await fetch('data/categories.json?v=' + Date.now());
-        if(!res.ok) return;
-        const data = await res.json();
-
-        if (data.siteTitle) document.getElementById('siteTitle').textContent = data.siteTitle;
-        if (data.siteSubtitle) document.getElementById('siteSubtitle').textContent = data.siteSubtitle;
-
-        if (data.coverImage) document.getElementById('coverImg').src = data.coverImage;
-        if (data.coverHeadline) document.getElementById('coverHeadline').textContent = data.coverHeadline;
-        if (data.coverSubtext) document.getElementById('coverSubtext').textContent = data.coverSubtext;
-
-        if (data.lineUrl) document.getElementById('lineBtn').href = data.lineUrl;
-        if (data.lineIcon) {
-          document.getElementById('lineIcon').src = data.lineIcon;
-          document.getElementById('qrIcon').src = data.lineIcon;
-        }
-        if (data.lineQr) document.getElementById('lineQr').src = data.lineQr;
-
-        if (Array.isArray(data.categories) && data.categories.length){
-          const grid = document.getElementById('grid');
-          grid.innerHTML = '';
-
-          data.categories.forEach(c => {
-            const en = c.titleEN || '';
-            const th = c.titleTH || '';
-            const img = c.image || '';
-            const pdf = c.pdf || '';
-
-            const titleParam = encodeURIComponent(en + (th ? ` (${th})` : ''));
-
-            const a = document.createElement('a');
-            a.className = 'card';
-            a.href = `price.html?title=${titleParam}&pdf=${encodeURIComponent(pdf)}`;
-
-            a.innerHTML = `
-              <div class="thumb">
-                ${img ? `<img src="${img}" alt="${en}" onerror="this.remove(); this.parentElement.textContent='${en.toUpperCase().slice(0,12)}';">`
-                      : `${en.toUpperCase().slice(0,12)}`}
-              </div>
-              <div class="content">
-                <p class="title">${en}</p>
-                <p class="sub">${th}</p>
-              </div>
-            `;
-            grid.appendChild(a);
-          });
-        }
-      }catch(e){
-        // ถ้า error ก็ปล่อย fallback ไว้ ไม่ทำเว็บพัง
-      }
-    }
-    loadFromBackoffice();
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>

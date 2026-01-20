@@ -2,363 +2,79 @@
 <html lang="th">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>LEEPLUS • ราคา</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root{
-      --bg:#f6f7f9; --card:#fff; --text:#111; --muted:#6b7280;
-      --line:#e5e7eb; --shadow:0 12px 28px rgba(0,0,0,.06);
-      --radius:16px; --btn:#111; --btnText:#fff;
-    }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto; background:var(--bg); color:var(--text);}
-    a{color:inherit; text-decoration:none}
-    .top{
-      position:sticky; top:0; z-index:20;
-      background:rgba(246,247,249,.92); backdrop-filter: blur(10px);
-      border-bottom:1px solid var(--line);
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto;
+      background:#f6f7f9;
     }
     .topbar{
-      max-width:1200px; margin:0 auto; padding:12px 14px;
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:12px 16px;
+      background:#fff;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .topbar h1{
+      font-size:16px;
+      margin:0;
+      font-weight:700;
+      flex:1;
     }
     .btn{
-      border:1px solid var(--line);
-      background:var(--card);
-      padding:10px 12px;
+      padding:8px 14px;
       border-radius:999px;
-      font-size:14px;
+      border:1px solid #e5e7eb;
+      background:#fff;
       cursor:pointer;
-      display:inline-flex; align-items:center; gap:8px;
-      box-shadow:0 6px 16px rgba(0,0,0,.04);
-      user-select:none;
-    }
-    .btn.primary{background:var(--btn); color:var(--btnText); border-color:var(--btn);}
-    .titlewrap{display:flex; flex-direction:column; gap:2px; min-width:240px; flex:1}
-    .title{font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .sub{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-
-    .container{max-width:1200px; margin:0 auto; padding:14px;}
-    .panel{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .controls{
-      padding:12px;
-      border-bottom:1px solid var(--line);
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-    }
-    .input{
-      flex:1; min-width:260px;
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px 12px;
+      text-decoration:none;
+      color:#111;
       font-size:14px;
-      background:#fafafa;
-    }
-    .hint{font-size:12px; color:var(--muted); width:100%;}
-    .err{
-      margin:12px;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid #ffd1d1;
-      background:#fff1f1;
-      color:#b00020;
-      display:none;
-      white-space:pre-wrap;
-    }
-
-    /* Viewer */
-    .viewerWrap{
-      display:flex;
-      background:#0b0f16; /* darker but clean */
-      min-height:70vh;
     }
     .viewer{
+      height:calc(100vh - 56px);
+    }
+    iframe{
       width:100%;
-      padding:14px;
-      overflow:auto;
-      height:78vh;
-    }
-    .pages{
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-      align-items:center;
-    }
-    .pageCard{
-      background:#111827;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;
-      padding:10px;
-      box-shadow:0 14px 40px rgba(0,0,0,.35);
-      width:fit-content;
-      max-width:100%;
-    }
-    canvas{
-      display:block;
-      background:#fff;
-      border-radius:10px;
-      max-width:100%;
-      height:auto;
-    }
-    .loading{
-      padding:18px;
-      color:#e5e7eb;
-      font-size:14px;
-    }
-
-    /* Small screen */
-    @media (max-width:560px){
-      .viewer{height:72vh}
-      .btn{padding:9px 11px}
-      .title{font-size:15px}
+      height:100%;
+      border:none;
+      background:#555;
     }
   </style>
 </head>
 
 <body>
-  <div class="top">
-    <div class="topbar">
-      <a class="btn" href="index.html">← กลับหน้าหมวด</a>
 
-      <div class="titlewrap">
-        <div class="title" id="pageTitle">หมวดสินค้า</div>
-        <div class="sub" id="pageSub">กำลังโหลด…</div>
-      </div>
+<div class="topbar">
+  <a class="btn" href="index.html">← กลับหน้าหมวด</a>
+  <h1 id="title">กำลังโหลด…</h1>
+  <a class="btn" id="openPdf" target="_blank">เปิด PDF</a>
+</div>
 
-      <button class="btn" id="prevBtn" type="button">◀ ก่อนหน้า</button>
-      <button class="btn" id="nextBtn" type="button">ถัดไป ▶</button>
+<div class="viewer">
+  <iframe id="pdfFrame"></iframe>
+</div>
 
-      <button class="btn" id="zoomOutBtn" type="button">−</button>
-      <button class="btn" id="zoomInBtn" type="button">+</button>
+<script>
+  const qs = new URLSearchParams(location.search);
+  const title = qs.get("title") || "หมวดสินค้า";
+  const pdf = qs.get("pdf");
 
-      <a class="btn" id="openNew" target="_blank" rel="noopener">เปิดไฟล์</a>
-      <a class="btn primary" id="downloadBtn" download>ดาวน์โหลด</a>
-    </div>
-  </div>
+  document.getElementById("title").textContent = title;
 
-  <div class="container">
-    <div class="panel">
-      <div class="controls">
-        <input id="pdfInput" class="input" placeholder="พาธ PDF เช่น pdf/battery.pdf" />
-        <button class="btn" id="reloadBtn" type="button">โหลด</button>
-        <div class="hint">เวอร์ชันนี้ใช้ pdf.js (ไม่มี toolbar ของเบราว์เซอร์) • ถ้าแก้จาก CMS แล้วไม่เปลี่ยน กด Ctrl + F5</div>
-      </div>
+  if(!pdf){
+    document.getElementById("title").textContent = "ไม่พบไฟล์ PDF";
+  }else{
+    const viewerUrl =
+      `pdfjs/web/viewer.html?file=${encodeURIComponent(pdf)}`;
 
-      <div id="errorBox" class="err"></div>
+    document.getElementById("pdfFrame").src = viewerUrl;
+    document.getElementById("openPdf").href = pdf;
+  }
+</script>
 
-      <div class="viewerWrap">
-        <div class="viewer">
-          <div id="loading" class="loading">กำลังโหลด PDF…</div>
-          <div id="pages" class="pages"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- pdf.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.js"></script>
-
-  <script>
-    // ====== Helpers
-    const qs = new URLSearchParams(location.search);
-    const title = qs.get("title") || "หมวดสินค้า";
-    const initialPdf = (qs.get("pdf") || "").trim();
-
-    const pageTitle = document.getElementById("pageTitle");
-    const pageSub   = document.getElementById("pageSub");
-    const pdfInput  = document.getElementById("pdfInput");
-    const openNew   = document.getElementById("openNew");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const errorBox  = document.getElementById("errorBox");
-    const pagesEl   = document.getElementById("pages");
-    const loadingEl = document.getElementById("loading");
-
-    const prevBtn   = document.getElementById("prevBtn");
-    const nextBtn   = document.getElementById("nextBtn");
-    const zoomInBtn = document.getElementById("zoomInBtn");
-    const zoomOutBtn= document.getElementById("zoomOutBtn");
-    const reloadBtn = document.getElementById("reloadBtn");
-
-    pageTitle.textContent = title;
-    pdfInput.value = initialPdf;
-
-    function showError(msg){
-      errorBox.style.display = "block";
-      errorBox.textContent = msg;
-    }
-    function clearError(){
-      errorBox.style.display = "none";
-      errorBox.textContent = "";
-    }
-    function setLoading(on, text="กำลังโหลด PDF…"){
-      loadingEl.style.display = on ? "block" : "none";
-      loadingEl.textContent = text;
-    }
-
-    // ====== pdf.js setup (ปิด worker เพื่อกัน error ข้าม browser/host)
-    // (ถ้าอยากเปิด worker ทีหลังค่อยปรับได้)
-    const CDN_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.min.js";
-    if (window.pdfjsLib) {
-      // ตั้งไว้เผื่อบาง browser ใช้
-      pdfjsLib.GlobalWorkerOptions.workerSrc = CDN_WORKER;
-    }
-
-    // ====== State
-    let pdfDoc = null;
-    let currentPage = 1;
-    let scale = 1.25; // เริ่มต้นอ่านสบาย
-
-    async function headCheck(path){
-      try{
-        const res = await fetch(path, { method:"HEAD", cache:"no-store" });
-        return res.ok ? null : `HTTP ${res.status}`;
-      }catch(e){
-        // บาง server บล็อก HEAD — ไม่ถือว่าพัง ให้ไปโหลดจริงต่อ
-        return null;
-      }
-    }
-
-    async function loadPdf(path){
-      clearError();
-      pagesEl.innerHTML = "";
-      setLoading(true, "กำลังโหลด PDF…");
-
-      if(!path){
-        setLoading(false);
-        showError("ยังไม่ได้ระบุ PDF path (เช่น pdf/battery.pdf)");
-        pageSub.textContent = "ยังไม่ได้เลือกไฟล์";
-        openNew.href = "#";
-        downloadBtn.href = "#";
-        return;
-      }
-
-      pageSub.textContent = path;
-      openNew.href = path;
-      downloadBtn.href = path;
-
-      const headErr = await headCheck(path);
-      if(headErr){
-        setLoading(false);
-        showError(`หาไฟล์ไม่เจอ (${headErr}) → ${path}\nเช็กว่าไฟล์อยู่ในโฟลเดอร์ pdf/ และสะกดชื่อให้ตรงเป๊ะ (ตัวเล็ก/ใหญ่สำคัญ)`);
-        return;
-      }
-
-      try{
-        // disableWorker: true = กันปัญหา worker / fake worker / CSP
-        const loadingTask = pdfjsLib.getDocument({ url: path, disableWorker: true });
-        pdfDoc = await loadingTask.promise;
-        currentPage = 1;
-
-        setLoading(false);
-        await renderAroundCurrent(); // เรนเดอร์หน้าใกล้ๆก่อน (เร็ว)
-        updateNav();
-      }catch(err){
-        console.error(err);
-        setLoading(false);
-        showError("โหลด PDF ไม่สำเร็จ\n" + (err?.message || String(err)));
-      }
-    }
-
-    async function renderPage(pageNum){
-      const page = await pdfDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale });
-
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d", { alpha: false });
-
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-
-      const pageCard = document.createElement("div");
-      pageCard.className = "pageCard";
-
-      // label เล็กๆ
-      const label = document.createElement("div");
-      label.style.color = "rgba(255,255,255,.72)";
-      label.style.fontSize = "12px";
-      label.style.margin = "0 0 8px 2px";
-      label.textContent = `หน้า ${pageNum} / ${pdfDoc.numPages}`;
-
-      pageCard.appendChild(label);
-      pageCard.appendChild(canvas);
-      pagesEl.appendChild(pageCard);
-
-      await page.render({ canvasContext: ctx, viewport }).promise;
-    }
-
-    async function renderAroundCurrent(){
-      pagesEl.innerHTML = "";
-
-      // เรนเดอร์ 1 หน้า (current) แบบชัวร์ก่อน
-      setLoading(true, `กำลังเรนเดอร์หน้า ${currentPage}…`);
-      await renderPage(currentPage);
-      setLoading(false);
-
-      // ถ้ามีพี่อยากเลื่อนดูทั้งไฟล์ทีเดียว เราเรนเดอร์เพิ่มแบบเบา ๆ (หน้าถัดไป/ก่อนหน้า)
-      // เพื่อให้ไม่หน่วงมาก
-      const extras = [];
-      if(currentPage > 1) extras.push(currentPage - 1);
-      if(currentPage < pdfDoc.numPages) extras.push(currentPage + 1);
-
-      for(const p of extras){
-        try{ await renderPage(p); } catch(e){ /* ignore */ }
-      }
-
-      // เลื่อนให้เห็นหน้าปัจจุบัน (อันแรก)
-      pagesEl.firstChild?.scrollIntoView({ behavior:"smooth", block:"start" });
-    }
-
-    function updateNav(){
-      if(!pdfDoc){
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        return;
-      }
-      prevBtn.disabled = currentPage <= 1;
-      nextBtn.disabled = currentPage >= pdfDoc.numPages;
-    }
-
-    // ====== UI events
-    prevBtn.addEventListener("click", async ()=>{
-      if(!pdfDoc || currentPage <= 1) return;
-      currentPage--;
-      await renderAroundCurrent();
-      updateNav();
-    });
-
-    nextBtn.addEventListener("click", async ()=>{
-      if(!pdfDoc || currentPage >= pdfDoc.numPages) return;
-      currentPage++;
-      await renderAroundCurrent();
-      updateNav();
-    });
-
-    zoomInBtn.addEventListener("click", async ()=>{
-      if(!pdfDoc) return;
-      scale = Math.min(2.25, scale + 0.15);
-      await renderAroundCurrent();
-      updateNav();
-    });
-
-    zoomOutBtn.addEventListener("click", async ()=>{
-      if(!pdfDoc) return;
-      scale = Math.max(0.75, scale - 0.15);
-      await renderAroundCurrent();
-      updateNav();
-    });
-
-    reloadBtn.addEventListener("click", ()=>{
-      loadPdf(pdfInput.value.trim());
-    });
-
-    // Init
-    loadPdf(initialPdf);
-  </script>
 </body>
 </html>

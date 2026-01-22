@@ -4,53 +4,22 @@
   <meta charset="UTF-8" />
   <title>LEEPLUS Price</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f6f6f6;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e5e5;
-    }
-
-    .back {
-      text-decoration: none;
-      color: #333;
-      font-size: 14px;
-    }
-
-    .title {
-      font-weight: 600;
-      font-size: 15px;
-    }
-
-    .pdf-wrap {
-      height: calc(100vh - 52px);
-      background: #000;
-    }
-
-    embed {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #000;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#f6f6f6}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e5e5}
+    .back{color:#333;text-decoration:none;font-size:14px}
+    .title{font-weight:600;font-size:15px}
+    .pdf-wrap{height:calc(100vh - 52px);background:#000}
+    embed{width:100%;height:100%;border:none;background:#000}
+    .err{padding:18px}
+    .btn{display:inline-block;margin-top:10px;padding:10px 12px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-size:14px}
   </style>
 </head>
-
 <body>
   <div class="topbar">
-    <a class="back" href="index.html">← กลับ</a>
+    <a class="back" id="backBtn" href="index.html">← กลับหน้าหมวด</a>
     <div class="title" id="pageTitle">Price</div>
-    <div style="width:40px"></div>
+    <a class="back" id="openPdfBtn" href="#" target="_blank">เปิด PDF</a>
   </div>
 
   <div class="pdf-wrap">
@@ -60,14 +29,27 @@
   <script>
     const params = new URLSearchParams(location.search);
     const title = params.get("title") || "Price";
-    const pdf = params.get("pdf");
+    let pdf = params.get("pdf"); // pdf ที่ส่งมาจาก app.js จะเป็น URL ที่ถูกแล้ว
+
+    // base path (รองรับ GitHub Pages)
+    const seg = location.pathname.split("/").filter(Boolean);
+    const BASE_PATH = seg.length > 0 ? `/${seg[0]}/` : "/";
 
     document.getElementById("pageTitle").textContent = title;
 
-    if (pdf) {
-      document.getElementById("pdfViewer").src = pdf + "#toolbar=0";
+    // ปรับปุ่ม back ให้กลับไปหน้า index ใน base path เสมอ
+    document.getElementById("backBtn").href = BASE_PATH + "index.html";
+
+    if (!pdf) {
+      document.querySelector(".pdf-wrap").innerHTML =
+        `<div class="err">ไม่พบไฟล์ PDF</div>`;
     } else {
-      document.body.innerHTML = "<p style='padding:20px'>ไม่พบไฟล์ PDF</p>";
+      // กัน cache และซ่อน toolbar (บาง browser รองรับ)
+      const bust = Date.now();
+      const finalPdf = pdf + (pdf.includes("?") ? "&" : "?") + "v=" + bust + "#toolbar=0";
+
+      document.getElementById("pdfViewer").src = finalPdf;
+      document.getElementById("openPdfBtn").href = pdf;
     }
   </script>
 </body>

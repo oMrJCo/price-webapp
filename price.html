@@ -70,7 +70,6 @@
     }
     .hint code{background:#f3f3f3; padding:2px 6px; border-radius:8px; font-size:12px}
 
-    /* Viewer */
     .viewer{
       background:#2b2b2b;
       padding:14px 0;
@@ -90,7 +89,6 @@
       height:auto;
     }
 
-    /* Loading / error */
     .center{
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       gap:10px; color:#fff;
@@ -115,7 +113,6 @@
     .errbox b{display:block; margin-bottom:6px}
     .errbox .small{color:#666; font-size:13px}
 
-    /* Mobile fine-tune */
     @media (max-width:520px){
       .title{max-width:52vw}
       .btn{padding:7px 10px; font-size:13px}
@@ -131,6 +128,7 @@
       <div class="title" id="pageTitle">Price</div>
     </div>
     <div class="actions">
+      <a class="btn secondary" id="fitBtn" href="#">ปรับให้พอดี</a>
       <a class="btn secondary" id="reloadBtn" href="#">โหลดใหม่</a>
       <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
     </div>
@@ -141,7 +139,7 @@
       <div class="hint">
         <div>ไฟล์: <code id="pdfPathText">-</code></div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <span>ถ้าโหลดช้า ให้กด “โหลดใหม่”</span>
+          <span>มือถือจะนิ่งขึ้น (ไม่ render ซ้ำ)</span>
         </div>
       </div>
 
@@ -149,7 +147,7 @@
         <div class="center" id="loading">
           <div class="spinner"></div>
           <div>กำลังโหลด PDF…</div>
-          <div style="font-size:12px; opacity:.85;">(จะแสดงทันทีทั้งมือถือและ PC)</div>
+          <div style="font-size:12px; opacity:.85;">(แสดงทันทีทั้งมือถือและ PC)</div>
         </div>
       </div>
     </div>
@@ -163,7 +161,7 @@
     // ===== Get params =====
     const params = new URLSearchParams(location.search);
     const title = params.get("title") || "Price";
-    let pdf = params.get("pdf"); // ควรเป็น /price-webapp/pdf/xxx.pdf
+    let pdf = params.get("pdf");
 
     document.getElementById("pageTitle").textContent = title;
     document.getElementById("backBtn").href = BASE_PATH + "index.html";
@@ -173,14 +171,11 @@
     const pdfPathText = document.getElementById("pdfPathText");
     const openPdfBtn = document.getElementById("openPdfBtn");
     const reloadBtn = document.getElementById("reloadBtn");
+    const fitBtn = document.getElementById("fitBtn");
 
-    reloadBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      // force reload without cache
-      const u = new URL(location.href);
-      u.searchParams.set("v", Date.now());
-      location.href = u.toString();
-    });
+    // ===== PDF.js setup =====
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
     function showError(msg, detail) {
       viewer.innerHTML = `
@@ -199,32 +194,44 @@
     }
 
     function clearPages() {
-      // ลบ canvas page เก่า (แต่คง loading)
       const pages = viewer.querySelectorAll(".page");
       pages.forEach(p => p.remove());
     }
 
-    // ===== PDF.js setup =====
-    // ตั้ง worker ให้ชัวร์ (สำคัญมาก)
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+    // ===== กัน render ซ้ำ (ตัวนี้แก้ปัญหาหลักบนมือถือ) =====
+    let isRendering = false;
+    let lastRenderWidth = 0;
 
-    async function renderPDF(url) {
+    // cache buster เฉพาะตอน "โหลดใหม่" เท่านั้น
+    let bust = params.get("v") || "";
+
+    function getPdfUrl(originalUrl) {
+      if (!bust) return originalUrl; // ปกติไม่ใส่ v= เพื่อไม่ยิงซ้ำ
+      return originalUrl + (originalUrl.includes("?") ? "&" : "?") + "v=" + bust;
+    }
+
+    async function renderPDF(url, force = false) {
+      const w = viewer.clientWidth || window.innerWidth || 1000;
+
+      // ไม่ force = ถ้าความกว้างเปลี่ยนนิดเดียว (พวก address bar ยุบ/ขยาย) ไม่ render ใหม่
+      if (!force && lastRenderWidth && Math.abs(w - lastRenderWidth) < 120) {
+        return;
+      }
+      lastRenderWidth = w;
+
+      if (isRendering) return;
+      isRendering = true;
+
       clearPages();
       loading.style.display = "flex";
 
-      // กัน cache ของไฟล์ PDF
-      const fetchUrl = url + (url.includes("?") ? "&" : "?") + "v=" + Date.now();
-
       try {
-        const task = pdfjsLib.getDocument({ url: fetchUrl, withCredentials: false });
+        const task = pdfjsLib.getDocument({ url: getPdfUrl(url), withCredentials: false });
         const pdfDoc = await task.promise;
 
-        // render ทุกหน้าเรียงลงมา
         for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
           const page = await pdfDoc.getPage(pageNum);
 
-          // คำนวณ scale ให้พอดีกับความกว้างจอ
           const containerWidth = Math.min(viewer.clientWidth, 1100) - 18;
           const viewport = page.getViewport({ scale: 1 });
           const scale = containerWidth / viewport.width;
@@ -249,8 +256,25 @@
         console.error(err);
         loading.style.display = "none";
         showError("ไฟล์อาจไม่พบ / path ผิด / หรือโหลดไม่ทัน", String(err?.message || err));
+      } finally {
+        isRendering = false;
       }
     }
+
+    // ===== Buttons =====
+    reloadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // ทำให้ "โหลดใหม่จริง" แบบกัน cache เฉพาะตอนกดปุ่มนี้
+      const u = new URL(location.href);
+      u.searchParams.set("v", Date.now());
+      location.href = u.toString();
+    });
+
+    fitBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Force render ให้พอดีจอ (ใช้ตอนหมุนเครื่อง/จอเปลี่ยนจริง)
+      renderPDF(pdf, true);
+    });
 
     // ===== Start =====
     if (!pdf) {
@@ -258,23 +282,17 @@
       pdfPathText.textContent = "ไม่พบพารามิเตอร์ pdf";
       showError("URL ไม่มีค่า pdf= ...", "กลับไปหน้าหมวดแล้วลองกดใหม่อีกครั้ง");
     } else {
-      // ถ้าเป็น relative เช่น pdf/battery.pdf ให้เติม BASE_PATH ให้
-      // แต่ถ้าเป็น /price-webapp/... อยู่แล้ว ก็ใช้ตรง ๆ
       if (!/^https?:\/\//i.test(pdf) && !pdf.startsWith("/")) {
         pdf = BASE_PATH + pdf.replace(/^\.\//, "");
       }
-
       openPdfBtn.href = pdf;
       pdfPathText.textContent = pdf;
 
-      renderPDF(pdf);
+      // render ครั้งแรก
+      renderPDF(pdf, true);
 
-      // ปรับขนาดเมื่อหมุนจอ/เปลี่ยนขนาด (มือถือ)
-      let resizeTimer;
-      window.addEventListener("resize", () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => renderPDF(pdf), 250);
-      });
+      // ❌ ไม่ auto-render บน resize แล้ว (เพราะมือถือทำให้วน)
+      // ถ้าพี่หมุนจอ / อยากให้พอดี กดปุ่ม "ปรับให้พอดี" แทน
     }
   </script>
 </body>

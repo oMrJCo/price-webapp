@@ -1,10 +1,8 @@
 // app.js — LEEPLUS Price Webapp (GitHub Pages Ready)
 
 const BASE_PATH = (() => {
-  // ถ้า URL เป็น /price-webapp/... ให้ base เป็น /price-webapp/
-  // ถ้าเป็น root (เช่น local) ให้ base เป็น /
+  // GitHub Pages แบบ Project: /price-webapp/...
   const seg = location.pathname.split("/").filter(Boolean);
-  // Project pages: /{repo}/...
   if (seg.length > 0) return `/${seg[0]}/`;
   return "/";
 })();
@@ -18,11 +16,10 @@ function normalizeList(json) {
 
 function normalizeRelPath(p) {
   if (!p) return "";
-  if (/^https?:\/\//i.test(p)) return p; // url เต็มไม่ต้องแตะ
-  // ตัด ./ และ /
+  if (/^https?:\/\//i.test(p)) return p; // url เต็ม ไม่แตะ
+  // ตัด ./ และ / หน้าออก
   p = p.replace(/^\.\//, "").replace(/^\//, "");
-  // ทำให้เป็น path ใต้ repo เสมอ
-  return BASE_PATH + p;
+  return BASE_PATH + p; // ใส่ /price-webapp/ ให้เอง
 }
 
 function makeTitle(item) {
@@ -45,7 +42,7 @@ async function loadCategories() {
     const items = normalizeList(json);
 
     if (!items.length) {
-      grid.innerHTML = `<div class="empty">ไม่พบข้อมูลหมวดสินค้าใน <b>categories.json</b></div>`;
+      grid.innerHTML = `<div class="empty">ไม่พบข้อมูลใน categories.json</div>`;
       return;
     }
 
@@ -57,6 +54,7 @@ async function loadCategories() {
       const pdf = normalizeRelPath(item.pdf || "");
       const img = normalizeRelPath(item.image || "");
 
+      // ให้ลิงก์ไป price.html อยู่ใต้ /price-webapp/ เสมอ
       const href = `${BASE_PATH}price.html?title=${encodeURIComponent(titleFull)}&pdf=${encodeURIComponent(pdf)}`;
 
       return `

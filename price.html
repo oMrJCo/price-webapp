@@ -7,47 +7,45 @@
   <style>
     body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#f6f6f6}
     .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e5e5}
-    .back{color:#333;text-decoration:none;font-size:14px}
-    .title{font-weight:600;font-size:15px}
-    .pdf-wrap{height:calc(100vh - 52px);background:#000}
+    .left{display:flex;align-items:center;gap:10px}
+    .back{color:#333;text-decoration:none;font-size:14px;padding:6px 10px;border:1px solid #e5e5e5;border-radius:999px;background:#fff}
+    .title{font-weight:700;font-size:15px}
+    .openpdf{color:#111;text-decoration:none;font-size:14px;padding:6px 12px;border:1px solid #111;border-radius:999px;background:#fff}
+    .pdf-wrap{height:calc(100vh - 58px);background:#000}
     embed{width:100%;height:100%;border:none;background:#000}
     .err{padding:18px}
-    .btn{display:inline-block;margin-top:10px;padding:10px 12px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-size:14px}
   </style>
 </head>
 <body>
   <div class="topbar">
-    <a class="back" id="backBtn" href="index.html">← กลับหน้าหมวด</a>
-    <div class="title" id="pageTitle">Price</div>
-    <a class="back" id="openPdfBtn" href="#" target="_blank">เปิด PDF</a>
+    <div class="left">
+      <a class="back" id="backBtn" href="index.html">← กลับหน้าหมวด</a>
+      <div class="title" id="pageTitle">Price</div>
+    </div>
+    <a class="openpdf" id="openPdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
   </div>
 
-  <div class="pdf-wrap">
+  <div class="pdf-wrap" id="wrap">
     <embed id="pdfViewer" type="application/pdf">
   </div>
 
   <script>
     const params = new URLSearchParams(location.search);
     const title = params.get("title") || "Price";
-    let pdf = params.get("pdf"); // pdf ที่ส่งมาจาก app.js จะเป็น URL ที่ถูกแล้ว
+    const pdf = params.get("pdf"); // ต้องเป็น /price-webapp/pdf/... (ได้จาก app.js)
 
-    // base path (รองรับ GitHub Pages)
+    // base path สำหรับปุ่มกลับ
     const seg = location.pathname.split("/").filter(Boolean);
     const BASE_PATH = seg.length > 0 ? `/${seg[0]}/` : "/";
 
     document.getElementById("pageTitle").textContent = title;
-
-    // ปรับปุ่ม back ให้กลับไปหน้า index ใน base path เสมอ
     document.getElementById("backBtn").href = BASE_PATH + "index.html";
 
     if (!pdf) {
-      document.querySelector(".pdf-wrap").innerHTML =
-        `<div class="err">ไม่พบไฟล์ PDF</div>`;
+      document.getElementById("wrap").innerHTML = `<div class="err">ไม่พบไฟล์ PDF</div>`;
     } else {
-      // กัน cache และซ่อน toolbar (บาง browser รองรับ)
-      const bust = Date.now();
-      const finalPdf = pdf + (pdf.includes("?") ? "&" : "?") + "v=" + bust + "#toolbar=0";
-
+      // กัน cache + พยายามซ่อน toolbar (บาง browser รองรับ)
+      const finalPdf = pdf + (pdf.includes("?") ? "&" : "?") + "v=" + Date.now() + "#toolbar=0";
       document.getElementById("pdfViewer").src = finalPdf;
       document.getElementById("openPdfBtn").href = pdf;
     }

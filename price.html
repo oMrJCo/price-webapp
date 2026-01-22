@@ -4,50 +4,277 @@
   <meta charset="UTF-8" />
   <title>LEEPLUS Price</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- PDF.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#f6f6f6}
-    .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e5e5}
-    .left{display:flex;align-items:center;gap:10px}
-    .back{color:#333;text-decoration:none;font-size:14px;padding:6px 10px;border:1px solid #e5e5e5;border-radius:999px;background:#fff}
-    .title{font-weight:700;font-size:15px}
-    .openpdf{color:#111;text-decoration:none;font-size:14px;padding:6px 12px;border:1px solid #111;border-radius:999px;background:#fff}
-    .pdf-wrap{height:calc(100vh - 58px);background:#000}
-    embed{width:100%;height:100%;border:none;background:#000}
-    .err{padding:18px}
+    :root{
+      --bg:#f6f6f6;
+      --card:#fff;
+      --text:#111;
+      --muted:#666;
+      --line:#e8e8e8;
+      --shadow: 0 10px 30px rgba(0,0,0,.08);
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text)}
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .left{display:flex; align-items:center; gap:10px; min-width:0}
+    .back{
+      color:#333; text-decoration:none; font-size:14px;
+      padding:7px 10px; border:1px solid var(--line);
+      border-radius:999px; background:#fff;
+      white-space:nowrap;
+    }
+    .title{
+      font-weight:800; font-size:15px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      max-width:62vw;
+    }
+    .actions{display:flex; align-items:center; gap:8px}
+    .btn{
+      color:#111; text-decoration:none; font-size:14px;
+      padding:7px 12px; border:1px solid #111;
+      border-radius:999px; background:#fff;
+      white-space:nowrap;
+    }
+    .btn.secondary{
+      border-color: var(--line);
+      color:#333;
+    }
+
+    .wrap{max-width:1100px; margin:14px auto; padding:0 12px;}
+    .panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .hint{
+      padding:10px 12px;
+      font-size:13px;
+      color:var(--muted);
+      border-bottom:1px solid var(--line);
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    }
+    .hint code{background:#f3f3f3; padding:2px 6px; border-radius:8px; font-size:12px}
+
+    /* Viewer */
+    .viewer{
+      background:#2b2b2b;
+      padding:14px 0;
+      min-height:60vh;
+    }
+    .page{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      margin:0 0 14px 0;
+    }
+    canvas{
+      background:#fff;
+      border-radius:10px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+      max-width: calc(100% - 18px);
+      height:auto;
+    }
+
+    /* Loading / error */
+    .center{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:10px; color:#fff;
+      padding:28px 14px;
+      text-align:center;
+    }
+    .spinner{
+      width:34px; height:34px; border-radius:50%;
+      border:3px solid rgba(255,255,255,.35);
+      border-top-color:#fff;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .errbox{
+      background:#fff; color:#111;
+      max-width:560px;
+      border-radius:14px;
+      padding:14px 14px;
+      box-shadow: var(--shadow);
+      border:1px solid var(--line);
+    }
+    .errbox b{display:block; margin-bottom:6px}
+    .errbox .small{color:#666; font-size:13px}
+
+    /* Mobile fine-tune */
+    @media (max-width:520px){
+      .title{max-width:52vw}
+      .btn{padding:7px 10px; font-size:13px}
+      .back{padding:7px 10px}
+    }
   </style>
 </head>
+
 <body>
   <div class="topbar">
     <div class="left">
       <a class="back" id="backBtn" href="index.html">← กลับหน้าหมวด</a>
       <div class="title" id="pageTitle">Price</div>
     </div>
-    <a class="openpdf" id="openPdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
+    <div class="actions">
+      <a class="btn secondary" id="reloadBtn" href="#">โหลดใหม่</a>
+      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
+    </div>
   </div>
 
-  <div class="pdf-wrap" id="wrap">
-    <embed id="pdfViewer" type="application/pdf">
+  <div class="wrap">
+    <div class="panel">
+      <div class="hint">
+        <div>ไฟล์: <code id="pdfPathText">-</code></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <span>ถ้าโหลดช้า ให้กด “โหลดใหม่”</span>
+        </div>
+      </div>
+
+      <div class="viewer" id="viewer">
+        <div class="center" id="loading">
+          <div class="spinner"></div>
+          <div>กำลังโหลด PDF…</div>
+          <div style="font-size:12px; opacity:.85;">(จะแสดงทันทีทั้งมือถือและ PC)</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const params = new URLSearchParams(location.search);
-    const title = params.get("title") || "Price";
-    const pdf = params.get("pdf"); // ต้องเป็น /price-webapp/pdf/... (ได้จาก app.js)
-
-    // base path สำหรับปุ่มกลับ
+    // ===== GitHub Pages BASE =====
     const seg = location.pathname.split("/").filter(Boolean);
     const BASE_PATH = seg.length > 0 ? `/${seg[0]}/` : "/";
+
+    // ===== Get params =====
+    const params = new URLSearchParams(location.search);
+    const title = params.get("title") || "Price";
+    let pdf = params.get("pdf"); // ควรเป็น /price-webapp/pdf/xxx.pdf
 
     document.getElementById("pageTitle").textContent = title;
     document.getElementById("backBtn").href = BASE_PATH + "index.html";
 
+    const viewer = document.getElementById("viewer");
+    const loading = document.getElementById("loading");
+    const pdfPathText = document.getElementById("pdfPathText");
+    const openPdfBtn = document.getElementById("openPdfBtn");
+    const reloadBtn = document.getElementById("reloadBtn");
+
+    reloadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // force reload without cache
+      const u = new URL(location.href);
+      u.searchParams.set("v", Date.now());
+      location.href = u.toString();
+    });
+
+    function showError(msg, detail) {
+      viewer.innerHTML = `
+        <div class="center">
+          <div class="errbox">
+            <b>โหลด PDF ไม่สำเร็จ</b>
+            <div class="small">${msg || ""}</div>
+            ${detail ? `<div class="small" style="margin-top:8px;">${detail}</div>` : ""}
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn" href="${openPdfBtn.href}" target="_blank" rel="noopener">เปิด PDF แท็บใหม่</a>
+              <a class="btn secondary" href="#" onclick="location.reload()">รีเฟรช</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function clearPages() {
+      // ลบ canvas page เก่า (แต่คง loading)
+      const pages = viewer.querySelectorAll(".page");
+      pages.forEach(p => p.remove());
+    }
+
+    // ===== PDF.js setup =====
+    // ตั้ง worker ให้ชัวร์ (สำคัญมาก)
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+    async function renderPDF(url) {
+      clearPages();
+      loading.style.display = "flex";
+
+      // กัน cache ของไฟล์ PDF
+      const fetchUrl = url + (url.includes("?") ? "&" : "?") + "v=" + Date.now();
+
+      try {
+        const task = pdfjsLib.getDocument({ url: fetchUrl, withCredentials: false });
+        const pdfDoc = await task.promise;
+
+        // render ทุกหน้าเรียงลงมา
+        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+          const page = await pdfDoc.getPage(pageNum);
+
+          // คำนวณ scale ให้พอดีกับความกว้างจอ
+          const containerWidth = Math.min(viewer.clientWidth, 1100) - 18;
+          const viewport = page.getViewport({ scale: 1 });
+          const scale = containerWidth / viewport.width;
+          const scaledViewport = page.getViewport({ scale });
+
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d", { alpha: false });
+
+          canvas.width = Math.floor(scaledViewport.width);
+          canvas.height = Math.floor(scaledViewport.height);
+
+          const pageWrap = document.createElement("div");
+          pageWrap.className = "page";
+          pageWrap.appendChild(canvas);
+          viewer.appendChild(pageWrap);
+
+          await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+        }
+
+        loading.style.display = "none";
+      } catch (err) {
+        console.error(err);
+        loading.style.display = "none";
+        showError("ไฟล์อาจไม่พบ / path ผิด / หรือโหลดไม่ทัน", String(err?.message || err));
+      }
+    }
+
+    // ===== Start =====
     if (!pdf) {
-      document.getElementById("wrap").innerHTML = `<div class="err">ไม่พบไฟล์ PDF</div>`;
+      openPdfBtn.href = "#";
+      pdfPathText.textContent = "ไม่พบพารามิเตอร์ pdf";
+      showError("URL ไม่มีค่า pdf= ...", "กลับไปหน้าหมวดแล้วลองกดใหม่อีกครั้ง");
     } else {
-      // กัน cache + พยายามซ่อน toolbar (บาง browser รองรับ)
-      const finalPdf = pdf + (pdf.includes("?") ? "&" : "?") + "v=" + Date.now() + "#toolbar=0";
-      document.getElementById("pdfViewer").src = finalPdf;
-      document.getElementById("openPdfBtn").href = pdf;
+      // ถ้าเป็น relative เช่น pdf/battery.pdf ให้เติม BASE_PATH ให้
+      // แต่ถ้าเป็น /price-webapp/... อยู่แล้ว ก็ใช้ตรง ๆ
+      if (!/^https?:\/\//i.test(pdf) && !pdf.startsWith("/")) {
+        pdf = BASE_PATH + pdf.replace(/^\.\//, "");
+      }
+
+      openPdfBtn.href = pdf;
+      pdfPathText.textContent = pdf;
+
+      renderPDF(pdf);
+
+      // ปรับขนาดเมื่อหมุนจอ/เปลี่ยนขนาด (มือถือ)
+      let resizeTimer;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => renderPDF(pdf), 250);
+      });
     }
   </script>
 </body>

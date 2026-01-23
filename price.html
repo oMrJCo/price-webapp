@@ -2,228 +2,160 @@
 <html lang="th">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <title>LEEPLUS • ราคา</title>
-
   <style>
     :root{
-      --bg:#f6f7f9;
-      --card:#ffffff;
-      --border:#e8eaee;
-      --text:#111827;
-      --muted:#6b7280;
-      --brand:#111827;
+      --bg:#f6f7f9; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --border:rgba(15,23,42,.10); --shadow:0 12px 30px rgba(2,6,23,.08);
       --radius:18px;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
-      background:var(--bg);
-      color:var(--text);
-    }
-    .wrap{
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 18px 16px 28px;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans Thai",sans-serif;background:var(--bg);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1200px;margin:0 auto;padding:14px 12px 90px}
     .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      background:rgba(255,255,255,.75);
-      backdrop-filter: blur(8px);
-      border:1px solid var(--border);
-      border-radius: 999px;
-      padding: 10px 12px;
-      position: sticky;
-      top: 10px;
-      z-index: 10;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:10px 8px;
     }
-    .left{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width: 0;
-    }
+    .left{display:flex;align-items:center;gap:10px}
     .btn{
-      appearance:none;
-      border:1px solid var(--border);
-      background:#fff;
-      padding: 9px 12px;
-      border-radius: 999px;
-      cursor:pointer;
-      font-size: 14px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      color: var(--text);
-      text-decoration:none;
-      white-space:nowrap;
+      border:1px solid var(--border); background:#fff; border-radius:999px; padding:8px 12px;
+      display:inline-flex;align-items:center;gap:8px; cursor:pointer;
+      box-shadow:0 6px 16px rgba(2,6,23,.06);
+      font-weight:700; font-size:13px;
     }
-    .btn:hover{border-color:#d7dbe2}
-    .title{
-      font-weight: 700;
-      font-size: 16px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 60vw;
-    }
-    .note{
-      margin: 12px 4px 10px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
+    .btn:active{transform:translateY(1px)}
+    h1{font-size:18px;margin:0}
+    .hint{color:var(--muted);font-size:12px;margin:4px 8px 10px}
     .panel{
-      background: var(--card);
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      overflow:hidden;
-      box-shadow: 0 8px 20px rgba(0,0,0,.05);
+      background:var(--card); border:1px solid var(--border); border-radius:22px; overflow:hidden;
+      box-shadow:var(--shadow);
     }
-    .panel-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 10px 12px;
-      border-bottom:1px solid var(--border);
-      background: #fff;
+    .panelTop{
+      padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid var(--border); background:rgba(255,255,255,.7);
     }
     .badge{
-      font-size: 12px;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      background:#f9fafb;
-      padding: 6px 10px;
-      border-radius: 999px;
-      max-width: 70%;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      white-space:nowrap;
+      display:inline-flex;align-items:center;gap:8px;
+      background:#eef2ff; color:#1e293b; border:1px solid rgba(99,102,241,.25);
+      padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;
+      max-width:100%;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    .status{
-      font-size: 12px;
-      color: var(--muted);
-      white-space:nowrap;
+    .status{color:var(--muted);font-size:12px;white-space:nowrap}
+    .viewer{
+      background:#0b1220;
+      min-height:60vh;
+      padding:14px 0;
     }
-
-    /* ✅ PDF area */
-    .pdf-wrap{
-      background: #111827;
+    .pages{
+      display:flex; flex-direction:column; gap:14px; align-items:center;
+      padding:0 10px 16px;
     }
-    iframe#pdfFrame{
-      width: 100%;
-      height: 85vh;
-      border: 0;
-      display:block;
-      background: #111827;
+    canvas{
+      border-radius:10px;
+      box-shadow:0 14px 28px rgba(0,0,0,.35);
+      background:#fff;
+      max-width:100%;
+      height:auto;
     }
-
-    @media (max-width: 720px){
-      .title{max-width: 48vw}
-      iframe#pdfFrame{height: 78vh;}
+    .err{
+      color:#fff; text-align:center; padding:36px 16px; line-height:1.5;
     }
+    .err a{color:#93c5fd;text-decoration:underline}
+    /* Floating zoom */
+    .tools{
+      position:sticky; top:10px; z-index:5;
+      display:flex; justify-content:center; gap:10px;
+      padding:10px 10px 0;
+    }
+    .toolBtn{
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(15,23,42,.55);
+      color:#fff;
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      backdrop-filter: blur(8px);
+    }
+    .toolBtn:active{transform:translateY(1px)}
+    .toolBtn[disabled]{opacity:.45;cursor:not-allowed}
+    @media (max-width:520px){
+      .viewer{min-height:70vh}
+    }
+    /* Floating LINE button */
+    .float{
+      position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px;
+      z-index:50;
+    }
+    .fab{
+      width:56px;height:56px;border-radius:999px;background:#06C755;display:grid;place-items:center;
+      box-shadow:0 14px 28px rgba(2,6,23,.20); border:0; cursor:pointer;
+    }
+    .fab img{width:30px;height:30px}
+    .qr{
+      width:140px; background:#fff; border-radius:16px; padding:10px; box-shadow:0 14px 28px rgba(2,6,23,.20);
+      border:1px solid var(--border); display:none;
+    }
+    .qr.show{display:block}
+    .qr img{width:100%;height:auto;border-radius:10px;display:block}
+    .qr .cap{margin-top:8px;font-size:12px;color:var(--muted);text-align:center}
   </style>
 </head>
-
 <body>
   <div class="wrap">
     <div class="topbar">
       <div class="left">
-        <a class="btn" href="index.html">← กลับหน้าหมวด</a>
-        <div class="title" id="pageTitle">กำลังโหลด...</div>
+        <button class="btn" id="backBtn">← กลับหน้าหมวด</button>
+        <h1 id="pageTitle">กำลังโหลด...</h1>
       </div>
-
-      <!-- ปุ่มเปิดไฟล์ตรง (กรณีอยากเปิดเต็มจอ/ดาวน์โหลด) -->
-      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
+      <button class="btn" id="openPdfBtn">เปิด PDF</button>
     </div>
 
-    <div class="note">
-      * โหมดนี้ใช้ตัวเปิด PDF ของเบราว์เซอร์ (เสถียรที่สุดบน GitHub Pages + มือถือคมชัด และไม่รีโหลดวน)
+    <div class="hint">
+      * เวอร์ชันนี้ใช้ <b>pdf.js</b> เพื่อให้ “ชัดบนมือถือ” และไม่เด้งไปแอป PDF (ยังมีปุ่มเปิด PDF แยกได้)
     </div>
 
     <div class="panel">
-      <div class="panel-head">
-        <div class="badge" id="pdfPathBadge">PDF: -</div>
-        <div class="status" id="statusText">กำลังเตรียมแสดงผล...</div>
+      <div class="panelTop">
+        <span class="badge" id="pdfPathBadge">PDF: -</span>
+        <span class="status" id="statusText">กำลังเตรียมแสดงผล...</span>
       </div>
 
-      <div class="pdf-wrap">
-        <iframe id="pdfFrame" src=""></iframe>
+      <div class="viewer" id="viewer">
+        <div class="tools">
+          <button class="toolBtn" id="zoomOutBtn">- ย่อ</button>
+          <button class="toolBtn" id="fitBtn">พอดีจอ</button>
+          <button class="toolBtn" id="zoomInBtn">+ ขยาย</button>
+        </div>
+        <div class="pages" id="pdfHost"></div>
       </div>
     </div>
   </div>
 
+  <div class="float">
+    <div id="qrBox" class="qr">
+      <img id="lineQr" src="assets/line-qr.png" alt="LINE QR" onerror="this.style.display='none'">
+      <div class="cap">สแกนเพื่อแอด LINE</div>
+    </div>
+    <button class="fab" id="lineFab" title="Add LINE / QR">
+      <img id="lineIcon" src="assets/line-icon.png" alt="LINE" onerror="this.style.display='none'">
+    </button>
+  </div>
+
+  <!-- pdf.js (legacy build for widest browser support) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.min.js"></script>
   <script>
-  (function () {
-    const titleEl = document.getElementById("pageTitle");
-    const badgeEl = document.getElementById("pdfPathBadge");
-    const statusEl = document.getElementById("statusText");
-    const frameEl = document.getElementById("pdfFrame");
-    const openBtn = document.getElementById("openPdfBtn");
-
-    const params = new URLSearchParams(window.location.search);
-    const title = params.get("title") || "ราคา";
-    let pdf = params.get("pdf"); // ควรมาแบบ "pdf/battery.pdf"
-
-    titleEl.textContent = title;
-
-    if (!pdf) {
-      badgeEl.textContent = "PDF: ไม่พบไฟล์";
-      statusEl.textContent = "แสดงผลไม่สำเร็จ";
-      frameEl.outerHTML = "<div style='padding:18px;color:#fff;text-align:center'>ไม่พบพารามิเตอร์ pdf</div>";
-      openBtn.href = "#";
-      return;
+    // ตั้งค่า worker ให้ชัวร์ (สำคัญมากสำหรับมือถือ/ซาฟารี)
+    if (window["pdfjsLib"]) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.worker.min.js";
     }
-
-    // ✅ รองรับทั้ง "pdf/xx.pdf" และ "/price-webapp/pdf/xx.pdf"
-    // GitHub Pages base path คือ /price-webapp/
-    const BASE = "/price-webapp/";
-
-    // ถ้าเป็น URL เต็ม ปล่อยผ่าน
-    if (/^https?:\/\//i.test(pdf)) {
-      // ok
-    } else {
-      // ถ้าเริ่มด้วย "/" แต่ไม่ใช่ /price-webapp/ ให้เติม base
-      if (pdf.startsWith("/") && !pdf.startsWith(BASE)) {
-        pdf = BASE + pdf.replace(/^\/+/, "");
-      }
-      // ถ้าเป็น relative (เช่น pdf/battery.pdf) ให้เติม base
-      if (!pdf.startsWith("/") && !pdf.startsWith(BASE)) {
-        pdf = BASE + pdf.replace(/^\/+/, "");
-      }
-    }
-
-    badgeEl.textContent = "PDF: " + pdf;
-    openBtn.href = pdf;
-
-    // ใส่ cache-bust กันมือถือบางเครื่องค้างไฟล์เก่า
-    const finalUrl = pdf + (pdf.includes("?") ? "&" : "?") + "v=" + Date.now();
-
-    // ✅ เซ็ตครั้งเดียว ไม่วน reload
-    frameEl.src = finalUrl;
-
-    frameEl.addEventListener("load", () => {
-      statusEl.textContent = "แสดงผลแล้ว";
-    });
-
-    // ถ้าไฟล์หาไม่เจอ / เปิดไม่ได้ → ให้กดเปิดตรง
-    frameEl.addEventListener("error", () => {
-      statusEl.textContent = "เปิดในหน้าไม่ได้";
-    });
-
-    // ป้องกัน iOS บางเคส “รีเฟรชเอง” จาก bfcache
-    window.addEventListener("pageshow", (e) => {
-      if (e.persisted) {
-        // ไม่ reload ทั้งหน้า แค่ set src ใหม่กันค้าง
-        frameEl.src = finalUrl;
-      }
-    });
-  })();
   </script>
+
+  <script src="price.js"></script>
 </body>
 </html>

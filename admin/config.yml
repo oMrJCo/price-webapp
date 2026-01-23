@@ -2,25 +2,37 @@ backend:
   name: github
   repo: oMrJCo/price-webapp
   branch: main
-  use_graphql: true
+
+# สำคัญ: ถ้าใช้ GitHub OAuth App ให้ใส่ client_id ในส่วนนี้
+# (ถ้าใช้ Netlify git-gateway ไม่ต้องใส่)
+# oauth_client_id: YOUR_GITHUB_OAUTH_CLIENT_ID
 
 media_folder: "assets"
 public_folder: "/assets"
 
 collections:
-  - name: "categories_config"
-    label: "Categories"
+  - name: "site"
+    label: "Site Settings + Categories"
     files:
-      - file: "categories.json"
-        label: "All Categories"
-        name: "all"
+      - name: "categories_config"
+        label: "Categories Config"
+        file: "categories.json"
+        format: "json"
         fields:
+          - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
+          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
+          - { label: "Cover Image", name: "coverImage", widget: "string", required: false, hint: "เช่น assets/cover.jpg" }
+          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
+          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
+          - { label: "LINE URL", name: "lineUrl", widget: "string", required: false }
+          - { label: "LINE Icon", name: "lineIcon", widget: "string", required: false, hint: "เช่น assets/line-icon.png" }
+          - { label: "LINE QR", name: "lineQr", widget: "string", required: false, hint: "เช่น assets/line-qr.png" }
+
           - label: "Categories"
             name: "categories"
             widget: "list"
-            summary: "{{fields.titleEN}} — {{fields.titleTH}}"
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image", name: "image", widget: "image", required: false }
+              - { label: "Image Path", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg" }
               - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }

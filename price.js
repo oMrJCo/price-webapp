@@ -1,187 +1,279 @@
-// price.js — PDF viewer (pdf.js) for GitHub Pages / Mobile retina
+// price.js — PDF Viewer (pdf.js) สำหรับ GitHub Pages
+// เป้าหมาย: เปิดแล้ว “เห็นทันที” บนมือถือ + ชัด (retina) + ไม่ reload วน
+
 (function () {
   const $ = (id) => document.getElementById(id);
 
   const backBtn = $("backBtn");
   const openPdfBtn = $("openPdfBtn");
   const pageTitle = $("pageTitle");
-  const pdfPathText = $("pdfPathText");
+  const pdfPathBadge = $("pdfPathBadge");
   const statusText = $("statusText");
   const pdfHost = $("pdfHost");
-  const fallbackMsg = $("fallbackMsg");
+  const viewer = $("viewer");
 
-  // ------- helpers -------
-  function getParam(name) {
-    const u = new URL(location.href);
-    return u.searchParams.get(name) || "";
+  const zoomInBtn = $("zoomInBtn");
+  const zoomOutBtn = $("zoomOutBtn");
+  const fitBtn = $("fitBtn");
+
+  // LINE floating
+  const lineFab = $("lineFab");
+  const qrBox = $("qrBox");
+  if (lineFab) {
+    lineFab.addEventListener("click", () => qrBox && qrBox.classList.toggle("show"));
   }
 
-  function safeDecode(s) {
-    try { return decodeURIComponent(s); } catch { return s; }
+  // อ่าน query params
+  const params = new URLSearchParams(location.search);
+  const title = params.get("title") || "ราคา";
+  let pdfParam = params.get("pdf") || "";
+
+  pageTitle.textContent = title;
+
+  backBtn?.addEventListener("click", () => {
+    // กลับไปหน้า index ในโฟลเดอร์เดียวกัน (GitHub Pages)
+    const base = new URL(".", location.href); // .../price.html -> .../
+    window.location.href = new URL("index.html", base).toString();
+  });
+
+  // Resolve path ให้ทำงานทั้ง:
+  // - "pdf/battery.pdf" (จาก CMS)
+  // - "/price-webapp/pdf/battery.pdf" (จากลิงก์เดิม)
+  // - "https://..." (ไฟล์จากที่อื่น)
+  function resolvePdfUrl(p) {
+    if (!p) return "";
+    // URL เต็ม
+    if (/^https?:\/\//i.test(p)) return p;
+
+    // ถ้าเป็น absolute (ขึ้นต้นด้วย /) ให้ใช้ตามนั้น (เหมาะกับ GitHub Pages: /price-webapp/...)
+    if (p.startsWith("/")) return p;
+
+    // ถ้าเป็น relative ให้ผูกกับ base path ของ repo (…/price-webapp/)
+    const basePath = location.pathname.replace(/\/[^\/]*$/, "/"); // ตัดชื่อไฟล์ออก
+    return basePath + p.replace(/^\.\//, "");
   }
 
-  function resolveUrl(path) {
-    // รองรับ:
-    // - https://...
-    // - /price-webapp/pdf/battery.pdf  (เหมาะกับ GitHub Pages)
-    // - pdf/battery.pdf               (เหมาะกับ local)
+  const pdfUrl = resolvePdfUrl(pdfParam);
+  pdfPathBadge.textContent = `PDF: ${pdfUrl || "-"}`;
+
+  openPdfBtn?.addEventListener("click", () => {
+    if (!pdfUrl) return;
+    window.open(pdfUrl, "_blank");
+  });
+
+  // ---- pdf.js rendering ----
+  let pdfDoc = null;
+  let renderScale = 1;         // scale ที่ผู้ใช้ปรับ (zoom)
+  let fitScale = 1;            // scale สำหรับ "พอดีจอ"
+  let renderToken = 0;         // กัน render ซ้ำตอน resize/scroll
+  let pagesMeta = [];          // เก็บ placeholder ของแต่ละหน้า
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // จำกัด 2 เพื่อกันเครื่องช้า
+
+  function setStatus(msg) {
+    if (statusText) statusText.textContent = msg;
+  }
+
+  function clearHost() {
+    pdfHost.innerHTML = "";
+    pagesMeta = [];
+  }
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function updateZoomButtons() {
+    zoomOutBtn.disabled = renderScale <= 0.6;
+    zoomInBtn.disabled = renderScale >= 2.2;
+  }
+
+  function calcFitScale(page) {
+    // ให้พอดีกว้างของ container (pdfHost)
+    const hostWidth = pdfHost.clientWidth || viewer.clientWidth || window.innerWidth;
+    const viewport = page.getViewport({ scale: 1 });
+    const padding = 22; // กันขอบ
+    return (hostWidth - padding) / viewport.width;
+  }
+
+  async function renderPageLazy(meta, token) {
+    if (!pdfDoc || meta.rendered || meta.rendering) return;
+    meta.rendering = true;
+
     try {
-      return new URL(path, location.href).toString();
-    } catch {
-      return path;
+      const page = await pdfDoc.getPage(meta.pageNumber);
+      if (token !== renderToken) return;
+
+      // คิด scale ที่ใช้จริง = fitScale * renderScale
+      const scale = fitScale * renderScale;
+      const viewport = page.getViewport({ scale });
+
+      // ขนาด canvas จริง (retina)
+      meta.canvas.width = Math.floor(viewport.width * dpr);
+      meta.canvas.height = Math.floor(viewport.height * dpr);
+      meta.canvas.style.width = Math.floor(viewport.width) + "px";
+      meta.canvas.style.height = Math.floor(viewport.height) + "px";
+
+      const ctx = meta.canvas.getContext("2d", { alpha: false });
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const renderTask = page.render({
+        canvasContext: ctx,
+        viewport,
+      });
+
+      await renderTask.promise;
+      if (token !== renderToken) return;
+
+      meta.rendered = true;
+    } catch (e) {
+      console.error(e);
+      // แสดง error บางหน้าไม่ render ก็ยังเลื่อนดูหน้าอื่นได้
+    } finally {
+      meta.rendering = false;
     }
   }
 
-  function setStatus(text) {
-    statusText.textContent = text;
+  function setupIntersectionObserver(token) {
+    // Render เฉพาะหน้าที่เห็น/ใกล้เห็น (มือถือเร็วขึ้น)
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const it of entries) {
+          if (it.isIntersecting) {
+            const meta = pagesMeta.find((m) => m.wrapper === it.target);
+            if (meta) renderPageLazy(meta, token);
+          }
+        }
+      },
+      { root: null, rootMargin: "600px 0px", threshold: 0.01 }
+    );
+
+    pagesMeta.forEach((m) => io.observe(m.wrapper));
+    return io;
   }
 
-  function showFallback(html) {
-    fallbackMsg.style.display = "block";
-    fallbackMsg.innerHTML = html;
+  function showError(msg, directUrl) {
+    setStatus("แสดงผลไม่สำเร็จ");
+    clearHost();
+    pdfHost.innerHTML = `
+      <div class="err">
+        <div style="font-weight:900;font-size:18px;margin-bottom:10px">เปิด PDF ไม่ได้</div>
+        <div style="opacity:.85">${msg || "ไม่ทราบสาเหตุ"}</div>
+        ${directUrl ? `<div style="margin-top:14px"><a href="${directUrl}" target="_blank" rel="noreferrer">ลิงก์: กดเปิด PDF โดยตรง</a></div>` : ""}
+      </div>
+    `;
   }
 
-  // ------- init title + buttons -------
-  const titleParam = getParam("title");
-  const pdfParam = getParam("pdf");
-
-  const titleText = titleParam ? safeDecode(titleParam) : "รายการราคา";
-  const pdfPath = pdfParam ? safeDecode(pdfParam) : "";
-
-  pageTitle.textContent = titleText;
-  pdfPathText.textContent = pdfPath || "-";
-
-  backBtn.addEventListener("click", () => {
-    // กลับหน้า index (อยู่ repo เดียวกัน)
-    location.href = "index.html";
-  });
-
-  openPdfBtn.addEventListener("click", () => {
-    if (!pdfPath) return;
-    window.open(resolveUrl(pdfPath), "_blank", "noopener");
-  });
-
-  // ------- render with PDF.js -------
-  async function waitPdfjs() {
-    // รอให้ pdfjsLib โหลดจาก CDN
-    const t0 = Date.now();
-    while (!window.pdfjsLib) {
-      await new Promise((r) => setTimeout(r, 50));
-      if (Date.now() - t0 > 8000) throw new Error("pdfjsLib โหลดไม่สำเร็จ");
+  async function loadPdf() {
+    if (!window.pdfjsLib) {
+      showError("โหลด pdf.js ไม่สำเร็จ (CDN)", pdfUrl);
+      return;
     }
-    return window.pdfjsLib;
-  }
-
-  // กัน “รีโหลดซ้ำ” บนมือถือ: ไม่ re-render ทุกครั้งที่ resize
-  let resizeTimer = null;
-  function onStableResize(cb) {
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(cb, 350);
-    });
-  }
-
-  function clearPages() {
-    // ลบเฉพาะ .page เพื่อไม่ลบ fallback
-    [...pdfHost.querySelectorAll(".page")].forEach((n) => n.remove());
-  }
-
-  function getContainerWidth() {
-    // เวลามือถือ landscape / บางเบราว์เซอร์ width เพี้ยน ให้ยึดจาก panel จริง
-    const rect = pdfHost.getBoundingClientRect();
-    return Math.max(320, rect.width || window.innerWidth);
-  }
-
-  async function renderPdf() {
-    if (!pdfPath) {
-      setStatus("ไม่พบพาธ PDF");
-      showFallback(`ไม่พบพาธไฟล์ PDF ในลิงก์นี้`);
+    if (!pdfUrl) {
+      showError("ไม่มีพาธ PDF ในลิงก์", "");
       return;
     }
 
-    const pdfUrl = resolveUrl(pdfPath);
+    clearHost();
+    setStatus("กำลังโหลดไฟล์ PDF...");
+
+    const token = ++renderToken;
 
     try {
-      setStatus("กำลังโหลดไฟล์ PDF...");
-      const pdfjsLib = await waitPdfjs();
+      // GitHub Pages อาจ cache แรง: กันด้วย query v=
+      const urlNoCache = pdfUrl + (pdfUrl.includes("?") ? "&" : "?") + "v=" + Date.now();
 
-      // ต้องตั้ง worker ให้ตรง (สำคัญมาก โดยเฉพาะมือถือ)
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.js";
-
-      // โหลดเอกสาร
       const loadingTask = pdfjsLib.getDocument({
-        url: pdfUrl,
-        // ลดปัญหาบางเครื่อง
-        disableAutoFetch: false,
+        url: urlNoCache,
+        // ช่วยลดปัญหา CORS/Range บางเครื่อง
+        disableRange: false,
         disableStream: false,
+        // บางมือถือมีปัญหา font: ปล่อยค่า default
       });
 
-      const pdf = await loadingTask.promise;
+      pdfDoc = await loadingTask.promise;
+      if (token !== renderToken) return;
 
-      setStatus(`กำลังเรนเดอร์... (ทั้งหมด ${pdf.numPages} หน้า)`);
+      setStatus(`ทั้งหมด ${pdfDoc.numPages} หน้า • กำลังเตรียมหน้าจอ...`);
 
-      clearPages();
-
-      // เรนเดอร์แบบ “ชัด” โดยคูณ devicePixelRatio
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const containerWidth = getContainerWidth();
-
-      // เรนเดอร์ทีละหน้า (วันนี้เอาชัวร์ก่อน)
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-
-        // คำนวณ scale ให้พอดีกับความกว้างหน้าจอ
-        const viewport1 = page.getViewport({ scale: 1 });
-        const maxWidth = containerWidth * 0.96; // ให้เหลือขอบ
-        const scale = maxWidth / viewport1.width;
-
-        const viewport = page.getViewport({ scale });
-
-        const pageWrap = document.createElement("div");
-        pageWrap.className = "page";
-
+      // สร้าง placeholder ของทุกหน้า
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const wrapper = document.createElement("div");
         const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { alpha: false });
-
-        // Retina: เพิ่ม resolution จริง แต่คงขนาดแสดงผลเดิม
-        canvas.width = Math.floor(viewport.width * dpr);
-        canvas.height = Math.floor(viewport.height * dpr);
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
-
-        pageWrap.appendChild(canvas);
-        pdfHost.appendChild(pageWrap);
-
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: page.getViewport({ scale: scale * dpr }),
-        };
-
-        await page.render(renderContext).promise;
-
-        // อัปเดตสถานะเป็นช่วง ๆ
-        if (pageNum === 1) setStatus("แสดงผลหน้า 1 แล้ว ✅");
-        if (pageNum === pdf.numPages) setStatus("แสดงผลครบทุกหน้า ✅");
+        wrapper.appendChild(canvas);
+        pdfHost.appendChild(wrapper);
+        pagesMeta.push({
+          pageNumber: i,
+          wrapper,
+          canvas,
+          rendered: false,
+          rendering: false,
+        });
       }
-    } catch (err) {
-      console.error(err);
-      setStatus("แสดงผลไม่สำเร็จ");
-      showFallback(
-        `เปิด PDF ไม่ได้<br><br>
-         <b>ลิงก์:</b> <a href="${resolveUrl(pdfPath)}" target="_blank" rel="noopener" style="color:#93c5fd">กดเปิด PDF โดยตรง</a><br>
-         <small style="color:#94a3b8">สาเหตุที่พบได้บ่อย: path PDF ไม่ตรง / worker ไม่โหลด / ไฟล์ไม่ขึ้น GitHub Pages</small>`
-      );
+
+      // คำนวณ fitScale จากหน้าแรก
+      const firstPage = await pdfDoc.getPage(1);
+      if (token !== renderToken) return;
+      fitScale = clamp(calcFitScale(firstPage), 0.6, 2.2);
+
+      // เริ่ม render แบบ lazy
+      const io = setupIntersectionObserver(token);
+
+      // สั่ง render หน้าแรกทันที (ให้ “เห็นทันที” บนอุปกรณ์อื่น)
+      await renderPageLazy(pagesMeta[0], token);
+
+      if (token !== renderToken) return;
+      setStatus("พร้อมใช้งาน");
+
+      // Resize: คำนวณ fitScale ใหม่ แล้วรีเซ็ตหน้าที่ render ไปแล้วให้ render ใหม่ (กันเบลอ)
+      let resizeTimer = null;
+      const onResize = () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(async () => {
+          if (!pdfDoc) return;
+          const t = ++renderToken; // invalidate render เก่า
+          setStatus("ปรับขนาดหน้าจอ...");
+
+          const p1 = await pdfDoc.getPage(1);
+          fitScale = clamp(calcFitScale(p1), 0.6, 2.2);
+
+          // reset ทุกหน้า (จะ render ใหม่แบบ lazy)
+          pagesMeta.forEach((m) => (m.rendered = false));
+          // render หน้าแรกก่อน
+          await renderPageLazy(pagesMeta[0], t);
+          setStatus("พร้อมใช้งาน");
+        }, 250);
+      };
+      window.addEventListener("resize", onResize, { passive: true });
+
+      // Zoom controls
+      function rerenderAll() {
+        const t = ++renderToken;
+        setStatus("กำลังปรับซูม...");
+        pagesMeta.forEach((m) => (m.rendered = false));
+        // render หน้าแรกทันที แล้วที่เหลือจะ lazy เอง
+        renderPageLazy(pagesMeta[0], t).then(() => setStatus("พร้อมใช้งาน"));
+        updateZoomButtons();
+      }
+
+      zoomInBtn?.addEventListener("click", () => {
+        renderScale = clamp(renderScale + 0.1, 0.6, 2.2);
+        rerenderAll();
+      });
+      zoomOutBtn?.addEventListener("click", () => {
+        renderScale = clamp(renderScale - 0.1, 0.6, 2.2);
+        rerenderAll();
+      });
+      fitBtn?.addEventListener("click", () => {
+        renderScale = 1;
+        rerenderAll();
+      });
+      updateZoomButtons();
+    } catch (e) {
+      console.error(e);
+      showError(e?.message || String(e), pdfUrl);
     }
   }
 
-  // render ครั้งแรก
-  renderPdf();
-
-  // ถ้าหมุนจอ/เปลี่ยนขนาด ให้ re-render แบบนิ่ง ๆ (ไม่วน)
-  onStableResize(() => {
-    // ไม่ต้อง re-render ถ้าไม่อยากให้กระพริบ:
-    // แต่ถ้าพี่อยากให้พอดีจอเวลา rotate จริง ๆ ให้เปิดไว้แบบนี้
-    renderPdf();
-  });
+  document.addEventListener("DOMContentLoaded", loadPdf);
 })();

@@ -1,65 +1,157 @@
-// price.js — PDF Viewer (Mobile-safe, no reload loop)
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>LEEPLUS — ราคา</title>
 
-(function () {
-  const params = new URLSearchParams(window.location.search);
-  const title = params.get("title") || "";
-  const pdfParam = params.get("pdf") || "";
-
-  const titleEl = document.getElementById("pageTitle");
-  const badgeEl = document.getElementById("pdfPathBadge");
-  const statusEl = document.getElementById("statusText");
-  const hostEl = document.getElementById("pdfHost");
-  const openBtn = document.getElementById("openPdfBtn");
-
-  if (titleEl) titleEl.textContent = title;
-  if (badgeEl) badgeEl.textContent = `PDF: ${pdfParam || "-"}`;
-
-  if (!pdfParam) {
-    if (statusEl) statusEl.textContent = "ไม่พบไฟล์ PDF";
-    return;
-  }
-
-  // แปลง path ให้รองรับ GitHub Pages (/price-webapp/)
-  const base = location.pathname.includes("/price-webapp/")
-    ? "/price-webapp/"
-    : "/";
-
-  const pdfUrl = pdfParam.startsWith("http")
-    ? pdfParam
-    : base + pdfParam.replace(/^\/+/, "");
-
-  // ปุ่มเปิด PDF (ใช้ native viewer ของเครื่อง → คม ชัด ไม่ reload)
-  if (openBtn) {
-    openBtn.onclick = () => {
-      window.open(pdfUrl, "_blank");
-    };
-  }
-
-  // แสดง PDF แบบ inline เฉพาะ Desktop / Tablet
-  const isMobile = /iphone|ipad|android/i.test(navigator.userAgent);
-
-  if (isMobile) {
-    if (statusEl) {
-      statusEl.textContent =
-        "อุปกรณ์มือถือ → ใช้ปุ่ม “เปิด PDF” เพื่อดูแบบคมชัด";
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --shadow:0 10px 30px rgba(0,0,0,.06);
+      --radius:16px;
     }
-    return;
-  }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:14px 14px 40px}
+    .topbar{
+      display:flex;align-items:center;gap:12px;
+      background:rgba(255,255,255,.8);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:10px 12px;
+      position:sticky;top:10px;z-index:20;
+      backdrop-filter: blur(8px);
+    }
+    .btn{
+      appearance:none;border:1px solid var(--line);
+      background:#fff;border-radius:999px;
+      padding:9px 12px;cursor:pointer;
+      font-weight:600;
+    }
+    .btn:active{transform:translateY(1px)}
+    .title{
+      font-weight:800;
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+      flex:1;
+    }
+    .right{display:flex;gap:10px;align-items:center}
+    .hint{
+      margin:12px 6px 10px;
+      color:var(--muted);
+      font-size:12.5px;
+    }
 
-  // Desktop: ใช้ <object> (ไม่ใช้ iframe → เสถียรกว่า)
-  const obj = document.createElement("object");
-  obj.data = pdfUrl;
-  obj.type = "application/pdf";
-  obj.style.width = "100%";
-  obj.style.height = "85vh";
-  obj.style.borderRadius = "12px";
-  obj.style.background = "#111";
+    .panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .panelHead{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 12px;
+      border-bottom:1px solid var(--line);
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      background:#f1f5f9;border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      color:#0f172a;
+      max-width:100%;
+    }
+    .badge code{font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; color:#0f172a}
+    .status{
+      font-size:12px;color:var(--muted);
+      white-space:nowrap;
+    }
 
-  obj.onerror = () => {
-    if (statusEl) statusEl.textContent = "โหลด PDF ไม่สำเร็จ";
-  };
+    /* พื้นที่แสดง PDF */
+    #pdfHost{
+      background:#0b1220; /* ดำแบบ viewer */
+      min-height:70vh;
+      padding:18px 0;
+    }
+    .page{
+      display:flex;justify-content:center;
+      padding:10px 0;
+    }
+    canvas{
+      background:#fff;
+      border-radius:8px;
+      box-shadow:0 10px 26px rgba(0,0,0,.25);
+      max-width:96%;
+      height:auto;
+    }
 
-  hostEl.appendChild(obj);
+    .centerMsg{
+      color:#cbd5e1;
+      text-align:center;
+      padding:40px 12px;
+      font-size:14px;
+    }
+    .loadingDots::after{
+      content:"";
+      display:inline-block;
+      width:18px;
+      text-align:left;
+      animation:dots 1.2s steps(4,end) infinite;
+    }
+    @keyframes dots{
+      0%{content:""}
+      25%{content:"."}
+      50%{content:".."}
+      75%{content:"..."}
+      100%{content:""}
+    }
+  </style>
 
-  if (statusEl) statusEl.textContent = "แสดง PDF แล้ว";
-})();
+  <!-- PDF.js (CDN) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <button class="btn" id="backBtn">← กลับหน้าหมวด</button>
+      <h1 class="title" id="pageTitle">กำลังโหลด...</h1>
+      <div class="right">
+        <button class="btn" id="openPdfBtn">เปิด PDF</button>
+      </div>
+    </div>
+
+    <div class="hint">
+      * เวอร์ชันนี้เป็น pdf.js (เหมือนแบบที่พี่ชอบ) — ปรับให้ชัดแบบ Retina บนมือถือ และกันรีโหลดวน
+    </div>
+
+    <div class="panel">
+      <div class="panelHead">
+        <div class="badge" id="pdfPathBadge">PDF: <code id="pdfPathText">-</code></div>
+        <div class="status" id="statusText"><span class="loadingDots">กำลังเตรียมแสดงผล</span></div>
+      </div>
+      <div id="pdfHost">
+        <div class="centerMsg" id="fallbackMsg" style="display:none;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="price.js"></script>
+</body>
+</html>

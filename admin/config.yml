@@ -1,38 +1,41 @@
 backend:
   name: github
-  repo: oMrJCo/price-webapp
+  repo: oMrJcO/price-webapp
   branch: main
 
-# สำคัญ: ถ้าใช้ GitHub OAuth App ให้ใส่ client_id ในส่วนนี้
-# (ถ้าใช้ Netlify git-gateway ไม่ต้องใส่)
-# oauth_client_id: YOUR_GITHUB_OAUTH_CLIENT_ID
+# สำคัญมากสำหรับ GitHub Pages (repo pages)
+site_url: https://omrjco.github.io/price-webapp
+display_url: https://omrjco.github.io/price-webapp
 
 media_folder: "assets"
-public_folder: "/assets"
+public_folder: "/price-webapp/assets"
 
 collections:
-  - name: "site"
-    label: "Site Settings + Categories"
+  - name: "categories_config"
+    label: "Categories"
     files:
-      - name: "categories_config"
-        label: "Categories Config"
+      - name: "categories"
+        label: "Site + Categories (categories.json)"
         file: "categories.json"
         format: "json"
         fields:
           - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
           - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-          - { label: "Cover Image", name: "coverImage", widget: "string", required: false, hint: "เช่น assets/cover.jpg" }
+
+          - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
           - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
           - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
+
           - { label: "LINE URL", name: "lineUrl", widget: "string", required: false }
-          - { label: "LINE Icon", name: "lineIcon", widget: "string", required: false, hint: "เช่น assets/line-icon.png" }
-          - { label: "LINE QR", name: "lineQr", widget: "string", required: false, hint: "เช่น assets/line-qr.png" }
+          - { label: "LINE Icon", name: "lineIcon", widget: "image", required: false }
+          - { label: "LINE QR", name: "lineQr", widget: "image", required: false }
 
           - label: "Categories"
             name: "categories"
             widget: "list"
+            summary: "{{fields.titleEN}} / {{fields.titleTH}}"
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image Path", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg" }
+              - { label: "Image", name: "image", widget: "image", required: false }
               - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }

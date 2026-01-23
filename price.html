@@ -2,156 +2,228 @@
 <html lang="th">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>LEEPLUS — ราคา</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LEEPLUS • ราคา</title>
 
   <style>
     :root{
-      --bg:#f6f7fb;
+      --bg:#f6f7f9;
       --card:#ffffff;
+      --border:#e8eaee;
       --text:#111827;
       --muted:#6b7280;
-      --line:#e5e7eb;
-      --shadow:0 10px 30px rgba(0,0,0,.06);
-      --radius:16px;
+      --brand:#111827;
+      --radius:18px;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
       background:var(--bg);
       color:var(--text);
     }
-    .wrap{max-width:1200px;margin:0 auto;padding:14px 14px 40px}
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 16px 28px;
+    }
     .topbar{
-      display:flex;align-items:center;gap:12px;
-      background:rgba(255,255,255,.8);
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:10px 12px;
-      position:sticky;top:10px;z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      background:rgba(255,255,255,.75);
       backdrop-filter: blur(8px);
+      border:1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 12px;
+      position: sticky;
+      top: 10px;
+      z-index: 10;
+    }
+    .left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
     }
     .btn{
-      appearance:none;border:1px solid var(--line);
-      background:#fff;border-radius:999px;
-      padding:9px 12px;cursor:pointer;
-      font-weight:600;
+      appearance:none;
+      border:1px solid var(--border);
+      background:#fff;
+      padding: 9px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size: 14px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color: var(--text);
+      text-decoration:none;
+      white-space:nowrap;
     }
-    .btn:active{transform:translateY(1px)}
+    .btn:hover{border-color:#d7dbe2}
     .title{
-      font-weight:800;
-      margin:0;
-      font-size:18px;
-      line-height:1.2;
-      flex:1;
+      font-weight: 700;
+      font-size: 16px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 60vw;
     }
-    .right{display:flex;gap:10px;align-items:center}
-    .hint{
-      margin:12px 6px 10px;
-      color:var(--muted);
-      font-size:12.5px;
+    .note{
+      margin: 12px 4px 10px;
+      font-size: 13px;
+      color: var(--muted);
     }
 
     .panel{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
+      background: var(--card);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
       overflow:hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,.05);
     }
-    .panelHead{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:10px 12px;
-      border-bottom:1px solid var(--line);
-      gap:10px;
-      flex-wrap:wrap;
+    .panel-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 10px 12px;
+      border-bottom:1px solid var(--border);
+      background: #fff;
     }
     .badge{
-      display:inline-flex;align-items:center;gap:8px;
-      background:#f1f5f9;border:1px solid var(--line);
-      border-radius:999px;
-      padding:6px 10px;
-      font-size:12px;
-      color:#0f172a;
-      max-width:100%;
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background:#f9fafb;
+      padding: 6px 10px;
+      border-radius: 999px;
+      max-width: 70%;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space:nowrap;
     }
-    .badge code{font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; color:#0f172a}
     .status{
-      font-size:12px;color:var(--muted);
+      font-size: 12px;
+      color: var(--muted);
       white-space:nowrap;
     }
 
-    /* พื้นที่แสดง PDF */
-    #pdfHost{
-      background:#0b1220; /* ดำแบบ viewer */
-      min-height:70vh;
-      padding:18px 0;
+    /* ✅ PDF area */
+    .pdf-wrap{
+      background: #111827;
     }
-    .page{
-      display:flex;justify-content:center;
-      padding:10px 0;
-    }
-    canvas{
-      background:#fff;
-      border-radius:8px;
-      box-shadow:0 10px 26px rgba(0,0,0,.25);
-      max-width:96%;
-      height:auto;
+    iframe#pdfFrame{
+      width: 100%;
+      height: 85vh;
+      border: 0;
+      display:block;
+      background: #111827;
     }
 
-    .centerMsg{
-      color:#cbd5e1;
-      text-align:center;
-      padding:40px 12px;
-      font-size:14px;
-    }
-    .loadingDots::after{
-      content:"";
-      display:inline-block;
-      width:18px;
-      text-align:left;
-      animation:dots 1.2s steps(4,end) infinite;
-    }
-    @keyframes dots{
-      0%{content:""}
-      25%{content:"."}
-      50%{content:".."}
-      75%{content:"..."}
-      100%{content:""}
+    @media (max-width: 720px){
+      .title{max-width: 48vw}
+      iframe#pdfFrame{height: 78vh;}
     }
   </style>
-
-  <!-- PDF.js (CDN) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.js"></script>
 </head>
+
 <body>
   <div class="wrap">
-
     <div class="topbar">
-      <button class="btn" id="backBtn">← กลับหน้าหมวด</button>
-      <h1 class="title" id="pageTitle">กำลังโหลด...</h1>
-      <div class="right">
-        <button class="btn" id="openPdfBtn">เปิด PDF</button>
+      <div class="left">
+        <a class="btn" href="index.html">← กลับหน้าหมวด</a>
+        <div class="title" id="pageTitle">กำลังโหลด...</div>
       </div>
+
+      <!-- ปุ่มเปิดไฟล์ตรง (กรณีอยากเปิดเต็มจอ/ดาวน์โหลด) -->
+      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
     </div>
 
-    <div class="hint">
-      * เวอร์ชันนี้เป็น pdf.js (เหมือนแบบที่พี่ชอบ) — ปรับให้ชัดแบบ Retina บนมือถือ และกันรีโหลดวน
+    <div class="note">
+      * โหมดนี้ใช้ตัวเปิด PDF ของเบราว์เซอร์ (เสถียรที่สุดบน GitHub Pages + มือถือคมชัด และไม่รีโหลดวน)
     </div>
 
     <div class="panel">
-      <div class="panelHead">
-        <div class="badge" id="pdfPathBadge">PDF: <code id="pdfPathText">-</code></div>
-        <div class="status" id="statusText"><span class="loadingDots">กำลังเตรียมแสดงผล</span></div>
+      <div class="panel-head">
+        <div class="badge" id="pdfPathBadge">PDF: -</div>
+        <div class="status" id="statusText">กำลังเตรียมแสดงผล...</div>
       </div>
-      <div id="pdfHost">
-        <div class="centerMsg" id="fallbackMsg" style="display:none;"></div>
+
+      <div class="pdf-wrap">
+        <iframe id="pdfFrame" src=""></iframe>
       </div>
     </div>
-
   </div>
 
-  <script src="price.js"></script>
+  <script>
+  (function () {
+    const titleEl = document.getElementById("pageTitle");
+    const badgeEl = document.getElementById("pdfPathBadge");
+    const statusEl = document.getElementById("statusText");
+    const frameEl = document.getElementById("pdfFrame");
+    const openBtn = document.getElementById("openPdfBtn");
+
+    const params = new URLSearchParams(window.location.search);
+    const title = params.get("title") || "ราคา";
+    let pdf = params.get("pdf"); // ควรมาแบบ "pdf/battery.pdf"
+
+    titleEl.textContent = title;
+
+    if (!pdf) {
+      badgeEl.textContent = "PDF: ไม่พบไฟล์";
+      statusEl.textContent = "แสดงผลไม่สำเร็จ";
+      frameEl.outerHTML = "<div style='padding:18px;color:#fff;text-align:center'>ไม่พบพารามิเตอร์ pdf</div>";
+      openBtn.href = "#";
+      return;
+    }
+
+    // ✅ รองรับทั้ง "pdf/xx.pdf" และ "/price-webapp/pdf/xx.pdf"
+    // GitHub Pages base path คือ /price-webapp/
+    const BASE = "/price-webapp/";
+
+    // ถ้าเป็น URL เต็ม ปล่อยผ่าน
+    if (/^https?:\/\//i.test(pdf)) {
+      // ok
+    } else {
+      // ถ้าเริ่มด้วย "/" แต่ไม่ใช่ /price-webapp/ ให้เติม base
+      if (pdf.startsWith("/") && !pdf.startsWith(BASE)) {
+        pdf = BASE + pdf.replace(/^\/+/, "");
+      }
+      // ถ้าเป็น relative (เช่น pdf/battery.pdf) ให้เติม base
+      if (!pdf.startsWith("/") && !pdf.startsWith(BASE)) {
+        pdf = BASE + pdf.replace(/^\/+/, "");
+      }
+    }
+
+    badgeEl.textContent = "PDF: " + pdf;
+    openBtn.href = pdf;
+
+    // ใส่ cache-bust กันมือถือบางเครื่องค้างไฟล์เก่า
+    const finalUrl = pdf + (pdf.includes("?") ? "&" : "?") + "v=" + Date.now();
+
+    // ✅ เซ็ตครั้งเดียว ไม่วน reload
+    frameEl.src = finalUrl;
+
+    frameEl.addEventListener("load", () => {
+      statusEl.textContent = "แสดงผลแล้ว";
+    });
+
+    // ถ้าไฟล์หาไม่เจอ / เปิดไม่ได้ → ให้กดเปิดตรง
+    frameEl.addEventListener("error", () => {
+      statusEl.textContent = "เปิดในหน้าไม่ได้";
+    });
+
+    // ป้องกัน iOS บางเคส “รีเฟรชเอง” จาก bfcache
+    window.addEventListener("pageshow", (e) => {
+      if (e.persisted) {
+        // ไม่ reload ทั้งหน้า แค่ set src ใหม่กันค้าง
+        frameEl.src = finalUrl;
+      }
+    });
+  })();
+  </script>
 </body>
 </html>

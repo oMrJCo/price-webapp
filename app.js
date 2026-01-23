@@ -1,11 +1,5 @@
-// app.js — LEEPLUS Price Webapp (GitHub Pages Ready)
-
-const BASE_PATH = (() => {
-  // GitHub Pages แบบ Project: /price-webapp/...
-  const seg = location.pathname.split("/").filter(Boolean);
-  if (seg.length > 0) return `/${seg[0]}/`;
-  return "/";
-})();
+// app.js — LEEPLUS Price Webapp
+// โหลดหมวดจาก categories.json และสร้างการ์ดใน index.html
 
 function normalizeList(json) {
   if (Array.isArray(json)) return json;
@@ -14,12 +8,12 @@ function normalizeList(json) {
   return [];
 }
 
-function normalizeRelPath(p) {
+function normalizePath(p) {
   if (!p) return "";
-  if (/^https?:\/\//i.test(p)) return p; // url เต็ม ไม่แตะ
-  // ตัด ./ และ / หน้าออก
-  p = p.replace(/^\.\//, "").replace(/^\//, "");
-  return BASE_PATH + p; // ใส่ /price-webapp/ ให้เอง
+  if (/^https?:\/\//i.test(p)) return p;
+  if (p.startsWith("./")) return p.slice(2);
+  if (p.startsWith("/")) return p; // absolute
+  return p; // relative
 }
 
 function makeTitle(item) {
@@ -33,38 +27,52 @@ async function loadCategories() {
   const grid = document.getElementById("categoriesGrid");
   if (!grid) return;
 
-  const url = `${BASE_PATH}categories.json?v=${Date.now()}`;
+  // กัน cache เพื่อให้แก้จาก CMS แล้วอัปเดตทันที
+  const url = `categories.json?v=${Date.now()}`;
 
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
     const json = await res.json();
+
     const items = normalizeList(json);
 
     if (!items.length) {
-      grid.innerHTML = `<div class="empty">ไม่พบข้อมูลใน categories.json</div>`;
+      grid.innerHTML = `
+        <div class="empty">
+          ไม่พบข้อมูลหมวดสินค้าใน <b>categories.json</b><br/>
+          ลองเข้า CMS แล้วกด Save อีกครั้ง
+        </div>
+      `;
       return;
     }
 
     grid.innerHTML = items.map((item) => {
-      const titleFull = makeTitle(item);
+      const title = makeTitle(item);
       const titleEN = (item.titleEN || "").trim();
       const titleTH = (item.titleTH || "").trim();
 
-      const pdf = normalizeRelPath(item.pdf || "");
-      const img = normalizeRelPath(item.image || "");
+      // IMPORTANT: ให้เก็บ pdf เป็น relative เช่น "pdf/battery.pdf"
+      // (price.html จะเติม /price-webapp/ ให้เองบน GitHub Pages)
+      const pdf = normalizePath(item.pdf || "");
+      const img = normalizePath(item.image || "");
 
-      // ให้ลิงก์ไป price.html อยู่ใต้ /price-webapp/ เสมอ
-      const href = `${BASE_PATH}price.html?title=${encodeURIComponent(titleFull)}&pdf=${encodeURIComponent(pdf)}`;
+      const thumbHtml = img
+        ? `<img src="${img}" alt="${title}" loading="lazy"
+             onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">`
+        : "";
+
+      const href = `price.html?title=${encodeURIComponent(title)}&pdf=${encodeURIComponent(pdf)}`;
 
       return `
         <a class="card" href="${href}">
           <div class="thumb ${img ? "" : "noimg"}">
-            ${img ? `<img src="${img}" alt="${titleFull}" loading="lazy">` : `<div class="ph">LEEPLUS</div>`}
+            ${thumbHtml}
+            ${img ? "" : `<div class="ph">LEEPLUS</div>`}
           </div>
           <div class="content">
             <p class="title">${titleEN || titleTH || "Category"}</p>
-            <p class="sub">${titleTH || ""}</p>
+            <p class="subt">${titleTH ? titleTH : ""}</p>
           </div>
         </a>
       `;
@@ -72,7 +80,12 @@ async function loadCategories() {
 
   } catch (err) {
     console.error(err);
-    grid.innerHTML = `<div class="empty">โหลดหมวดสินค้าไม่สำเร็จ<br><small>${String(err.message || err)}</small></div>`;
+    grid.innerHTML = `
+      <div class="empty">
+        โหลดข้อมูลหมวดสินค้าไม่สำเร็จ<br/>
+        <small>${String(err.message || err)}</small>
+      </div>
+    `;
   }
 }
 

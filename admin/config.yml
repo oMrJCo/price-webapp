@@ -1,24 +1,30 @@
 backend:
-  name: github
-  repo: OmrJCo/price-webapp
+  name: git-gateway
   branch: main
 
-media_folder: "assets"
-public_folder: "/price-webapp/assets"
+# URL เว็บจริง (GitHub Pages ของพี่)
+site_url: https://omrjco.github.io/price-webapp
+display_url: https://omrjco.github.io/price-webapp
 
+# ที่เก็บรูป
+media_folder: "assets"
+public_folder: "/assets"
+
+# แก้ไฟล์ JSON เดียว (categories.json ที่ root)
 collections:
-  - name: "categories"
+  - name: "categories_config"
     label: "Categories"
     files:
-      - name: "all"
+      - name: "categories"
         label: "All Categories"
         file: "categories.json"
         format: "json"
         fields:
-          - label: "Site Title"
-            name: "siteTitle"
-            widget: "string"
-            required: false
+          - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
+          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
+          - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
+          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
+          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
 
           - label: "Categories"
             name: "categories"
@@ -26,5 +32,5 @@ collections:
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image", name: "image", widget: "string", required: false }
-              - { label: "PDF Path", name: "pdf", widget: "string", required: false }
+              - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg" }
+              - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }

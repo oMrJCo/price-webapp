@@ -1,12 +1,19 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>LEEPLUS CMS</title>
 
-    <!-- Decap CMS -->
-    <script src="https://unpkg.com/decap-cms@3.1.0/dist/decap-cms.js"></script>
+    <!-- สำคัญ: Netlify Identity Widget -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
+
   <body>
+    <!-- สำคัญมาก: Decap จะ mount ลง div นี้ -->
+    <div id="nc-root"></div>
+
+    <!-- ใช้ตัว stable (อย่าใช้ beta) -->
+    <script src="https://unpkg.com/decap-cms@3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>

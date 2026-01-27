@@ -2,41 +2,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     const grid = document.getElementById("categoriesGrid");
     if (!grid) return;
 
-    // ดึงข้อมูลพร้อมกัน Cache เพื่อให้หน้าเว็บอัปเดตทันทีที่พี่แก้ไฟล์
+    // ดึงข้อมูลพร้อมกัน Cache เพื่อความสดใหม่
     const url = `categories.json?v=${Date.now()}`;
 
     try {
         const res = await fetch(url);
         if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
-        const json = await res.json();
+        const data = await res.json();
 
-        // แกะข้อมูลจากตัวแปร categories
-        const items = json.categories || [];
+        // --- ส่วนที่ 1: กู้คืน Cover ของพี่ ---
+        const coverImg = document.getElementById("coverImage");
+        const coverHead = document.getElementById("coverHeadline");
+        const coverSub = document.getElementById("coverSubtext");
 
-        if (items.length === 0) {
-            grid.innerHTML = "<p style='grid-column:1/-1; text-align:center;'>-- ไม่พบข้อมูลสินค้า --</p>";
-            return;
-        }
+        if (coverImg && data.coverImage) coverImg.src = data.coverImage;
+        if (coverHead && data.coverHeadline) coverHead.textContent = data.coverHeadline;
+        if (coverSub && data.coverSubtext) coverSub.textContent = data.coverSubtext;
 
-        // วนลูปสร้างการ์ดสินค้าแต่ละใบ
+        // อัปเดตหัวข้อเว็บ
+        if (data.siteTitle) document.getElementById("siteTitle").textContent = data.siteTitle;
+        if (data.siteSubtitle) document.getElementById("siteSubtitle").textContent = data.siteSubtitle;
+
+        // --- ส่วนที่ 2: สร้างการ์ดสินค้า (สัมพันธ์กับหน้าราคา) ---
+        const items = data.categories || [];
         grid.innerHTML = items.map(item => {
-            const titleEN = (item.titleEN || "").trim();
-            const titleTH = (item.titleTH || "").trim();
-            const pdf = item.pdf || "";
+            const title = item.titleEN || item.titleTH || "Category";
+            const sub = item.titleTH || "";
+            const pdf = item.pdf || ""; // ส่งค่า 'pdf' ไปตามที่หน้าสองรอรับ
             const img = item.image || "";
 
-            // ส่งข้อมูลไปหน้า price.html
-            const href = `price.html?title=${encodeURIComponent(titleEN || titleTH)}&pdf=${encodeURIComponent(pdf)}`;
+            const href = `price.html?title=${encodeURIComponent(title)}&pdf=${encodeURIComponent(pdf)}`;
             
             return `
                 <a class="card" href="${href}">
                     <div class="thumb">
-                        ${img ? `<img src="${img}" alt="${titleTH}" onerror="this.style.display='none';">` : ''}
+                        ${img ? `<img src="${img}" alt="${title}" onerror="this.style.display='none';">` : ''}
                         <div class="placeholder">LEEPLUS</div>
                     </div>
                     <div class="content">
-                        <p class="title">${titleEN || titleTH}</p>
-                        <p class="sub">${titleTH ? titleTH : ""}</p>
+                        <p class="title">${title}</p>
+                        <p class="sub">${sub}</p>
                     </div>
                 </a>
             `;

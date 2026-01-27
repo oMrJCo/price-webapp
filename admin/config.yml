@@ -1,36 +1,26 @@
 backend:
   name: github
-  repo: OmrJco/price-webapp
+  repo: omrjco/price-webapp  # ⚠️ ตรวจสอบให้แน่ใจว่าชื่อ user/repo ถูกต้อง (ถ้าเปลี่ยน repo ต้องแก้ตรงนี้)
   branch: main
-  base_url: https://price-webapp.vercel.app
-  auth_endpoint: /api/auth
+  base_url: ""               # ปล่อยว่างไว้เพื่อให้ใช้ domain ปัจจุบัน
+  auth_endpoint: api/auth    # สำคัญมาก: ชี้ไปที่โฟลเดอร์ api ที่เราสร้างไว้เพื่อ Login
 
-site_url: https://omrjco.github.io/price-webapp
-display_url: https://omrjco.github.io/price-webapp
-
-media_folder: "assets"
-public_folder: "/price-webapp/assets"
+media_folder: "pdf"          # โฟลเดอร์ที่รูป/pdf จะถูกอัปโหลดไปเก็บ
+public_folder: "pdf"         # path ที่จะเขียนลงในไฟล์ json
 
 collections:
-  - name: "categories_config"
-    label: "Categories"
+  - name: "settings"
+    label: "จัดการข้อมูล"
     files:
       - name: "categories"
-        label: "All Categories"
+        label: "หมวดหมู่ราคา (Price List)"
         file: "categories.json"
-        format: "json"
+        description: "จัดการรายการสินค้าและไฟล์ PDF"
         fields:
-          - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
-          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-          - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
-          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
-          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
-
-          - label: "Categories"
-            name: "categories"
+          - name: "categories"
+            label: "รายการหมวดหมู่"
             widget: "list"
             fields:
-              - { label: "Title (EN)", name: "titleEN", widget: "string" }
-              - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg หรือ /price-webapp/assets/battery.jpg" }
-              - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf หรือ /price-webapp/pdf/battery.pdf" }
+              - {label: "Title (English)", name: "titleEN", widget: "string"}
+              - {label: "Title (Thai)", name: "titleTH", widget: "string"}
+              - {label: "Upload PDF", name: "pdf", widget: "file"}

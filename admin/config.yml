@@ -5,32 +5,29 @@ backend:
 media_folder: "assets"
 public_folder: "/assets"
 
+site_url: https://moonlit-halva-d42472.netlify.app
+display_url: https://moonlit-halva-d42472.netlify.app
+
 collections:
-  - name: "catalog"
-    label: "Catalog Settings"
+  - name: "categories_config"
+    label: "Categories"
     files:
       - name: "categories"
-        label: "Categories (categories.json)"
+        label: "All Categories"
         file: "categories.json"
         format: "json"
         fields:
           - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
           - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-
           - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
           - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
           - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
 
-          - { label: "LINE URL", name: "lineUrl", widget: "string", required: false }
-          - { label: "LINE Icon", name: "lineIcon", widget: "string", required: false }
-          - { label: "LINE QR", name: "lineQr", widget: "string", required: false }
-
           - label: "Categories"
             name: "categories"
             widget: "list"
-            summary: "{{fields.titleEN}} / {{fields.titleTH}}"
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
-              - { label: "Title (TH)", name: "titleTH", widget: "string", required: false }
-              - { label: "Image path", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg" }
-              - { label: "PDF path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }
+              - { label: "Title (TH)", name: "titleTH", widget: "string" }
+              - { label: "Image", name: "image", widget: "string", required: false }
+              - { label: "PDF Path", name: "pdf", widget: "string" }

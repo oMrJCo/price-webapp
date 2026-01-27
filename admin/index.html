@@ -13,23 +13,24 @@
   <script>
     var myConfig = {
       backend: {
-        name: 'github',
-        repo: 'omrjco/price-webapp', // ⚠️ เช็คชื่อ Repo คุณอีกที
+        name: 'github',          // ⚠️ ต้องเป็น github เท่านั้น ห้ามเป็น git-gateway
+        repo: 'omrjco/price-webapp',
         branch: 'main',
-        auth_endpoint: '/api/auth'
+        base_url: 'https://price-webapp.vercel.app', // ⚠️ ใส่ชื่อเว็บ Vercel ของคุณให้เต็มยศตรงนี้เลย เพื่อความชัวร์
+        auth_endpoint: 'api/auth'
       },
       media_folder: 'pdf',
       public_folder: 'pdf',
       collections: [
         {
-          name: 'settings', // ชื่อนี้ห้ามซ้ำ (ตอนนี้มีอันเดียว ไม่ซ้ำแน่นอน)
+          name: 'settings',
           label: 'จัดการข้อมูล',
           files: [
             {
               name: 'categories',
               label: 'หมวดหมู่ราคา',
               file: 'categories.json',
-              description: 'จัดการรายการสินค้าและไฟล์ PDF',
+              description: 'จัดการรายการสินค้า',
               fields: [
                 {
                   name: 'categories',
@@ -48,7 +49,6 @@
       ]
     };
 
-    // เริ่มระบบ
     CMS.init({ config: myConfig });
   </script>
 </body>

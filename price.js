@@ -1,6 +1,5 @@
-// price.js — PDF Viewer (pdf.js) สำหรับ LEEPLUS
-// ต้นฉบับ: เน้น Retina + Lazy Loading (พี่วางโครงไว้ดีมาก)
-// ส่วนแก้ไข: เติมระบบปิด QR Box เมื่อคลิกที่ว่าง (น้องยิ้มเพิ่มเติมให้ค่ะ)
+// price.js — PDF Viewer (pdf.js) สำหรับ GitHub Pages
+// เป้าหมาย: เปิดแล้ว “เห็นทันที” บนมือถือ + ชัด (retina) + ไม่ reload วน
 
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -17,42 +16,38 @@
   const zoomOutBtn = $("zoomOutBtn");
   const fitBtn = $("fitBtn");
 
-  /**
-   * 1. ส่วนแก้ไข: LINE floating (รวมร่างใหม่ ไม่รื้อโครงเดิม)
-   */
+  // ---- [จุดที่น้องยิ้มแก้ไข 1/2]: ปรับปรุง LINE floating ให้ปิดง่ายขึ้น ----
   const lineFab = $("lineFab");
   const qrBox = $("qrBox");
   if (lineFab) {
     lineFab.addEventListener("click", (e) => {
-      e.stopPropagation(); // กันเหตุการณ์ส่งต่อไปยัง document
+      e.stopPropagation(); // กันไม่ให้เหตุการณ์วิ่งไปที่ document
       if (qrBox) qrBox.classList.toggle("show");
     });
   }
 
-  // เติมส่วนแก้ไข: คลิกที่ว่างให้ปิด QR
+  // เพิ่มส่วนแก้ไข: คลิกที่ว่างให้ปิด QR ทันที
   document.addEventListener("click", (e) => {
     if (qrBox && qrBox.classList.contains("show")) {
-      // ถ้าจุดที่คลิกไม่ใช่ตัว QR Box และไม่ใช่ปุ่มเขียว ให้ปิดทันที
       if (!qrBox.contains(e.target) && e.target !== lineFab) {
         qrBox.classList.remove("show");
       }
     }
   });
 
-  /**
-   * 2. ต้นฉบับ: การดึงค่าและจัดการ Path (คงไว้ตามที่พี่วงสีแดงว่าสำคัญ)
-   */
+  // อ่าน query params (รักษาชื่อตัวแปร 'pdf' ตามที่พี่วงสีแดงไว้)
   const params = new URLSearchParams(location.search);
   const title = params.get("title") || "ราคา";
-  let pdfParam = params.get("pdf") || ""; // ต้องใช้ชื่อ 'pdf' ตามที่หน้าแรกส่งมา
+  let pdfParam = params.get("pdf") || "";
 
-  if (pageTitle) pageTitle.textContent = title;
+  pageTitle.textContent = title;
 
   backBtn?.addEventListener("click", () => {
-    const base = new URL(".", location.href);
+    const base = new URL(".", location.href); 
     window.location.href = new URL("index.html", base).toString();
   });
 
+  // Resolve path ให้ทำงานบน GitHub Pages
   function resolvePdfUrl(p) {
     if (!p) return "";
     if (/^https?:\/\//i.test(p)) return p;
@@ -62,16 +57,14 @@
   }
 
   const pdfUrl = resolvePdfUrl(pdfParam);
-  if (pdfPathBadge) pdfPathBadge.textContent = `PDF: ${pdfUrl || "-"}`;
+  pdfPathBadge.textContent = `PDF: ${pdfUrl || "-"}`;
 
   openPdfBtn?.addEventListener("click", () => {
-    if (pdfUrl) window.open(pdfUrl, "_blank");
+    if (!pdfUrl) return;
+    window.open(pdfUrl, "_blank");
   });
 
-  /**
-   * 3. ต้นฉบับ: ระบบแสดงผล PDF (Retina + Intersection Observer)
-   * ส่วนนี้คือโครงสร้างหลักที่พี่ทำไว้ น้องยิ้มไม่แตะต้องเลยค่ะ
-   */
+  // ---- [ต้นฉบับพี่]: pdf.js rendering (Retina + Lazy Load) ----
   let pdfDoc = null;
   let renderScale = 1;         
   let fitScale = 1;            
@@ -94,8 +87,8 @@
   }
 
   function updateZoomButtons() {
-    if (zoomOutBtn) zoomOutBtn.disabled = renderScale <= 0.6;
-    if (zoomInBtn) zoomInBtn.disabled = renderScale >= 2.2;
+    zoomOutBtn.disabled = renderScale <= 0.6;
+    zoomInBtn.disabled = renderScale >= 2.2;
   }
 
   function calcFitScale(page) {
@@ -157,15 +150,36 @@
     return io;
   }
 
+  function showError(msg, directUrl) {
+    setStatus("แสดงผลไม่สำเร็จ");
+    clearHost();
+    pdfHost.innerHTML = `
+      <div class="err">
+        <div style="font-weight:900;font-size:18px;margin-bottom:10px">เปิด PDF ไม่ได้</div>
+        <div style="opacity:.85">${msg || "ไม่ทราบสาเหตุ"}</div>
+        ${directUrl ? `<div style="margin-top:14px"><a href="${directUrl}" target="_blank" rel="noreferrer">ลิงก์: กดเปิด PDF โดยตรง</a></div>` : ""}
+      </div>
+    `;
+  }
+
   async function loadPdf() {
-    if (!window.pdfjsLib || !pdfUrl) return;
+    if (!window.pdfjsLib) {
+      showError("โหลด pdf.js ไม่สำเร็จ (CDN)", pdfUrl);
+      return;
+    }
+    if (!pdfUrl) {
+      showError("ไม่มีพาธ PDF ในลิงก์", "");
+      return;
+    }
 
     clearHost();
     setStatus("กำลังโหลดไฟล์ PDF...");
+
     const token = ++renderToken;
 
     try {
       const urlNoCache = pdfUrl + (pdfUrl.includes("?") ? "&" : "?") + "v=" + Date.now();
+
       const loadingTask = pdfjsLib.getDocument({
         url: urlNoCache,
         disableRange: false,
@@ -199,12 +213,29 @@
       await renderPageLazy(pagesMeta[0], token);
       updateZoomButtons();
 
+      // [ต้นฉบับพี่]: Resize handling
+      let resizeTimer = null;
+      window.addEventListener("resize", () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(async () => {
+          if (!pdfDoc) return;
+          const t = ++renderToken;
+          setStatus("ปรับขนาดหน้าจอ...");
+          const p1 = await pdfDoc.getPage(1);
+          fitScale = clamp(calcFitScale(p1), 0.6, 2.2);
+          pagesMeta.forEach((m) => (m.rendered = false));
+          await renderPageLazy(pagesMeta[0], t);
+          setStatus("พร้อมใช้งาน");
+        }, 250);
+      }, { passive: true });
+
     } catch (e) {
       console.error(e);
+      showError(e?.message || String(e), pdfUrl);
     }
   }
 
-  // Zoom controls
+  // [ต้นฉบับพี่]: Zoom controls
   function rerenderAll() {
     const t = ++renderToken;
     setStatus("กำลังปรับซูม...");

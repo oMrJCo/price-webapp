@@ -2,13 +2,15 @@ backend:
   name: github
   repo: oMrJcO/price-webapp
   branch: main
-  # ส่วนที่ต้องเพิ่มเพื่อให้ Login ได้
-  auth_type: implicit
-  app_id: ใส่_Client_ID_ที่พี่ได้มาจากขั้นตอนที่_1
+  # รหัสกุญแจที่พี่ได้มา น้องยิ้มใส่ให้แล้วค่ะ
+  app_id: "Ov23li928i8Y2a9rPTBl"
+  base_url: https://api.github.com
+  auth_endpoint: login/oauth/authorize
 
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
+# จัดการรูปภาพและไฟล์
 media_folder: "assets"
 public_folder: "assets"
 
@@ -25,14 +27,15 @@ collections:
           - { label: "คำอธิบายใต้ชื่อ", name: "siteSubtitle", widget: "string" }
           - { label: "รูปภาพ Cover", name: "coverImage", widget: "image" }
           - { label: "หัวข้อบน Cover", name: "coverHeadline", widget: "string" }
-          - { label: "คำบรรยายบน Cover", name: "coverSubtext", widget: "string" }
+          - { label: "คำอธิบายบน Cover", name: "coverSubtext", widget: "string" }
           - { label: "LINE QR Code", name: "lineQr", widget: "image" }
           - { label: "ไอคอนปุ่ม LINE", name: "lineIcon", widget: "image" }
-          - label: "รายการสินค้า"
+          - label: "รายการหมวดหมู่สินค้า"
             name: "categories"
             widget: "list"
+            summary: "{{fields.titleEN}} / {{fields.titleTH}}"
             fields:
-              - { label: "ชื่อ (EN)", name: "titleEN", widget: "string" }
-              - { label: "ชื่อ (TH)", name: "titleTH", widget: "string" }
-              - { label: "รูป", name: "image", widget: "image" }
-              - { label: "PDF", name: "pdf", widget: "file" }
+              - { label: "ชื่อหมวดหมู่ (EN)", name: "titleEN", widget: "string" }
+              - { label: "ชื่อหมวดหมู่ (TH)", name: "titleTH", widget: "string" }
+              - { label: "รูปภาพประกอบ", name: "image", widget: "image" }
+              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file" }

@@ -14,20 +14,20 @@
     var myConfig = {
       backend: {
         name: 'github',
-        repo: 'omrjco/price-webapp', // ⚠️ เช็คชื่อ Repo ให้ถูกนะครับ
+        repo: 'omrjco/price-webapp', // ⚠️ เช็คชื่อ Repo คุณอีกที
         branch: 'main',
-        auth_endpoint: '/api/auth'   // ชี้ไปที่ตัว Login ของเรา
+        auth_endpoint: '/api/auth'
       },
       media_folder: 'pdf',
       public_folder: 'pdf',
       collections: [
         {
-          name: 'settings',
+          name: 'settings', // ชื่อนี้ห้ามซ้ำ (ตอนนี้มีอันเดียว ไม่ซ้ำแน่นอน)
           label: 'จัดการข้อมูล',
           files: [
             {
               name: 'categories',
-              label: 'หมวดหมู่ราคา (Price List)',
+              label: 'หมวดหมู่ราคา',
               file: 'categories.json',
               description: 'จัดการรายการสินค้าและไฟล์ PDF',
               fields: [
@@ -48,7 +48,7 @@
       ]
     };
 
-    // สั่งเริ่มระบบด้วยค่าที่เราเขียนเอง
+    // เริ่มระบบ
     CMS.init({ config: myConfig });
   </script>
 </body>

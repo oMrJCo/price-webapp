@@ -1,33 +1,24 @@
-export default async function handler(req, res) {
-  try {
-    const clientId = process.env.GITHUB_CLIENT_ID;
-    const redirectUri = process.env.GITHUB_REDIRECT_URI; 
-    // ตัวอย่าง: https://price-webapp.vercel.app/api/callback
+export default function handler(req, res) {
+  const client_id = process.env.GITHUB_CLIENT_ID;
+  const redirect_uri = process.env.OAUTH_REDIRECT_URI; // เช่น https://price-webapp.vercel.app/api/callback
+  const scope = process.env.OAUTH_SCOPE || "repo";
 
-    if (!clientId || !redirectUri) {
-      res.status(500).send("Missing env: GITHUB_CLIENT_ID / GITHUB_REDIRECT_URI");
-      return;
-    }
-
-    // Decap จะส่ง ?repo=... มาได้ แต่เราไม่ต้องใช้ก็ได้
-    const scope = "repo";
-    const state = Math.random().toString(36).slice(2);
-
-    const authorizeUrl =
-      "https://github.com/login/oauth/authorize" +
-      `?client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&state=${encodeURIComponent(state)}`;
-
-    res.setHeader(
-      "Set-Cookie",
-      `decap_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Secure`
-    );
-
-    res.writeHead(302, { Location: authorizeUrl });
-    res.end();
-  } catch (e) {
-    res.status(500).send(String(e?.message || e));
+  if (!client_id || !redirect_uri) {
+    res.status(500).send("Missing env: GITHUB_CLIENT_ID or OAUTH_REDIRECT_URI");
+    return;
   }
+
+  // Decap จะส่ง ?site_id=... มาให้เรา (เราเก็บไว้ใน state)
+  const site_id = req.query.site_id || "";
+  const state = Buffer.from(JSON.stringify({ site_id })).toString("base64");
+
+  const url =
+    "https://github.com/login/oauth/authorize" +
+    `?client_id=${encodeURIComponent(client_id)}` +
+    `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&state=${encodeURIComponent(state)}`;
+
+  res.writeHead(302, { Location: url });
+  res.end();
 }

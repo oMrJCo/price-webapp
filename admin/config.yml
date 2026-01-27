@@ -1,9 +1,9 @@
 backend:
   name: github
-  repo: oMrJcO/price-webapp
+  repo: OMrJco/price-webapp
   branch: main
 
-  # OAuth Proxy (Vercel)
+  # ✅ OAuth Proxy (Vercel) — ต้องอยู่ใต้ backend เท่านั้น
   base_url: https://price-webapp.vercel.app
   auth_endpoint: /api/auth
 
@@ -24,19 +24,15 @@ collections:
         fields:
           - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
           - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-          - { label: "Cover Image (path)", name: "coverImage", widget: "string", required: false, hint: "เช่น assets/cover.jpg หรือ /price-webapp/assets/cover.jpg" }
+          - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
           - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
           - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
-
-          - { label: "LINE URL", name: "lineUrl", widget: "string", required: false }
-          - { label: "LINE Icon (path)", name: "lineIcon", widget: "string", required: false }
-          - { label: "LINE QR (path)", name: "lineQr", widget: "string", required: false }
 
           - label: "Categories"
             name: "categories"
             widget: "list"
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
-              - { label: "Title (TH)", name: "titleTH", widget: "string", required: false }
+              - { label: "Title (TH)", name: "titleTH", widget: "string" }
               - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg หรือ /price-webapp/assets/battery.jpg" }
               - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf หรือ /price-webapp/pdf/battery.pdf" }

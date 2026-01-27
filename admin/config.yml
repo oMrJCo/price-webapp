@@ -2,12 +2,12 @@ backend:
   name: github
   repo: oMrJcO/price-webapp
   branch: main
+  # เพิ่มส่วนนี้เพื่อใช้ระบบ Login ของ GitHub โดยตรง
+  base_url: https://api.github.com
 
-# ลิงก์หน้าเว็บของพี่
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
-# จัดการโฟลเดอร์รูปภาพ
 media_folder: "assets"
 public_folder: "assets"
 
@@ -22,14 +22,11 @@ collections:
         fields:
           - { label: "ชื่อเว็บไซต์ (Site Title)", name: "siteTitle", widget: "string" }
           - { label: "คำบรรยายใต้ชื่อ (Subtitle)", name: "siteSubtitle", widget: "string" }
-
           - { label: "รูปภาพ Cover", name: "coverImage", widget: "image" }
           - { label: "หัวข้อบนรูป Cover", name: "coverHeadline", widget: "string" }
           - { label: "คำอธิบายบนรูป Cover", name: "coverSubtext", widget: "string" }
-
           - { label: "LINE QR Code", name: "lineQr", widget: "image" }
           - { label: "ไอคอนปุ่ม LINE", name: "lineIcon", widget: "image" }
-
           - label: "รายการหมวดหมู่สินค้า"
             name: "categories"
             widget: "list"
@@ -38,4 +35,4 @@ collections:
               - { label: "ชื่อหมวดหมู่ (EN)", name: "titleEN", widget: "string" }
               - { label: "ชื่อหมวดหมู่ (TH)", name: "titleTH", widget: "string" }
               - { label: "รูปภาพประกอบ", name: "image", widget: "image" }
-              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file", hint: "อัปโหลดไฟล์ .pdf ของหมวดนี้" }
+              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file" }

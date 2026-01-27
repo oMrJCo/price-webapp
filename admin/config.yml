@@ -3,39 +3,38 @@ backend:
   repo: oMrJcO/price-webapp
   branch: main
 
-# สำคัญมากสำหรับ GitHub Pages (repo pages)
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
+# ปรับเพื่อให้ Path รูปภาพสัมพันธ์กับหน้าบ้าน
 media_folder: "assets"
-public_folder: "/price-webapp/assets"
+public_folder: "assets"
 
 collections:
   - name: "categories_config"
-    label: "Categories"
+    label: "จัดการข้อมูลเว็บไซต์"
     files:
       - name: "categories"
-        label: "Site + Categories (categories.json)"
+        label: "แก้ไขหน้าหลัก (LEEPLUS)"
         file: "categories.json"
         format: "json"
         fields:
-          - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
-          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
+          - { label: "ชื่อเว็บไซต์", name: "siteTitle", widget: "string" }
+          - { label: "คำอธิบายใต้ชื่อ", name: "siteSubtitle", widget: "string" }
 
-          - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
-          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
-          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
+          - { label: "รูปภาพ Cover", name: "coverImage", widget: "image" }
+          - { label: "หัวข้อบน Cover", name: "coverHeadline", widget: "string" }
+          - { label: "คำบรรยายบน Cover", name: "coverSubtext", widget: "string" }
 
-          - { label: "LINE URL", name: "lineUrl", widget: "string", required: false }
-          - { label: "LINE Icon", name: "lineIcon", widget: "image", required: false }
-          - { label: "LINE QR", name: "lineQr", widget: "image", required: false }
+          - { label: "QR Code LINE", name: "lineQr", widget: "image" }
+          - { label: "ไอคอนปุ่ม LINE", name: "lineIcon", widget: "image" }
 
-          - label: "Categories"
+          - label: "รายการหมวดหมู่สินค้า"
             name: "categories"
             widget: "list"
             summary: "{{fields.titleEN}} / {{fields.titleTH}}"
             fields:
-              - { label: "Title (EN)", name: "titleEN", widget: "string" }
-              - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image", name: "image", widget: "image", required: false }
-              - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }
+              - { label: "ชื่อหมวดหมู่ (EN)", name: "titleEN", widget: "string" }
+              - { label: "ชื่อหมวดหมู่ (TH)", name: "titleTH", widget: "string" }
+              - { label: "รูปภาพประกอบ", name: "image", widget: "image" }
+              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file", hint: "อัปโหลดไฟล์ .pdf ที่นี่" }

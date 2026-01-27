@@ -1,27 +1,24 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: OmrJCo/price-webapp
   branch: main
 
-# อัปโหลดรูปไปที่ assets/
 media_folder: "assets"
-public_folder: "/assets"
-
-publish_mode: simple
+public_folder: "/price-webapp/assets"
 
 collections:
-  - name: "categories_config"
+  - name: "categories"
     label: "Categories"
     files:
-      - name: "categories"
+      - name: "all"
         label: "All Categories"
         file: "categories.json"
         format: "json"
         fields:
-          - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
-          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-          - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
-          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
-          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
+          - label: "Site Title"
+            name: "siteTitle"
+            widget: "string"
+            required: false
 
           - label: "Categories"
             name: "categories"
@@ -29,5 +26,5 @@ collections:
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "ตัวอย่าง: assets/battery.jpg" }
-              - { label: "PDF Path", name: "pdf", widget: "string", hint: "ตัวอย่าง: pdf/battery.pdf" }
+              - { label: "Image", name: "image", widget: "string", required: false }
+              - { label: "PDF Path", name: "pdf", widget: "string", required: false }

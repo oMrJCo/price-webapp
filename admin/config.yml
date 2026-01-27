@@ -1,9 +1,7 @@
 backend:
   name: github
-  repo: OMrJco/price-webapp
+  repo: OmrJco/price-webapp
   branch: main
-
-  # ✅ OAuth Proxy (Vercel) — ต้องอยู่ใต้ backend เท่านั้น
   base_url: https://price-webapp.vercel.app
   auth_endpoint: /api/auth
 

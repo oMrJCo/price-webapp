@@ -2,11 +2,11 @@ backend:
   name: git-gateway
   branch: main
 
+# อัปโหลดรูปไปที่ assets/
 media_folder: "assets"
 public_folder: "/assets"
 
-site_url: https://moonlit-halva-d42472.netlify.app
-display_url: https://moonlit-halva-d42472.netlify.app
+publish_mode: simple
 
 collections:
   - name: "categories_config"
@@ -29,5 +29,5 @@ collections:
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image", name: "image", widget: "string", required: false }
-              - { label: "PDF Path", name: "pdf", widget: "string" }
+              - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "ตัวอย่าง: assets/battery.jpg" }
+              - { label: "PDF Path", name: "pdf", widget: "string", hint: "ตัวอย่าง: pdf/battery.pdf" }

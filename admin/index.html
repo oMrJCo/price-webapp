@@ -1,55 +1,10 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Content Manager</title>
-</head>
-<body>
-  <script>window.CMS_MANUAL_INIT = true;</script>
-  
-  <script src="https://unpkg.com/decap-cms@^3.1.2/dist/decap-cms.js"></script>
-
-  <script>
-    var myConfig = {
-      backend: {
-        name: 'github',          // ⚠️ ต้องเป็น github เท่านั้น ห้ามเป็น git-gateway
-        repo: 'omrjco/price-webapp',
-        branch: 'main',
-        base_url: 'https://price-webapp.vercel.app', // ⚠️ ใส่ชื่อเว็บ Vercel ของคุณให้เต็มยศตรงนี้เลย เพื่อความชัวร์
-        auth_endpoint: 'api/auth'
-      },
-      media_folder: 'pdf',
-      public_folder: 'pdf',
-      collections: [
-        {
-          name: 'settings',
-          label: 'จัดการข้อมูล',
-          files: [
-            {
-              name: 'categories',
-              label: 'หมวดหมู่ราคา',
-              file: 'categories.json',
-              description: 'จัดการรายการสินค้า',
-              fields: [
-                {
-                  name: 'categories',
-                  label: 'รายการหมวดหมู่',
-                  widget: 'list',
-                  fields: [
-                    {label: 'Title (English)', name: 'titleEN', widget: 'string'},
-                    {label: 'Title (Thai)', name: 'titleTH', widget: 'string'},
-                    {label: 'Upload PDF', name: 'pdf', widget: 'file'}
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-
-    CMS.init({ config: myConfig });
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LEEPLUS Backoffice</title>
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  </head>
+  <body></body>
 </html>

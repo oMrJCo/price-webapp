@@ -4,51 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
+
+  <link href="/admin/config.yml" type="text/yaml" rel="cms-config-url">
+
 </head>
 <body>
   <script src="https://unpkg.com/decap-cms@^3.1.2/dist/decap-cms.js"></script>
-
-  <script>
-    var config = {
-      backend: {
-        name: 'github',
-        repo: 'omrjco/price-webapp', // ⚠️ ชื่อ Repo ของคุณ
-        branch: 'main',
-        base_url: '', // ว่างไว้เพื่อให้ใช้ domain ปัจจุบัน
-        auth_endpoint: 'api/auth' // ชี้ไปที่ api ล็อกอิน
-      },
-      media_folder: 'pdf',
-      public_folder: 'pdf',
-      collections: [
-        {
-          name: 'settings',
-          label: 'จัดการข้อมูล',
-          files: [
-            {
-              name: 'categories',
-              label: 'หมวดหมู่ราคา',
-              file: 'categories.json',
-              description: 'แก้ไขรายการสินค้า',
-              fields: [
-                {
-                  name: 'categories',
-                  label: 'รายการหมวดหมู่',
-                  widget: 'list',
-                  fields: [
-                    {label: 'Title (English)', name: 'titleEN', widget: 'string'},
-                    {label: 'Title (Thai)', name: 'titleTH', widget: 'string'},
-                    {label: 'Upload PDF', name: 'pdf', widget: 'file'}
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-
-    // เริ่มทำงาน CMS ด้วยค่า Config นี้
-    CMS.init({ config: config });
-  </script>
 </body>
 </html>

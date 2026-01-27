@@ -1,27 +1,14 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>LEEPLUS Backoffice</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Manager</title>
 
-    <!-- กัน Decap init เร็วเกิน -->
-    <script>window.CMS_MANUAL_INIT = true;</script>
+  <link href="/admin/config.yml" type="text/yaml" rel="cms-config-url">
 
-    <!-- Decap CMS -->
-    <script src="https://unpkg.com/decap-cms@3.10.0/dist/decap-cms.js"></script>
-
-    <style>
-      body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
-    </style>
-  </head>
-
-  <body>
-    <script>
-      // init หลังโหลด lib แล้ว
-      window.addEventListener("load", () => {
-        if (window.CMS) window.CMS.init();
-      });
-    </script>
-  </body>
+</head>
+<body>
+  <script src="https://unpkg.com/decap-cms@^3.1.2/dist/decap-cms.js"></script>
+</body>
 </html>

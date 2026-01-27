@@ -1,42 +1,38 @@
 backend:
   name: github
-  repo: oMrJcO/price-webapp
+  repo: oMrJCo/price-webapp      # ✅ ต้องเป็น owner/repo ให้ตรงเป๊ะ
   branch: main
-  # ใช้ Client ID ที่พี่ได้มา (ห้ามใส่ Secret ในนี้นะคะ)
-  app_id: "Ov23li928i8Y2a9rPTBl"
-  # เปลี่ยนมาใช้ระบบ Token โดยตรง
-  auth_type: implicit
-  base_url: https://api.github.com
-  auth_endpoint: login/oauth/authorize
+
+  # ✅ ใส่ URL ของ Auth Proxy (Vercel) ที่เราจะสร้างใน STEP B
+  base_url: https://price-webapp.vercel.app/
+  auth_endpoint: /api/auth
 
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
 media_folder: "assets"
-public_folder: "assets"
+public_folder: "/price-webapp/assets"
 
 collections:
   - name: "categories_config"
-    label: "จัดการเนื้อหาเว็บไซต์"
+    label: "Categories"
     files:
       - name: "categories"
-        label: "ข้อมูลหน้าหลักและหมวดหมู่"
+        label: "All Categories"
         file: "categories.json"
         format: "json"
         fields:
-          - { label: "ชื่อเว็บไซต์", name: "siteTitle", widget: "string" }
-          - { label: "คำอธิบายใต้ชื่อ", name: "siteSubtitle", widget: "string" }
-          - { label: "รูปภาพ Cover", name: "coverImage", widget: "image" }
-          - { label: "หัวข้อบน Cover", name: "coverHeadline", widget: "string" }
-          - { label: "คำอธิบายบน Cover", name: "coverSubtext", widget: "string" }
-          - { label: "LINE QR Code", name: "lineQr", widget: "image" }
-          - { label: "ไอคอนปุ่ม LINE", name: "lineIcon", widget: "image" }
-          - label: "รายการหมวดหมู่สินค้า"
+          - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
+          - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
+          - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
+          - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
+          - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
+
+          - label: "Categories"
             name: "categories"
             widget: "list"
-            summary: "{{fields.titleEN}} / {{fields.titleTH}}"
             fields:
-              - { label: "ชื่อหมวดหมู่ (EN)", name: "titleEN", widget: "string" }
-              - { label: "ชื่อหมวดหมู่ (TH)", name: "titleTH", widget: "string" }
-              - { label: "รูปภาพประกอบ", name: "image", widget: "image" }
-              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file" }
+              - { label: "Title (EN)", name: "titleEN", widget: "string" }
+              - { label: "Title (TH)", name: "titleTH", widget: "string" }
+              - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg หรือ /price-webapp/assets/battery.jpg" }
+              - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf หรือ /price-webapp/pdf/battery.pdf" }

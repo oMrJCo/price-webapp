@@ -6,27 +6,27 @@ backend:
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
-# ปรับเพื่อให้ Path รูปภาพสัมพันธ์กับหน้าบ้าน
+# จัดการโฟลเดอร์รูปภาพให้สัมพันธ์กับโค้ดหน้าบ้าน
 media_folder: "assets"
 public_folder: "assets"
 
 collections:
   - name: "categories_config"
-    label: "จัดการข้อมูลเว็บไซต์"
+    label: "จัดการเนื้อหาเว็บไซต์"
     files:
       - name: "categories"
-        label: "แก้ไขหน้าหลัก (LEEPLUS)"
+        label: "ข้อมูลหน้าหลักและหมวดหมู่"
         file: "categories.json"
         format: "json"
         fields:
-          - { label: "ชื่อเว็บไซต์", name: "siteTitle", widget: "string" }
-          - { label: "คำอธิบายใต้ชื่อ", name: "siteSubtitle", widget: "string" }
+          - { label: "ชื่อเว็บไซต์ (Site Title)", name: "siteTitle", widget: "string" }
+          - { label: "คำบรรยายใต้ชื่อ (Subtitle)", name: "siteSubtitle", widget: "string" }
 
           - { label: "รูปภาพ Cover", name: "coverImage", widget: "image" }
-          - { label: "หัวข้อบน Cover", name: "coverHeadline", widget: "string" }
-          - { label: "คำบรรยายบน Cover", name: "coverSubtext", widget: "string" }
+          - { label: "หัวข้อบนรูป Cover", name: "coverHeadline", widget: "string" }
+          - { label: "คำอธิบายบนรูป Cover", name: "coverSubtext", widget: "string" }
 
-          - { label: "QR Code LINE", name: "lineQr", widget: "image" }
+          - { label: "LINE QR Code", name: "lineQr", widget: "image" }
           - { label: "ไอคอนปุ่ม LINE", name: "lineIcon", widget: "image" }
 
           - label: "รายการหมวดหมู่สินค้า"
@@ -37,4 +37,4 @@ collections:
               - { label: "ชื่อหมวดหมู่ (EN)", name: "titleEN", widget: "string" }
               - { label: "ชื่อหมวดหมู่ (TH)", name: "titleTH", widget: "string" }
               - { label: "รูปภาพประกอบ", name: "image", widget: "image" }
-              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file", hint: "อัปโหลดไฟล์ .pdf ที่นี่" }
+              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file", hint: "อัปโหลดไฟล์ PDF ของหมวดนี้" }

@@ -2,15 +2,16 @@ backend:
   name: github
   repo: oMrJcO/price-webapp
   branch: main
-  # รหัสกุญแจที่พี่ได้มา น้องยิ้มใส่ให้แล้วค่ะ
+  # ใช้ Client ID ที่พี่ได้มา (ห้ามใส่ Secret ในนี้นะคะ)
   app_id: "Ov23li928i8Y2a9rPTBl"
+  # เปลี่ยนมาใช้ระบบ Token โดยตรง
+  auth_type: implicit
   base_url: https://api.github.com
   auth_endpoint: login/oauth/authorize
 
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
-# จัดการรูปภาพและไฟล์
 media_folder: "assets"
 public_folder: "assets"
 

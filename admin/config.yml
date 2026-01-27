@@ -3,10 +3,11 @@ backend:
   repo: oMrJcO/price-webapp
   branch: main
 
+# ลิงก์หน้าเว็บของพี่
 site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
-# จัดการโฟลเดอร์รูปภาพให้สัมพันธ์กับโค้ดหน้าบ้าน
+# จัดการโฟลเดอร์รูปภาพ
 media_folder: "assets"
 public_folder: "assets"
 
@@ -37,4 +38,4 @@ collections:
               - { label: "ชื่อหมวดหมู่ (EN)", name: "titleEN", widget: "string" }
               - { label: "ชื่อหมวดหมู่ (TH)", name: "titleTH", widget: "string" }
               - { label: "รูปภาพประกอบ", name: "image", widget: "image" }
-              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file", hint: "อัปโหลดไฟล์ PDF ของหมวดนี้" }
+              - { label: "ไฟล์ PDF ราคา", name: "pdf", widget: "file", hint: "อัปโหลดไฟล์ .pdf ของหมวดนี้" }

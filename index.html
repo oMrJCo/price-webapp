@@ -3,98 +3,89 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ราคาสินค้า LEEPLUS</title>
+  <title>ราคาสินค้า LEEPLUS | อุปกรณ์มือถือคุณภาพ</title>
   <style>
-    :root{
-      --bg:#f6f7f9; --card:#fff; --text:#0f172a; --muted:#64748b;
-      --border:rgba(15,23,42,.08); --shadow:0 10px 30px rgba(2,6,23,.08);
-      --radius:18px;
+    :root {
+      /* ปรับเฉดสีให้ดู Luxury ขึ้นตามสไตล์ LEEPLUS (ดำ-ทอง-เทา) */
+      --bg: #f8fafc; 
+      --card: #ffffff; 
+      --text: #0f172a; 
+      --muted: #64748b;
+      --brand: #eab308; /* สีเหลืองทองของ LEEPLUS */
+      --border: rgba(15,23,42,.06); 
+      --shadow: 0 12px 34px rgba(2,6,23,.08);
+      --radius: 20px;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans Thai",sans-serif;background:var(--bg);color:var(--text)}
-    a{color:inherit;text-decoration:none}
-    .wrap{max-width:1100px;margin:0 auto;padding:22px 18px 90px}
-    header{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px}
-    header .logo{font-size:22px;line-height:1}
-    header h1{font-size:22px;margin:0}
-    header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font-family: system-ui,-apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 20px 100px; }
+    
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    header .logo { font-size: 24px; background: var(--text); color: #fff; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; font-weight: bold; }
+    header h1 { font-size: 20px; margin: 0; font-weight: 800; }
+    header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 
-    .cover{
-      border-radius:24px; overflow:hidden; box-shadow:var(--shadow);
-      background:#111827; position:relative; min-height:210px;
-      display:flex; align-items:flex-end; padding:26px;
-      margin:14px 0 18px;
+    .cover {
+      border-radius: 28px; overflow: hidden; box-shadow: var(--shadow);
+      background: #0f172a; position: relative; min-height: 220px;
+      display: flex; align-items: flex-end; padding: 30px;
+      margin-bottom: 24px;
     }
-    .cover::before{
-      content:""; position:absolute; inset:0;
-      background:linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.15));
-      z-index:1;
-    }
-    .cover img{
-      position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
-      transform:scale(1.02);
-    }
-    .cover .txt{position:relative; z-index:2; max-width:720px}
-    .cover .headline{font-size:36px;margin:0 0 8px;color:#fff;font-weight:800;letter-spacing:-.5px}
-    .cover .sub{margin:0;color:rgba(255,255,255,.85);font-size:14px;line-height:1.45}
+    .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+    .cover .txt { position: relative; z-index: 2; }
+    .cover .headline { font-size: 32px; margin: 0 0 4px; color: #fff; font-weight: 800; letter-spacing: -0.5px; }
+    .cover .sub { margin: 0; color: rgba(255,255,255,0.8); font-size: 14px; }
 
-    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-    @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media (max-width:520px){.grid{grid-template-columns:1fr}.cover{min-height:180px;padding:18px}.cover .headline{font-size:26px}}
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    @media (min-width: 768px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
+    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } .cover { min-height: 180px; padding: 20px; } .cover .headline { font-size: 24px; } }
 
-    .card{
-      background:var(--card); border:1px solid var(--border); border-radius:20px;
-      overflow:hidden; box-shadow:0 12px 24px rgba(2,6,23,.06);
-      transition:transform .12s ease, box-shadow .12s ease;
-      display:block;
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; box-shadow: 0 4px 12px rgba(2,6,23,0.03);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer; text-decoration: none; color: inherit;
     }
-    .card:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(2,6,23,.10)}
-    .thumb{height:150px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;position:relative}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-    .thumb.noimg{background:linear-gradient(135deg,#e5e7eb,#f3f4f6)}
-    .thumb .ph{font-weight:900;letter-spacing:.8px;color:rgba(15,23,42,.25);font-size:20px}
-    .content{padding:12px 14px 14px}
-    .title{margin:0;font-weight:800}
-    .sub{margin:4px 0 0;color:var(--muted);font-size:13px}
-    .empty{
-      grid-column:1/-1; padding:14px; background:#fff; border:1px dashed var(--border);
-      border-radius:16px; color:var(--muted); font-size:14px;
-    }
+    .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--brand); }
+    
+    .thumb { height: 160px; background: #f1f5f9; position: relative; overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .card:hover .thumb img { transform: scale(1.08); }
+    .thumb .placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: #cbd5e1; font-weight: 800; font-size: 24px; }
 
-    /* Floating LINE button */
-    .float{
-      position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px;
-      z-index:50;
-    }
-    .fab{
-      width:56px;height:56px;border-radius:999px;background:#06C755;display:grid;place-items:center;
-      box-shadow:0 14px 28px rgba(2,6,23,.20); border:0; cursor:pointer;
-    }
-    .fab img{width:30px;height:30px}
-    .qr{
-      width:140px; background:#fff; border-radius:16px; padding:10px; box-shadow:0 14px 28px rgba(2,6,23,.20);
-      border:1px solid var(--border); display:none;
-    }
-    .qr.show{display:block}
-    .qr img{width:100%;height:auto;border-radius:10px;display:block}
-    .qr .cap{margin-top:8px;font-size:12px;color:var(--muted);text-align:center}
+    .content { padding: 16px; }
+    .title { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); }
+    .subtext { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+    /* LINE Floating */
+    .float { position: fixed; right: 20px; bottom: 20px; z-index: 100; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+    .qr-box { width: 160px; background: #fff; padding: 12px; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); display: none; }
+    .qr-box.show { display: block; animation: slideUp 0.3s ease; }
+    .qr-box img { width: 100%; border-radius: 12px; }
+    .fab { width: 60px; height: 60px; border-radius: 30px; background: #06C755; border: none; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 20px rgba(6,199,85,0.3); transition: transform 0.2s; }
+    .fab:active { transform: scale(0.9); }
+    .fab img { width: 32px; height: 32px; }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
+
   <div class="wrap">
     <header>
-      <div class="logo">📦</div>
+      <div class="logo">L</div>
       <div>
-        <h1 id="siteTitle">ราคาสินค้า <b>LEEPLUS</b></h1>
-        <p id="siteSubtitle">เลือกหมวดสินค้าเพื่อดูราคาล่าสุด</p>
+        <h1>ราคาสินค้า <b>LEEPLUS</b></h1>
+        <p>อัปเดตราคาล่าสุดสำหรับพาร์ทเนอร์</p>
       </div>
     </header>
 
-    <section class="cover" aria-label="cover">
-      <img id="coverImage" src="assets/cover.jpg" alt="" onerror="this.style.display='none'">
+    <section class="cover">
+      <img id="coverImage" src="assets/cover.jpg" alt="LEEPLUS Cover" onerror="this.style.opacity='0'">
       <div class="txt">
-        <p class="headline" id="coverHeadline">ศูนย์รวมอะไหล่มือถือ</p>
-        <p class="sub" id="coverSubtext">แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว</p>
+        <p class="headline">Premium Parts</p>
+        <p class="sub">เลือกหมวดหมู่ที่ต้องการเพื่อตรวจสอบราคา</p>
       </div>
     </section>
 
@@ -102,12 +93,12 @@
   </div>
 
   <div class="float">
-    <div id="qrBox" class="qr">
-      <img id="lineQr" src="assets/line-qr.png" alt="LINE QR" onerror="this.style.display='none'">
-      <div class="cap">สแกนเพื่อแอด LINE</div>
+    <div id="qrBox" class="qr-box">
+      <img src="assets/line-qr.png" alt="QR Code" onerror="this.parentElement.style.display='none'">
+      <p style="margin:8px 0 0; font-size:12px; text-align:center; color:var(--muted)">แอดไลน์สอบถาม</p>
     </div>
-    <button class="fab" id="lineFab" title="Add LINE / QR">
-      <img id="lineIcon" src="assets/line-icon.png" alt="LINE" onerror="this.style.display='none'">
+    <button class="fab" onclick="document.getElementById('qrBox').classList.toggle('show')">
+      <img src="assets/line-icon.png" alt="LINE">
     </button>
   </div>
 

@@ -8,7 +8,13 @@
     :root { --bg:#f8fafc; --text:#0f172a; --brand:#eab308; }
     body { margin:0; font-family:system-ui, sans-serif; background:var(--bg); color:var(--text); }
     .wrap { max-width:1000px; margin:0 auto; padding:24px 20px; }
-    header { margin-bottom:24px; }
+    header { margin-bottom:24px; display:flex; align-items:center; gap:15px; }
+    .logo-circle { width:45px; height:45px; background:var(--brand); border-radius:50%; display:grid; place-items:center; font-weight:900; color:#fff; font-size:24px; }
+    h1 { margin:0; font-size:22px; }
+    #siteSubtitle { margin:0; font-size:14px; color:#64748b; }
+    .cover-box { width:100%; height:200px; background:#ddd; border-radius:20px; overflow:hidden; position:relative; margin-bottom:25px; }
+    #coverImage { width:100%; height:100%; object-fit:cover; }
+    .cover-txt { position:absolute; bottom:20px; left:20px; color:#fff; text-shadow:0 2px 4px rgba(0,0,0,0.5); }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
     .card { background:#fff; border-radius:20px; overflow:hidden; border:1px solid rgba(0,0,0,0.05); text-decoration:none; color:inherit; transition:0.2s; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
     .card:hover { transform:translateY(-5px); border-color:var(--brand); }
@@ -18,16 +24,41 @@
     .content { padding:16px; }
     .title { margin:0; font-weight:700; }
     .sub { font-size:13px; color:#64748b; margin-top:4px; }
+    
+    /* สไตล์ปุ่ม LINE */
+    #qrBox { width:140px; background:#fff; border-radius:16px; padding:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.1); display:none; position:fixed; right:16px; bottom:85px; z-index:100; }
+    #lineFab { width:56px; height:56px; border-radius:50%; background:#06C755; border:0; cursor:pointer; display:grid; place-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.2); position:fixed; right:16px; bottom:20px; z-index:100; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1 id="siteTitle">LEEPLUS</h1>
-      <p id="siteSubtitle">Loading...</p>
+      <div class="logo-circle">L</div>
+      <div>
+        <h1 id="siteTitle">LEEPLUS</h1>
+        <p id="siteSubtitle">กำลังโหลด...</p>
+      </div>
     </header>
+
+    <div class="cover-box">
+      <img id="coverImage" src="" alt="">
+      <div class="cover-txt">
+        <h2 id="coverHeadline" style="margin:0;"></h2>
+        <p id="coverSubtext" style="margin:0; opacity:0.9;"></p>
+      </div>
+    </div>
+
     <div id="categoriesGrid" class="grid"></div>
   </div>
+
+  <div id="qrBox">
+    <img src="assets/line-qr.png" alt="QR" style="width:100%; border-radius:10px;">
+    <div style="font-size:11px; text-align:center; margin-top:5px; color:#667;">สแกนเพื่อสอบถาม</div>
+  </div>
+  <button id="lineFab">
+    <img src="assets/line-icon.png" alt="LINE" style="width:30px; height:30px;">
+  </button>
+
   <script src="app.js"></script>
 </body>
 </html>

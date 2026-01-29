@@ -2,15 +2,16 @@ backend:
   name: git-gateway
   branch: main
 
-# URL เว็บจริง (GitHub Pages ของพี่)
-site_url: https://omrjco.github.io/price-webapp
+# ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"
+site_url: https://moonlit-halva-d42472.netlify.app
+
+# ✅ เว็บจริงที่ให้คนเห็น (GitHub Pages) ใส่ไว้ที่ display_url ได้
 display_url: https://omrjco.github.io/price-webapp
 
-# ที่เก็บรูป
+# ที่เก็บรูป (ใน repo)
 media_folder: "assets"
 public_folder: "/assets"
 
-# แก้ไฟล์ JSON เดียว (categories.json ที่ root)
 collections:
   - name: "categories_config"
     label: "Categories"

@@ -1,25 +1,34 @@
 document.addEventListener("DOMContentLoaded", async () => {
     const grid = document.getElementById("categoriesGrid");
-    const url = `categories.json?v=${Date.now()}`;
+
+    // 🔐 Source of Truth: GitHub Raw
+    const CATEGORIES_URL =
+        "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 
     try {
-        const res = await fetch(url);
+        // กัน cache ด้วย timestamp
+        const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, {
+            cache: "no-store"
+        });
+
+        if (!res.ok) throw new Error("Failed to load categories.json");
+
         const data = await res.json();
 
-        // ดึงข้อมูล Cover และหัวข้อเว็บ
-        if(data.siteTitle) document.getElementById("siteTitle").textContent = data.siteTitle;
-        if(data.siteSubtitle) document.getElementById("siteSubtitle").textContent = data.siteSubtitle;
-        if(data.coverImage) document.getElementById("coverImage").src = data.coverImage;
-        if(data.coverHeadline) document.getElementById("coverHeadline").textContent = data.coverHeadline;
-        if(data.coverSubtext) document.getElementById("coverSubtext").textContent = data.coverSubtext;
+        // ===== Header / Cover =====
+        if (data.siteTitle) document.getElementById("siteTitle").textContent = data.siteTitle;
+        if (data.siteSubtitle) document.getElementById("siteSubtitle").textContent = data.siteSubtitle;
+        if (data.coverImage) document.getElementById("coverImage").src = data.coverImage;
+        if (data.coverHeadline) document.getElementById("coverHeadline").textContent = data.coverHeadline;
+        if (data.coverSubtext) document.getElementById("coverSubtext").textContent = data.coverSubtext;
 
-        // สร้างการ์ดสินค้า
+        // ===== Categories =====
         const items = data.categories || [];
         grid.innerHTML = items.map(item => {
             const pdf = item.pdf || "";
             const title = item.titleEN || item.titleTH || "Category";
             const href = `price.html?title=${encodeURIComponent(title)}&pdf=${encodeURIComponent(pdf)}`;
-            
+
             return `
                 <a class="card" href="${href}">
                     <div class="thumb">
@@ -34,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             `;
         }).join("");
 
-        // ระบบปุ่ม LINE หน้าแรก
+        // ===== LINE FAB =====
         const fab = document.getElementById("lineFab");
         const qr = document.getElementById("qrBox");
         if (fab && qr) {
@@ -42,8 +51,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 e.stopPropagation();
                 qr.style.display = (qr.style.display === "block") ? "none" : "block";
             });
-            document.addEventListener("click", () => { qr.style.display = "none"; });
+            document.addEventListener("click", () => {
+                qr.style.display = "none";
+            });
         }
 
-    } catch (err) { console.error("Error:", err); }
+    } catch (err) {
+        console.error("Error loading categories:", err);
+    }
 });

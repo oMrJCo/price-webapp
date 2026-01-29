@@ -1,11 +1,88 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LEEPLUS CMS</title>
-  </head>
-  <body>
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
-  </body>
-</html>
+<script>
+  (function () {
+    // ใส่ base_url ของ Worker ของพี่
+    const OAUTH_BASE = "https://leeplus-decap-oauth.athiwatjc.workers.dev";
+
+    function openAuthPopup() {
+      const siteId = window.location.host; // ใช้ host เป็น state/ไซต์ไอดี
+      const scope = "repo";
+      const authUrl =
+        `${OAUTH_BASE}/auth?provider=github&site_id=${encodeURIComponent(siteId)}&scope=${encodeURIComponent(scope)}`;
+
+      // เปิดเป็น popup จริง ๆ (มี opener แน่นอน)
+      window.open(
+        authUrl,
+        "decap-auth",
+        "width=600,height=700,menubar=no,toolbar=no,status=no,resizable=yes,scrollbars=yes"
+      );
+    }
+
+    // ดักปุ่ม Login ของ Decap
+    function hookLoginButton() {
+      const btns = Array.from(document.querySelectorAll("button, a"));
+      const target = btns.find(el => (el.textContent || "").toLowerCase().includes("login with github"));
+
+      if (target && !target.__hooked) {
+        target.__hooked = true;
+        target.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openAuthPopup();
+        }, true);
+        return true;
+      }
+      return false;
+    }
+
+    // รอให้ Decap render ปุ่มก่อน
+    const obs = new MutationObserver(() => hookLoginButton());
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+
+    // เผื่อปุ่มมาเร็ว
+    hookLoginButton();
+  })();
+</script>
+<script>
+  (function () {
+    // ใส่ base_url ของ Worker ของพี่
+    const OAUTH_BASE = "https://leeplus-decap-oauth.athiwatjc.workers.dev";
+
+    function openAuthPopup() {
+      const siteId = window.location.host; // ใช้ host เป็น state/ไซต์ไอดี
+      const scope = "repo";
+      const authUrl =
+        `${OAUTH_BASE}/auth?provider=github&site_id=${encodeURIComponent(siteId)}&scope=${encodeURIComponent(scope)}`;
+
+      // เปิดเป็น popup จริง ๆ (มี opener แน่นอน)
+      window.open(
+        authUrl,
+        "decap-auth",
+        "width=600,height=700,menubar=no,toolbar=no,status=no,resizable=yes,scrollbars=yes"
+      );
+    }
+
+    // ดักปุ่ม Login ของ Decap
+    function hookLoginButton() {
+      const btns = Array.from(document.querySelectorAll("button, a"));
+      const target = btns.find(el => (el.textContent || "").toLowerCase().includes("login with github"));
+
+      if (target && !target.__hooked) {
+        target.__hooked = true;
+        target.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openAuthPopup();
+        }, true);
+        return true;
+      }
+      return false;
+    }
+
+    // รอให้ Decap render ปุ่มก่อน
+    const obs = new MutationObserver(() => hookLoginButton());
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+
+    // เผื่อปุ่มมาเร็ว
+    hookLoginButton();
+  })();
+</script>

@@ -4,7 +4,8 @@ backend:
   repo: omrjco/price-webapp
   branch: main
   base_url: https://omrjco.github.io/decap-oauth
-  auth_endpoint: /
+  auth_endpoint: /callback.html
+
 
 
 # ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"

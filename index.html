@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ราคาสินค้า LEEPLUS</title>
+
+  <!-- ✅ Auto-redirect สำหรับลิงก์ Recovery ของ Netlify Identity
+       เวลาอีเมลส่งมาเป็น /#recovery_token=... จะเด้งไป /reset-password.html ให้เอง -->
+  <script>
+    (function () {
+      const hash = window.location.hash || "";
+      if (hash.startsWith("#recovery_token=")) {
+        window.location.replace("/reset-password.html" + hash);
+      }
+    })();
+  </script>
+
   <style>
     :root { --bg:#f8fafc; --text:#0f172a; --brand:#eab308; }
     body { margin:0; font-family:system-ui, sans-serif; background:var(--bg); color:var(--text); }
@@ -24,7 +36,7 @@
     .content { padding:16px; }
     .title { margin:0; font-weight:700; }
     .sub { font-size:13px; color:#64748b; margin-top:4px; }
-    
+
     /* สไตล์ปุ่ม LINE */
     #qrBox { width:140px; background:#fff; border-radius:16px; padding:10px; box-shadow:0 10px 25px rgba(0,0,0,0.15); border:1px solid rgba(0,0,0,0.1); display:none; position:fixed; right:16px; bottom:85px; z-index:100; }
     #lineFab { width:56px; height:56px; border-radius:50%; background:#06C755; border:0; cursor:pointer; display:grid; place-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.2); position:fixed; right:16px; bottom:20px; z-index:100; }

@@ -66,6 +66,11 @@
       "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
       "image": "",
       "pdf": "pdf/lcd-aaa.pdf"
+    },
+    {
+      "titleEN": "TEST-CMS-LEEPLUS",
+      "titleTH": "test",
+      "pdf": "pdf/HD-ตารางดูรุ่น.pdf"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

@@ -1,5 +1,6 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: omrjco/price-webapp
   branch: main
 
 # ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"

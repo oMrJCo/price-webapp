@@ -3,7 +3,7 @@ backend:
   repo: omrjco/price-webapp
   branch: main
   base_url: https://leeplus-decap-oauth.athiwatjc.workers.dev
-  auth_endpoint: auth
+  auth_endpoint: /auth
   open_authorization_popup: true
 
 

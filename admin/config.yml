@@ -1,7 +1,11 @@
 backend:
+  backend:
   name: github
   repo: omrjco/price-webapp
   branch: main
+  base_url: https://decap-cms-oauth.netlify.app
+  auth_endpoint: auth
+
 
 # ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"
 site_url: https://moonlit-halva-d42472.netlify.app
@@ -10,8 +14,8 @@ site_url: https://moonlit-halva-d42472.netlify.app
 display_url: https://omrjco.github.io/price-webapp
 
 # ที่เก็บรูป (ใน repo)
-media_folder: "assets"
-public_folder: "/assets"
+media_folder: "assets/uploads"
+public_folder: "/assets/uploads"
 
 collections:
   - name: "categories_config"

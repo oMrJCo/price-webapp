@@ -1,19 +1,13 @@
 backend:
-  backend:
   name: github
   repo: omrjco/price-webapp
   branch: main
   base_url: https://leeplus-decap-oauth.athiwatjc.workers.dev
   auth_endpoint: auth
 
-
-# ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"
-site_url: https://moonlit-halva-d42472.netlify.app
-
-# ✅ เว็บจริงที่ให้คนเห็น (GitHub Pages) ใส่ไว้ที่ display_url ได้
+site_url: https://omrjco.github.io/price-webapp
 display_url: https://omrjco.github.io/price-webapp
 
-# ที่เก็บรูป (ใน repo)
 media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
@@ -28,7 +22,7 @@ collections:
         fields:
           - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
           - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-          - { label: "Cover Image", name: "coverImage", widget: "string", required: false }
+          - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
           - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
           - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
 
@@ -38,5 +32,18 @@ collections:
             fields:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
-              - { label: "Image (path)", name: "image", widget: "string", required: false, hint: "เช่น assets/battery.jpg" }
-              - { label: "PDF Path", name: "pdf", widget: "string", hint: "เช่น pdf/battery.pdf" }
+
+              # ✅ เปลี่ยนจาก string path → ให้ upload ได้เลย
+              - label: "Image"
+                name: "image"
+                widget: "image"
+                required: false
+
+              # ✅ เปลี่ยนจาก string path → ให้ upload PDF ได้เลย
+              - label: "PDF"
+                name: "pdf"
+                widget: "file"
+                required: false
+                media_library:
+                  allow_multiple: false
+                allow_multiple: false

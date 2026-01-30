@@ -10,7 +10,7 @@
     {
       "titleEN": "Battery",
       "titleTH": "แบตเตอรี่",
-      "image": "/assets/uploads/images/b1.jpg",
+      "image": "/price-webapp/assets/uploads/images/b1.jpg",
       "pdf": "pdf/battery.pdf"
     },
     {
@@ -70,7 +70,7 @@
     {
       "titleEN": "test",
       "titleTH": "test",
-      "image": "/assets/uploads/images/20wai.jpg",
+      "image": "/price-webapp/assets/uploads/images/20wai.jpg",
       "pdf": "/price-webapp/assets/uploads/pdfs/12.easy-box-ตารางรุ่น.pdf"
     }
   ],

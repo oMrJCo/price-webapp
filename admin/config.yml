@@ -41,6 +41,7 @@ collections:
               - label: "Image"
                 name: "image"
                 widget: "image"
+                hint: "แนะนำขนาด 1920×800 px (แนวนอน)"
                 required: false
                 media_folder: "assets/uploads/images"
                 public_folder: "/price-webapp/assets/uploads/images"
@@ -49,6 +50,7 @@ collections:
               - label: "PDF (แนบไฟล์)"
                 name: "pdf"
                 widget: "file"
+                hint: "แนะนำขนาด 800×800 px (สี่เหลี่ยม)"
                 required: false
                 allow_multiple: false
                 media_folder: "assets/uploads/pdfs"

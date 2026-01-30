@@ -1,5 +1,5 @@
 {
-  "coverImage": "assets/cover.jpg",
+  "coverImage": "/assets/uploads/tablenew.png",
   "coverHeadline": "ศูนย์รวมอะไหล่มือถือ",
   "lineIcon": "assets/line-icon.png",
   "siteTitle": "📦 ราคาสินค้า LEEPLUS ครบทุกอย่าง",
@@ -66,6 +66,12 @@
       "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
       "image": "",
       "pdf": "pdf/lcd-aaa.pdf"
+    },
+    {
+      "titleEN": "test",
+      "titleTH": "test",
+      "image": "/assets/uploads/images/20wai.jpg",
+      "pdf": "/assets/uploads/pdfs/13.ตารางรุ่น-camera-lens.pdf"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

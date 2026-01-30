@@ -10,7 +10,7 @@ display_url: https://omrjco.github.io/price-webapp
 
 # ✅ โฟลเดอร์อัปโหลดหลัก (ค่า default)
 media_folder: "assets/uploads"
-public_folder: "/assets/uploads"
+public_folder: "/price-webapp/assets/uploads"
 
 collections:
   - name: "categories_config"
@@ -43,7 +43,7 @@ collections:
                 widget: "image"
                 required: false
                 media_folder: "assets/uploads/images"
-                public_folder: "/assets/uploads/images"
+                public_folder: "/price-webapp/assets/uploads/images"
 
               # ✅ PDF: อัปโหลด + แยกโฟลเดอร์ pdfs
               - label: "PDF (แนบไฟล์)"
@@ -52,4 +52,4 @@ collections:
                 required: false
                 allow_multiple: false
                 media_folder: "assets/uploads/pdfs"
-                public_folder: "/assets/uploads/pdfs"
+                public_folder: "/price-webapp/assets/uploads/pdfs"

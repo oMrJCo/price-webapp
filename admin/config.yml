@@ -3,7 +3,7 @@ backend:
   branch: main
 
 # ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"
-site_url: https://moonlit-halva-d42472.netlify.app
+site_url: https://sprightly-panda-ba302f.netlify.app
 
 # ✅ เว็บจริงที่ให้คนเห็น (GitHub Pages) ใส่ไว้ที่ display_url ได้
 display_url: https://omrjco.github.io/price-webapp

@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <a class="card" href="${href}">
                     <div class="thumb">
                         ${item.image ? `<img src="${item.image}" onerror="this.style.display='none'">` : ''}
-                        <div class="placeholder">LEEPLUS</div>
+                        <div class="placeholder"></div>
                     </div>
                     <div class="content">
                         <p class="title">${title}</p>

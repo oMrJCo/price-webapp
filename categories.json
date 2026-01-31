@@ -66,6 +66,10 @@
       "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
       "image": "/price-webapp/assets/uploads/images/lcd.jpg",
       "pdf": "pdf/lcd-aaa.pdf"
+    },
+    {
+      "titleEN": "test",
+      "titleTH": "test"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

@@ -16,62 +16,56 @@
     {
       "titleEN": "Battery Power Up",
       "titleTH": "แบตเตอรี่เพิ่มความจุ",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/b2.jpg",
       "pdf": "pdf/battery-powerup.pdf"
     },
     {
       "titleEN": "Battery No BSM",
       "titleTH": "แบตเตอรี่ไม่มีขั้ว",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/b3.jpg",
       "pdf": "pdf/battery-no-bsm.pdf"
     },
     {
       "titleEN": "Battery Diagnostics",
       "titleTH": "แบตเตอรี่แจ้งใช้แล้ว",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/batt100-.jpg",
       "pdf": "pdf/battery-diagnostics.pdf"
     },
     {
       "titleEN": "Battery Genuine",
       "titleTH": "แบตเตอรี่แจ้งของแท้",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/batt100-1.jpg",
       "pdf": "pdf/battery-genuine.pdf"
     },
     {
       "titleEN": "Adapter & USB",
       "titleTH": "อุปกรณ์ชาร์จ",
-      "image": "assets/adapter-usb.jpg",
+      "image": "/price-webapp/assets/uploads/images/b6.jpg",
       "pdf": "pdf/adapter-usb.pdf"
     },
     {
       "titleEN": "LCD Screen",
       "titleTH": "หน้าจอโทรศัพท์",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/b8.jpg",
       "pdf": "pdf/lcd-screen.pdf"
     },
     {
       "titleEN": "Film Protector",
       "titleTH": "ฟิล์มกระจกกันรอย",
-      "image": "assets/film-protector.jpg",
+      "image": "/price-webapp/assets/uploads/images/b5.jpg",
       "pdf": "pdf/film-protector.pdf"
     },
     {
       "titleEN": "Hydrogel Film",
       "titleTH": "ฟิล์มไฮโดรเจล",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/hydrop.jpg",
       "pdf": "pdf/hydrogel-film.pdf"
     },
     {
       "titleEN": "LCD Screen AAA",
       "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
-      "image": "",
+      "image": "/price-webapp/assets/uploads/images/lcd.jpg",
       "pdf": "pdf/lcd-aaa.pdf"
-    },
-    {
-      "titleEN": "test",
-      "titleTH": "test",
-      "image": "/price-webapp/assets/uploads/images/20wai.jpg",
-      "pdf": "/price-webapp/assets/uploads/pdfs/12.easy-box-ตารางรุ่น.pdf"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

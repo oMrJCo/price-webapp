@@ -1,222 +1,199 @@
-// =====================
-// ตั้งค่าเดียวที่ต้องใส่
-// =====================
-const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LEEPLUS ราคา (Sheet)</title>
 
-// =====================
-// Helper
-// =====================
-function getParam(name) {
-  const u = new URL(window.location.href);
-  return u.searchParams.get(name) || "";
-}
-
-function csvUrlForSheet(sheetName) {
-  const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
-  const params = new URLSearchParams({
-    tqx: "out:csv",
-    sheet: sheetName,
-  });
-  return `${base}?${params.toString()}`;
-}
-
-// ✅ ทำให้ image_url "ทน" ต่อการกรอกผิด
-// - ถ้าเป็นลิงก์เต็ม (http/https) ใช้ได้เลย
-// - ถ้าเป็น path สั้น เช่น /price-webapp/... จะเติมโดเมน GitHub Pages ให้
-function normalizeImageUrl(url) {
-  const s = (url || "").trim();
-  if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return "https://omrjco.github.io" + s;
-  return s; // เผื่อใส่โดเมนอื่นแบบไม่ขึ้น http (ไม่แนะนำ แต่กันพัง)
-}
-
-function parseCSV(text) {
-  const rows = [];
-  let row = [],
-    cur = "",
-    inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i],
-      next = text[i + 1];
-
-    if (ch === '"' && inQuotes && next === '"') {
-      cur += '"';
-      i++;
-      continue;
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --card:#111827;
+      --card2:#0b1220;
+      --text:#f8fafc;
+      --muted:#a1a1aa;
+      --brand:#eab308;
+      --border:rgba(255,255,255,.08);
+      --shadow:0 14px 40px rgba(0,0,0,.55);
+      --radius:18px;
+      --max:980px;
     }
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-      continue;
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(234,179,8,.10), transparent 55%),
+        radial-gradient(900px 500px at 110% 10%, rgba(59,130,246,.10), transparent 60%),
+        var(--bg);
     }
+    .wrap{max-width:var(--max); margin:0 auto; padding:18px 14px 40px;}
 
-    if (!inQuotes && ch === ",") {
-      row.push(cur);
-      cur = "";
-      continue;
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:14px 14px; border:1px solid var(--border); border-radius:var(--radius);
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      box-shadow:var(--shadow);
+      position:sticky; top:10px; z-index:10;
+      backdrop-filter: blur(10px);
     }
-    if (!inQuotes && (ch === "\n" || ch === "\r")) {
-      if (cur.length || row.length) {
-        row.push(cur);
-        rows.push(row);
-      }
-      row = [];
-      cur = "";
-      continue;
+    .left{display:flex; align-items:center; gap:10px; min-width:0;}
+    .btn{
+      appearance:none; border:1px solid var(--border);
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      border-radius:999px;
+      padding:8px 12px;
+      cursor:pointer;
+      text-decoration:none;
+      font-size:13px;
+      white-space:nowrap;
     }
-    cur += ch;
-  }
-  if (cur.length || row.length) {
-    row.push(cur);
-    rows.push(row);
-  }
+    .btn:hover{border-color:rgba(234,179,8,.55)}
+    .titlebox{min-width:0}
+    .crumb{color:var(--muted); font-size:12px; margin:0}
+    h1{margin:2px 0 0; font-size:20px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .meta{color:var(--muted); font-size:12px; margin:4px 0 0}
 
-  return rows.filter((r) => r.some((c) => (c || "").trim() !== ""));
-}
-
-function uniq(arr) {
-  return [...new Set(arr.filter(Boolean))];
-}
-
-function el(id) {
-  return document.getElementById(id);
-}
-
-function escapeHTML(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function formatPrice(p) {
-  const raw = String(p ?? "").trim();
-  const n = Number(raw.replace(/[^\d.]/g, ""));
-  if (Number.isFinite(n) && raw !== "") return `${n.toLocaleString("th-TH")} บาท`;
-  // ถ้าเป็นค่าว่าง ให้โชว์ "-"
-  if (!raw) return "-";
-  // ถ้าเป็นข้อความแปลกๆ ให้โชว์ตามนั้น (กันพัง)
-  return `${escapeHTML(raw)} บาท`;
-}
-
-function renderTabs(brands, activeBrand, onClick) {
-  const tabs = el("tabs");
-  tabs.innerHTML = brands
-    .map(
-      (b) =>
-        `<button class="tab ${b === activeBrand ? "active" : ""}" data-brand="${escapeHTML(
-          b
-        )}">${escapeHTML(b)}</button>`
-    )
-    .join("");
-
-  tabs.querySelectorAll(".tab").forEach((btn) => {
-    btn.addEventListener("click", () => onClick(btn.dataset.brand));
-  });
-}
-
-function renderTable(rows) {
-  const tbody = el("tbody");
-  const empty = el("empty");
-
-  tbody.innerHTML = rows
-    .map((r) => {
-      const img = normalizeImageUrl(r.image_url);
-      return `
-        <tr>
-          <td>
-            <div class="row">
-              <div class="thumb">
-                ${
-                  img
-                    ? `<img src="${escapeHTML(img)}" alt="" loading="lazy" onerror="this.remove()">`
-                    : ``
-                }
-              </div>
-              <div>
-                <div class="model">${escapeHTML(r.model || "")}</div>
-                <div style="margin-top:4px;">
-                  <span class="brandBadge">${escapeHTML(r.brand || "")}</span>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="price">${formatPrice(r.price)}</td>
-        </tr>
-      `;
-    })
-    .join("");
-
-  empty.style.display = rows.length ? "none" : "block";
-}
-
-async function loadSheet(sheetName) {
-  const url = csvUrlForSheet(sheetName);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("โหลดชีตไม่สำเร็จ (เช็ก public/publish + ชื่อแท็บ)");
-
-  const text = await res.text();
-  const rows = parseCSV(text);
-  const headers = rows[0].map((h) => (h || "").trim());
-
-  return rows.slice(1).map((cols) => {
-    const obj = {};
-    headers.forEach((h, i) => (obj[h] = (cols[i] ?? "").trim()));
-    return obj;
-  });
-}
-
-(async function init() {
-  const tab = getParam("tab") || "Battery";
-  el("crumb").textContent = `Sheet › ${tab}`;
-  el("pageTitle").textContent = tab;
-
-  const all = await loadSheet(tab);
-
-  // updated: เอาค่า updated ตัวแรกที่มี
-  const upd = all.find((r) => (r.updated || "").trim())?.updated || "-";
-  el("updateText").textContent = `อัปเดต: ${upd}`;
-
-  const brands = uniq(all.map((r) => (r.brand || "").trim())).filter(Boolean);
-  let activeBrand = brands[0] || "";
-  let query = "";
-
-  function apply() {
-    let rows = all;
-
-    if (activeBrand) rows = rows.filter((r) => (r.brand || "").trim() === activeBrand);
-    if (query) {
-      const q = query.toLowerCase();
-      rows = rows.filter((r) => (r.model || "").toLowerCase().includes(q));
+    .panel{
+      margin-top:14px;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .controls{padding:14px}
+    .search{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:rgba(255,255,255,.03);
+      padding:12px 14px;
+      color:var(--text);
+      outline:none;
+    }
+    .tabs{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+    .tab{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.02);
+      color:var(--text);
+      border-radius:999px;
+      padding:8px 12px;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .tab.active{
+      border-color:rgba(234,179,8,.65);
+      box-shadow:0 0 0 3px rgba(234,179,8,.12) inset;
     }
 
-    rows = rows
-      .slice()
-      .sort((a, b) => (a.model || "").localeCompare(b.model || "", "en"));
+    .tableWrap{padding:0 14px 14px}
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+    }
+    thead th{
+      text-align:left;
+      font-size:13px;
+      color:var(--muted);
+      padding:12px 12px;
+      border-bottom:1px solid var(--border);
+    }
+    tbody td{
+      padding:12px 12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:14px;
+      vertical-align:middle;
+    }
+    tbody tr:last-child td{border-bottom:none}
+    td.price{
+      text-align:right;
+      font-weight:900;
+      color:var(--brand);
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
 
-    renderTable(rows);
-  }
+    .row{
+      display:flex; align-items:center; gap:10px;
+    }
+    .thumb{
+      width:44px; height:44px; border-radius:12px; overflow:hidden;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      flex:0 0 auto;
+    }
+    .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+    .model{font-weight:750;}
+    .brandBadge{
+      display:inline-block;
+      font-size:11px;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.02);
+      padding:3px 8px;
+      border-radius:999px;
+      margin-left:8px;
+    }
 
-  renderTabs(brands, activeBrand, (b) => {
-    activeBrand = b;
-    // re-render active state
-    renderTabs(brands, activeBrand, arguments.callee);
-    apply();
-  });
+    .empty{color:var(--muted); padding:14px; text-align:center; display:none;}
 
-  el("search").addEventListener("input", (e) => {
-    query = e.target.value.trim();
-    apply();
-  });
+    @media (max-width:640px){
+      thead{display:none;}
+      table, tbody, tr, td{display:block; width:100%;}
+      tbody tr{border-bottom:1px solid rgba(255,255,255,.06)}
+      tbody td{border-bottom:none; padding:10px 12px;}
+      td.price{text-align:left; font-size:16px}
+      td.price::before{content:"ราคาส่ง "; color:var(--muted); font-weight:600; margin-right:6px;}
+    }
+  </style>
+</head>
 
-  apply();
-})().catch((err) => {
-  console.error(err);
-  el("tbody").innerHTML = "";
-  el("empty").style.display = "block";
-  el("empty").textContent =
-    "โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ (เช็ก SPREADSHEET_ID / public / ชื่อแท็บ)";
-});
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="left">
+        <a class="btn" href="index.html">← กลับหน้าหมวด</a>
+        <div class="titlebox">
+          <p class="crumb" id="crumb">Sheet ›</p>
+          <h1 id="pageTitle">กำลังโหลด…</h1>
+          <p class="meta" id="updateText">อัปเดต: -</p>
+        </div>
+      </div>
+      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">เปิด PDF</a>
+    </div>
+
+    <div class="panel">
+      <div class="controls">
+        <div style="color:var(--muted); font-size:12px; margin-bottom:10px;">
+          ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้
+        </div>
+        <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iPhone 7, 6S Plus..." />
+        <div class="tabs" id="tabs"></div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>รุ่น</th>
+              <th style="text-align:right;">ราคาส่ง</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="empty">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="price_sheet.js"></script>
+</body>
+</html>

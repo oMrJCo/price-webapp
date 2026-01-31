@@ -3,7 +3,7 @@
 // =====================
 // ใช้ Spreadsheet ID จากลิงก์ Google Sheet:
 // https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit#gid=...
-const SPREADSHEET_ID = "PASTE_SPREADSHEET_ID_HERE";
+const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 
 // =====================
 // Helper

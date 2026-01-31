@@ -86,11 +86,16 @@ function renderTable(rows) {
     const img = normalizeImageUrl(r.image_url);
     const hasImg = !!img;
 
+    // ใส่ data- เพื่อใช้เปิด popup
+    const dataAttrs = hasImg
+      ? `data-img="${escapeHTML(img)}" data-title="${escapeHTML(r.model || "รูปสินค้า")}"`
+      : "";
+
     return `
       <tr>
         <td>
           <div class="row">
-            <div class="thumb ${hasImg ? "" : "no-img"}">
+            <div class="thumb ${hasImg ? "" : "no-img"}" ${dataAttrs} role="button" tabindex="0" aria-label="ดูรูป">
               ${
                 hasImg
                   ? `<img src="${escapeHTML(img)}" alt="" loading="lazy"
@@ -130,7 +135,71 @@ async function loadSheet(sheetName) {
   });
 }
 
+/* =========================
+   Popup (Image Modal)
+   ========================= */
+function setupImageModal() {
+  const modal = el("imgModal");
+  const modalImg = el("modalImg");
+  const modalTitle = el("modalTitle");
+  const closeBtn = el("modalClose");
+
+  function openModal(src, title) {
+    if (!src) return;
+    modalImg.src = src;
+    modalTitle.textContent = title || "รูปสินค้า";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    modalImg.src = "";
+    document.body.style.overflow = "";
+  }
+
+  // ปิดเมื่อคลิกพื้นหลัง (นอกการ์ด)
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  closeBtn.addEventListener("click", closeModal);
+
+  // ปิดด้วย Esc
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) {
+      closeModal();
+    }
+  });
+
+  // เปิดเมื่อคลิกที่ thumb (ใช้ event delegation)
+  document.addEventListener("click", (e) => {
+    const thumb = e.target.closest(".thumb");
+    if (!thumb) return;
+    const src = thumb.getAttribute("data-img") || "";
+    const title = thumb.getAttribute("data-title") || "รูปสินค้า";
+    if (!src) return;
+    openModal(src, title);
+  });
+
+  // เปิดด้วย Enter/Space เมื่อโฟกัส thumb
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const active = document.activeElement;
+    if (!active || !active.classList || !active.classList.contains("thumb")) return;
+    const src = active.getAttribute("data-img") || "";
+    const title = active.getAttribute("data-title") || "รูปสินค้า";
+    if (!src) return;
+    e.preventDefault();
+    openModal(src, title);
+  });
+}
+
 (async function init() {
+  setupImageModal();
+
   const tab = getParam("tab") || "Battery";
   el("crumb").textContent = `Sheet › ${tab}`;
   el("pageTitle").textContent = tab;

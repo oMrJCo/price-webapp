@@ -20,7 +20,8 @@
       "titleTH": "แบตเตอรี่เพิ่มความจุ",
       "image": "/price-webapp/assets/uploads/images/b2.jpg",
       "pdf": "",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery%20power%20up"
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery%20power%20up",
+      "pdf_file": "/price-webapp/assets/uploads/pdfs/battery-powerup.pdf"
     },
     {
       "titleEN": "Battery No BSM",

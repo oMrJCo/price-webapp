@@ -14,199 +14,252 @@
       --muted:#a1a1aa;
       --brand:#eab308;
       --border:rgba(255,255,255,.08);
-      --shadow:0 14px 40px rgba(0,0,0,.55);
+      --shadow:0 14px 40px rgb(0 0 0 / .55);
       --radius:18px;
-      --max:980px;
+      --radius2:14px;
+      --pad:18px;
+      --max:1160px;
     }
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
       margin:0;
-      font-family:system-ui,-apple-system,sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Thai", sans-serif;
+      background: radial-gradient(1200px 700px at 50% -10%, rgba(234,179,8,.18), transparent 60%),
+                  radial-gradient(900px 600px at 10% 10%, rgba(56,189,248,.10), transparent 55%),
+                  radial-gradient(900px 600px at 90% 10%, rgba(168,85,247,.10), transparent 55%),
+                  var(--bg);
       color:var(--text);
-      background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(234,179,8,.10), transparent 55%),
-        radial-gradient(900px 500px at 110% 10%, rgba(59,130,246,.10), transparent 60%),
-        var(--bg);
+      padding:24px 14px;
     }
+    a{ color:inherit; text-decoration:none; }
 
-    .wrap{ max-width:var(--max); margin:0 auto; padding:18px 14px 40px; }
+    .wrap{ max-width:var(--max); margin:0 auto; }
 
-    /* Top bar */
     .topbar{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:14px 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:linear-gradient(180deg,var(--card),var(--card2));
-      box-shadow:var(--shadow);
-      position:sticky; top:10px; z-index:10;
-      backdrop-filter: blur(10px);
+      border-radius:22px;
+      padding:18px 18px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      box-shadow: var(--shadow);
     }
-    .left{ display:flex; align-items:center; gap:10px; min-width:0; }
-    .titlebox{ min-width:0; }
-    .crumb{ margin:0; color:var(--muted); font-size:12px; }
-    h1{ margin:2px 0 0; font-size:20px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .meta{ margin:4px 0 0; color:var(--muted); font-size:12px; }
-
+    .left{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      min-width:0;
+    }
     .btn{
-      appearance:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(255,255,255,.06);
       border:1px solid var(--border);
-      background:rgba(255,255,255,.03);
       color:var(--text);
-      border-radius:999px;
-      padding:8px 12px;
+      font-weight:700;
+      font-size:14px;
       cursor:pointer;
-      text-decoration:none;
-      font-size:13px;
+      user-select:none;
+      transition:.15s transform ease, .15s background ease;
       white-space:nowrap;
     }
-    .btn:hover{ border-color:rgba(234,179,8,.55); }
+    .btn:hover{ background: rgba(255,255,255,.10); }
+    .btn:active{ transform: translateY(1px); }
 
-    /* Panel */
-    .panel{
-      margin-top:14px;
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      background:linear-gradient(180deg,var(--card),var(--card2));
-      box-shadow:var(--shadow);
-      overflow:hidden;
+    .titlebox{ min-width:0; }
+    .crumb{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
     }
-    .controls{ padding:14px; }
-    .hint{ color:var(--muted); font-size:12px; margin-bottom:10px; }
+    h1{
+      margin:2px 0 0;
+      font-size:24px;
+      line-height:1.15;
+      letter-spacing:-.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .meta{
+      margin:6px 0 0;
+      font-size:12px;
+      color:var(--muted);
+    }
 
+    .card{
+      margin-top:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:18px;
+      box-shadow: var(--shadow);
+    }
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .hint{
+      font-size:13px;
+      color:var(--muted);
+      margin:0 0 10px;
+    }
     .search{
       width:100%;
-      border:1px solid var(--border);
       border-radius:999px;
-      background:rgba(255,255,255,.03);
       padding:12px 14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.20);
       color:var(--text);
+      font-size:14px;
       outline:none;
     }
-
-    .tabs{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-    .tab{
-      border:1px solid var(--border);
-      background:rgba(255,255,255,.02);
-      color:var(--text);
-      border-radius:999px;
+    .tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+      margin-bottom:14px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
       padding:8px 12px;
-      cursor:pointer;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      font-weight:800;
       font-size:13px;
+      cursor:pointer;
+      user-select:none;
+      transition:.15s background ease, .15s transform ease;
     }
-    .tab.active{
-      border-color:rgba(234,179,8,.65);
-      box-shadow:0 0 0 3px rgba(234,179,8,.12) inset;
+    .pill:hover{ background: rgba(255,255,255,.08); }
+    .pill:active{ transform: translateY(1px); }
+    .pill.active{
+      background: rgba(234,179,8,.15);
+      border-color: rgba(234,179,8,.35);
+      box-shadow: 0 0 0 2px rgba(234,179,8,.08) inset;
     }
 
-    /* Table */
-    .tableWrap{ padding:0 14px 14px; }
     table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
       overflow:hidden;
-      border-radius:14px;
       border:1px solid var(--border);
-      background:rgba(0,0,0,.18);
+      border-radius:16px;
+      background: rgba(0,0,0,.18);
     }
     thead th{
       text-align:left;
+      padding:12px 12px;
       font-size:13px;
       color:var(--muted);
-      padding:12px 12px;
       border-bottom:1px solid var(--border);
+      background: rgba(255,255,255,.03);
     }
     tbody td{
       padding:12px 12px;
       border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align:top;
       font-size:14px;
-      vertical-align:middle;
     }
     tbody tr:last-child td{ border-bottom:none; }
 
-    td.price{
-      text-align:right;
+    .model{
+      font-weight:800;
+      font-size:15px;
+      margin:0 0 6px;
+    }
+    .sub{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+    .price{
       font-weight:900;
-      color:var(--brand);
-      letter-spacing:.2px;
+      color: var(--brand);
+      text-align:right;
       white-space:nowrap;
     }
 
-    .row{ display:flex; align-items:center; gap:10px; }
-
     .thumb{
-      width:44px; height:44px;
-      border-radius:12px; overflow:hidden;
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.06);
-      flex:0 0 auto;
-      cursor: zoom-in;
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
     }
     .thumb img{
-      width:100%; height:100%;
+      width:100%;
+      height:100%;
       object-fit:cover;
       display:block;
     }
-    .thumb.no-img{ display:none; }
 
-    .model{ font-weight:750; }
-    .brandBadge{
-      display:inline-block;
-      font-size:11px;
-      color:var(--muted);
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.02);
-      padding:3px 8px;
-      border-radius:999px;
-      margin-top:6px;
+    .brandHeaderRow td{
+      padding:14px 12px;
+      background: rgba(255,255,255,.02);
     }
-
-    .empty{
-      color:var(--muted);
-      padding:14px;
-      text-align:center;
-      display:none;
-    }
-
-    /* ===== Brand Group Header (pill) ===== */
-    tr.brand-row td{
-      padding:10px 12px;
-      background: rgba(255,255,255,.04);
-      border-bottom: 1px solid rgba(255,255,255,.07);
-    }
-    .brand-pill{
+    .brandHeader{
       display:inline-flex;
       align-items:center;
       gap:10px;
-      padding:7px 12px;
+      padding:8px 14px;
       border-radius:999px;
-      font-weight:800;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      font-weight:900;
       letter-spacing:.2px;
-      color: rgba(255,255,255,.86);
-      background: rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.10);
     }
-    .brand-dot{
-      width:8px; height:8px;
-      border-radius:99px;
-      background: rgba(234,179,8,.95);
+    .dot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(234,179,8,.85);
       box-shadow: 0 0 0 3px rgba(234,179,8,.12);
     }
 
-    /* Mobile */
-    @media (max-width:640px){
-      thead{ display:none; }
-      table, tbody, tr, td{ display:block; width:100%; }
-      tbody tr{ border-bottom:1px solid rgba(255,255,255,.06); }
-      tbody td{ border-bottom:none; padding:10px 12px; }
-      td.price{ text-align:left; font-size:16px; }
-      td.price::before{ content:"ราคาส่ง "; color:var(--muted); font-weight:600; margin-right:6px; }
+    .empty{
+      display:none;
+      margin-top:14px;
+      padding:16px;
+      border-radius:16px;
+      border:1px dashed rgba(255,255,255,.16);
+      color:var(--muted);
+      font-size:14px;
+      text-align:center;
     }
 
-    /* =========================
-       Popup (Image Modal)
-       ========================= */
+    /* modal */
     .modal{
       position:fixed;
       inset:0;
@@ -214,61 +267,53 @@
       align-items:center;
       justify-content:center;
       padding:18px;
-      background:rgba(0,0,0,.72);
-      z-index:999;
+      background: rgba(0,0,0,.7);
+      z-index:9999;
     }
-    .modal.open{ display:flex; }
-
-    .modal-card{
-      width:min(960px, 100%);
-      max-height:85vh;
-      background:linear-gradient(180deg, rgba(17,24,39,.92), rgba(11,18,32,.92));
-      border:1px solid rgba(255,255,255,.10);
+    .modal.show{ display:flex; }
+    .modalCard{
+      width:min(720px, 100%);
+      background: rgba(15,23,42,.92);
+      border:1px solid rgba(255,255,255,.12);
       border-radius:18px;
-      box-shadow:0 30px 90px rgba(0,0,0,.75);
+      box-shadow: var(--shadow);
       overflow:hidden;
-      position:relative;
     }
-    .modal-top{
+    .modalTop{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:10px 12px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      color:var(--muted);
-      font-size:12px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
     }
-    .modal-title{
+    .modalTitle{
+      font-weight:900;
+      font-size:14px;
+      color:var(--text);
+      margin:0;
+      white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      white-space:nowrap;
-      max-width:70%;
     }
-    .modal-close{
-      appearance:none;
+    .modalClose{
+      background: rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.03);
       color:var(--text);
-      border-radius:999px;
-      padding:6px 10px;
+      border-radius:12px;
+      padding:8px 10px;
       cursor:pointer;
-      font-size:12px;
+      font-weight:800;
     }
-    .modal-close:hover{ border-color:rgba(234,179,8,.55); }
-
-    .modal-body{
-      padding:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:rgba(0,0,0,.18);
+    .modalBody{
+      padding:14px;
     }
-    .modal-body img{
-      width:auto;
-      max-width:100%;
-      height:auto;
-      max-height:calc(85vh - 56px);
+    .modalImg{
+      width:100%;
+      max-height:70vh;
+      object-fit:contain;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.10);
       border-radius:14px;
       display:block;
     }
@@ -287,46 +332,40 @@
         </div>
       </div>
 
-      <!-- เผื่ออนาคตทำ PDF ต่อ -->
-      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">เปิด PDF</a>
+      <!-- ปุ่มดาวน์โหลด PDF (โชว์เมื่อหมวดนี้มี pdf / pdf_file ใน categories.json) -->
+      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">ดาวน์โหลด PDF</a>
     </div>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="hint">
-          ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้
-        </div>
+    <div class="card">
+      <p class="hint">ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้</p>
 
-        <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
+      <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
 
-        <div class="tabs" id="tabs"></div>
-      </div>
+      <div class="tabs" id="tabs"></div>
 
-      <div class="tableWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>รุ่น</th>
-              <th style="text-align:right;">ราคาส่ง</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70%;">รุ่น</th>
+            <th style="width:30%; text-align:right;">ราคาส่ง</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
 
-        <div class="empty" id="empty">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</div>
-      </div>
+      <div class="empty" id="empty">ไม่พบข้อมูล</div>
     </div>
   </div>
 
-  <!-- Popup รูป -->
+  <!-- Image modal -->
   <div class="modal" id="imgModal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-label="รูปสินค้า">
-      <div class="modal-top">
-        <div class="modal-title" id="modalTitle">รูปสินค้า</div>
-        <button class="modal-close" id="modalClose" type="button">ปิด ✕</button>
+    <div class="modalCard" role="dialog" aria-modal="true">
+      <div class="modalTop">
+        <p class="modalTitle" id="modalTitle">รูปสินค้า</p>
+        <button class="modalClose" id="modalClose" type="button">ปิด</button>
       </div>
-      <div class="modal-body">
-        <img id="modalImg" src="" alt="">
+      <div class="modalBody">
+        <img class="modalImg" id="modalImg" alt="รูปสินค้า" />
       </div>
     </div>
   </div>

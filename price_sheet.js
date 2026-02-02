@@ -8,6 +8,11 @@
    ========================= */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
+
+// categories.json (for optional PDF download button on price_sheet page)
+const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
+const GH_BASE = "/price-webapp/";
+
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
 
@@ -36,256 +41,338 @@ function escapeHTML(s) {
 function normalizeImageUrl(url) {
   const s = (url || "").trim();
   if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://")) return s;
-  if (s.startsWith("/")) return "https://omrjco.github.io" + s;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("/")) return `https://omrjco.github.io${s}`;
   return s;
 }
 
-// Compact search + alias ip -> iphone
-function normalizeSearchCompact(s) {
-  const str = String(s || "").toLowerCase();
-  let compact;
+function isHttpUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url.trim());
+}
+
+function normalizeMaybeRelativeUrl(url) {
+  const u = String(url || "").trim();
+  if (!u) return "";
+  if (isHttpUrl(u)) return u;
+  if (u.startsWith("/")) return u;
+  return GH_BASE + u;
+}
+
+function tryGetTabFromPriceUrl(priceUrl) {
+  const s = String(priceUrl || "").trim();
+  if (!s) return "";
   try {
-    compact = str.replace(/[^\p{L}\p{N}]+/gu, "");
+    const u = new URL(s, window.location.origin);
+    return u.searchParams.get("tab") || "";
   } catch {
-    compact = str.replace(/[^a-z0-9]+/g, "");
+    return "";
   }
-  if (compact.startsWith("ip") && !compact.startsWith("iphone")) {
-    compact = "iphone" + compact.slice(2);
+}
+
+async function setupPdfDownloadButton(tabName) {
+  const btn = el("openPdfBtn");
+  if (!btn) return;
+  btn.style.display = "none";
+
+  try {
+    const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const cats = Array.isArray(data.categories) ? data.categories : [];
+
+    const tab = String(tabName || "").trim();
+    if (!tab) return;
+    const tabLower = tab.toLowerCase();
+
+    // หา category ที่ match กับ tab นี้:
+    // 1) sheetTab == tab
+    // 2) price_url มี ?tab=... (กรณีใส่เป็นลิงก์เต็ม)
+    const match = cats.find((c) => {
+      const st = String(c.sheetTab || "").trim();
+      if (st && st.toLowerCase() === tabLower) return true;
+
+      const purl = String(c.price_url || "").trim();
+      const t = tryGetTabFromPriceUrl(purl);
+      if (t && String(t).trim().toLowerCase() === tabLower) return true;
+
+      return false;
+    });
+
+    if (!match) return;
+
+    const pdf = match.pdf || match.pdf_file || "";
+    const pdfUrl = normalizeMaybeRelativeUrl(pdf);
+    if (!pdfUrl) return;
+
+    btn.href = pdfUrl;
+    btn.textContent = "ดาวน์โหลด PDF";
+    btn.title = "ดาวน์โหลดไฟล์ PDF";
+    btn.target = "_blank";
+    btn.rel = "noopener";
+    // download อาจใช้ไม่ได้กับบางโดเมน แต่ไม่เสียหาย
+    btn.setAttribute("download", "");
+    btn.style.display = "inline-flex";
+  } catch (e) {
+    console.warn("setupPdfDownloadButton failed:", e);
   }
-  return compact;
 }
 
 function parseCSV(text) {
+  // simple CSV parser that respects quotes
   const rows = [];
-  let row = [], cur = "", inQuotes = false;
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
 
   for (let i = 0; i < text.length; i++) {
-    const ch = text[i], next = text[i + 1];
+    const ch = text[i];
+    const next = text[i + 1];
 
-    if (ch === '"' && inQuotes && next === '"') { cur += '"'; i++; continue; }
-    if (ch === '"') { inQuotes = !inQuotes; continue; }
-
-    if (!inQuotes && ch === ",") { row.push(cur); cur = ""; continue; }
-    if (!inQuotes && (ch === "\n" || ch === "\r")) {
-      if (cur.length || row.length) { row.push(cur); rows.push(row); }
-      row = []; cur = "";
+    if (ch === '"' && inQuotes && next === '"') {
+      cur += '"';
+      i++;
+      continue;
+    }
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      row.push(cur);
+      cur = "";
+      continue;
+    }
+    if ((ch === "\n" || ch === "\r") && !inQuotes) {
+      if (ch === "\r" && next === "\n") i++;
+      row.push(cur);
+      cur = "";
+      if (row.some(c => c !== "")) rows.push(row);
+      row = [];
       continue;
     }
     cur += ch;
   }
-  if (cur.length || row.length) { row.push(cur); rows.push(row); }
-
-  return rows.filter(r => r.some(c => (c || "").trim() !== ""));
+  row.push(cur);
+  if (row.some(c => c !== "")) rows.push(row);
+  return rows;
 }
 
 function uniq(arr) {
-  return [...new Set(arr.filter(Boolean))];
+  const set = new Set();
+  const out = [];
+  for (const x of arr) {
+    const k = String(x);
+    if (!set.has(k)) {
+      set.add(k);
+      out.push(x);
+    }
+  }
+  return out;
 }
 
-function formatPrice(p) {
-  const raw = String(p ?? "").trim();
-  const n = Number(raw.replace(/[^\d.]/g, ""));
-  if (Number.isFinite(n) && raw !== "") return `${n.toLocaleString("th-TH")} บาท`;
-  if (!raw) return "-";
-  return `${escapeHTML(raw)} บาท`;
-}
-
-/**
- * All mode grouping:
- * - brand order = first appearance in sheet
- * - items inside brand = original sheet order (no sort)
- */
 function groupByBrandPreserveSheetOrder(rows) {
-  const groups = new Map();
   const brandOrder = [];
+  const map = new Map();
 
   for (const r of rows) {
-    const b = (r.brand || "").trim() || "Other";
-    if (!groups.has(b)) {
-      groups.set(b, []);
+    const b = (r.brand || "").trim() || "Unknown";
+    if (!map.has(b)) {
+      map.set(b, []);
       brandOrder.push(b);
     }
-    groups.get(b).push(r);
+    map.get(b).push(r);
   }
 
   const out = [];
   for (const b of brandOrder) {
     out.push({ __type: "brandHeader", brand: b });
-    out.push(...groups.get(b));
+    out.push(...map.get(b));
   }
   return out;
 }
 
-/**
- * Tabs: render once + set active by toggling class
- * (Fix: no re-render on click => no double click issue)
- */
-function renderTabs(brands, activeKey, onSelect) {
-  const tabs = el("tabs");
+function normalizeSearchCompact(s) {
+  const raw = String(s || "").toLowerCase().trim();
+  if (!raw) return "";
 
-  tabs.innerHTML = brands.map(b => `
-    <button class="tab" data-key="${escapeHTML(b.key)}">${escapeHTML(b.label)}</button>
-  `).join("");
+  // alias: ip15 -> iphone15
+  if (raw.startsWith("ip") && !raw.startsWith("iphone")) {
+    const rest = raw.slice(2);
+    return ("iphone" + rest).replace(/[^a-z0-9]+/g, "");
+  }
+  return raw.replace(/[^a-z0-9]+/g, "");
+}
 
-  function setActive(key) {
-    tabs.querySelectorAll(".tab").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.key === key);
-    });
+function normalizeSearchTokens(s) {
+  return String(s || "")
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function setupImageModal() {
+  const modal = el("imgModal");
+  const img = el("modalImg");
+  const title = el("modalTitle");
+  const close = el("modalClose");
+
+  function hide() {
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+    img.src = "";
+  }
+  function show(src, t) {
+    title.textContent = t || "รูปสินค้า";
+    img.src = src;
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
   }
 
-  setActive(activeKey);
-
-  tabs.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.key;
-      setActive(key);
-      onSelect(key);
-    });
+  close.addEventListener("click", hide);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) hide();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hide();
   });
 
-  return setActive;
+  // event delegation for thumbs
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest(".thumb");
+    if (!t) return;
+    const src = t.getAttribute("data-full") || "";
+    const name = t.getAttribute("data-title") || "";
+    if (src) show(src, name);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target.closest(".thumb");
+    if (!t) return;
+    e.preventDefault();
+    const src = t.getAttribute("data-full") || "";
+    const name = t.getAttribute("data-title") || "";
+    if (src) show(src, name);
+  });
+}
+
+async function loadSheet(tab) {
+  const url = csvUrlForSheet(tab);
+  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch CSV");
+  const text = await res.text();
+
+  const rows = parseCSV(text);
+  if (!rows.length) return [];
+
+  const header = rows[0].map(h => String(h || "").trim());
+  const body = rows.slice(1);
+
+  const out = body
+    .filter(r => r.some(c => String(c || "").trim() !== ""))
+    .map((r) => {
+      const obj = {};
+      for (let i = 0; i < header.length; i++) obj[header[i]] = r[i] ?? "";
+      return {
+        brand: obj.brand || "",
+        model: obj.model || "",
+        price: obj.price || "",
+        image_url: obj.image_url || "",
+        updated: obj.updated || "",
+      };
+    });
+
+  return out;
+}
+
+function renderTabs(brands, activeKey, onSelect) {
+  const root = el("tabs");
+  root.innerHTML = "";
+
+  for (const b of brands) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pill";
+    btn.textContent = b.label;
+    btn.dataset.key = b.key;
+    if (b.key === activeKey) btn.classList.add("active");
+
+    btn.addEventListener("click", () => {
+      // toggle class without rerender -> fix "click twice"
+      root.querySelectorAll(".pill").forEach(x => x.classList.remove("active"));
+      btn.classList.add("active");
+      onSelect(b.key);
+    });
+
+    root.appendChild(btn);
+  }
 }
 
 function renderTable(rows) {
   const tbody = el("tbody");
-  const empty = el("empty");
+  tbody.innerHTML = "";
 
-  tbody.innerHTML = rows.map(r => {
-    if (r && r.__type === "brandHeader") {
-      return `
-        <tr class="brand-row">
-          <td colspan="2">
-            <span class="brand-pill">
-              <span class="brand-dot"></span>
-              ${escapeHTML(r.brand || "")}
-            </span>
-          </td>
-        </tr>
+  if (!rows.length) {
+    if (el("empty")) {
+      el("empty").style.display = "block";
+      el("empty").textContent = "ไม่พบข้อมูล";
+    }
+    return;
+  }
+  if (el("empty")) el("empty").style.display = "none";
+
+  for (const r of rows) {
+    // brand header row
+    if (r.__type === "brandHeader") {
+      const tr = document.createElement("tr");
+      tr.className = "brandHeaderRow";
+      tr.innerHTML = `
+        <td colspan="2">
+          <span class="brandHeader"><span class="dot"></span>${escapeHTML(r.brand)}</span>
+        </td>
       `;
+      tbody.appendChild(tr);
+      continue;
     }
 
     const img = normalizeImageUrl(r.image_url);
-    const hasImg = !!img;
+    const thumbHtml = img
+      ? `<div class="thumb" tabindex="0" role="button" aria-label="ดูรูป ${escapeHTML(r.model)}"
+              data-full="${escapeHTML(img)}" data-title="${escapeHTML(r.model)}">
+            <img src="${escapeHTML(img)}" alt="${escapeHTML(r.model)}" loading="lazy" />
+         </div>`
+      : `<div class="thumb" style="cursor:default; opacity:.35"></div>`;
 
-    const dataAttrs = hasImg
-      ? `data-img="${escapeHTML(img)}" data-title="${escapeHTML(r.model || "รูปสินค้า")}"`
-      : "";
-
-    return `
-      <tr>
-        <td>
-          <div class="row">
-            <div class="thumb ${hasImg ? "" : "no-img"}" ${dataAttrs} role="button" tabindex="0" aria-label="ดูรูปสินค้า">
-              ${
-                hasImg
-                  ? `<img src="${escapeHTML(img)}" alt="" loading="lazy"
-                        onerror="this.closest('.thumb').classList.add('no-img'); this.remove();">`
-                  : ``
-              }
-            </div>
-            <div>
-              <div class="model">${escapeHTML(r.model || "")}</div>
-              <div style="margin-top:4px;">
-                <span class="brandBadge">${escapeHTML(r.brand || "")}</span>
-              </div>
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          ${thumbHtml}
+          <div>
+            <div class="model">${escapeHTML(r.model)}</div>
+            <div class="sub">
+              <span class="tag">${escapeHTML(r.brand || "")}</span>
             </div>
           </div>
-        </td>
-        <td class="price">${formatPrice(r.price)}</td>
-      </tr>
+        </div>
+      </td>
+      <td class="price">${escapeHTML(r.price)} บาท</td>
     `;
-  }).join("");
-
-  const hasRealRows = rows.some(x => !(x && x.__type === "brandHeader"));
-  empty.style.display = hasRealRows ? "none" : "block";
-}
-
-async function loadSheet(sheetName) {
-  const url = csvUrlForSheet(sheetName);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("โหลดชีตไม่สำเร็จ (เช็ก public/publish + ชื่อแท็บ)");
-
-  const text = await res.text();
-  const rows = parseCSV(text);
-  const headers = rows[0].map(h => (h || "").trim());
-
-  return rows.slice(1).map(cols => {
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (cols[i] ?? "").trim());
-    return obj;
-  });
-}
-
-/* =========================
-   Popup (Image Modal)
-   ========================= */
-function setupImageModal() {
-  const modal = el("imgModal");
-  const modalImg = el("modalImg");
-  const modalTitle = el("modalTitle");
-  const closeBtn = el("modalClose");
-
-  if (!modal || !modalImg || !modalTitle || !closeBtn) return;
-
-  function openModal(src, title) {
-    if (!src) return;
-    modalImg.src = src;
-    modalTitle.textContent = title || "รูปสินค้า";
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
+    tbody.appendChild(tr);
   }
-
-  function closeModal() {
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-    modalImg.src = "";
-    document.body.style.overflow = "";
-  }
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
-
-  closeBtn.addEventListener("click", closeModal);
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
-  });
-
-  // event delegation: click thumbnail
-  document.addEventListener("click", (e) => {
-    const thumb = e.target.closest(".thumb");
-    if (!thumb) return;
-    const src = thumb.getAttribute("data-img") || "";
-    const title = thumb.getAttribute("data-title") || "รูปสินค้า";
-    if (!src) return;
-    openModal(src, title);
-  });
-
-  // keyboard: Enter/Space on focused thumb
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    const a = document.activeElement;
-    if (!a || !a.classList || !a.classList.contains("thumb")) return;
-    const src = a.getAttribute("data-img") || "";
-    const title = a.getAttribute("data-title") || "รูปสินค้า";
-    if (!src) return;
-    e.preventDefault();
-    openModal(src, title);
-  });
 }
 
-/* =========================
-   Init
-   ========================= */
 (async function init() {
   setupImageModal();
 
   const tab = getParam("tab") || "Battery";
   el("crumb").textContent = `Sheet › ${tab}`;
   el("pageTitle").textContent = tab;
+
+  // Optional: show PDF download button if this tab has PDF attached in categories.json
+  setupPdfDownloadButton(tab);
 
   const all = await loadSheet(tab);
 
@@ -302,40 +389,39 @@ function setupImageModal() {
   let query = "";
 
   function apply() {
+    const q = query;
+    const qCompact = normalizeSearchCompact(q);
+    const qTokens = normalizeSearchTokens(q);
+
+    const isSearching = !!qCompact || qTokens.length > 0;
+
     let rows = all;
 
-    // If searching: search across all brands in this sheet tab
-    if (query) {
-      const qLower = query.toLowerCase().trim();
-      const qCompact = normalizeSearchCompact(qLower);
-      const qTokens = qLower.split(/\s+/).filter(Boolean);
-
-      rows = rows.filter(r => {
-        const brand = String(r.brand || "");
-        const model = String(r.model || "");
-        const hay = `${brand} ${model}`.toLowerCase();
-
+    if (isSearching) {
+      // search across all brands
+      rows = all.filter(r => {
+        const hay = `${r.brand || ""} ${r.model || ""}`.toLowerCase();
         const hayCompact = normalizeSearchCompact(hay);
-        if (qCompact && hayCompact.includes(qCompact)) return true;
 
-        if (qTokens.length) return qTokens.every(t => hay.includes(t));
+        if (qCompact && hayCompact.includes(qCompact)) return true;
+        if (qTokens.length) {
+          return qTokens.every(t => hay.includes(t));
+        }
         return false;
       });
 
-      // preserve sheet order
       renderTable(rows);
       return;
     }
 
-    // No search:
-    if (activeBrand && activeBrand !== ALL_BRAND_KEY) {
-      rows = rows.filter(r => (r.brand || "").trim() === activeBrand);
+    // not searching -> brand filter
+    if (activeBrand !== ALL_BRAND_KEY) {
+      rows = all.filter(r => (r.brand || "").trim() === activeBrand);
       renderTable(rows);
-      return;
+    } else {
+      // All -> group by brand preserve sheet order
+      renderTable(groupByBrandPreserveSheetOrder(rows));
     }
-
-    // All: group by brand, preserve sheet order
-    renderTable(groupByBrandPreserveSheetOrder(rows));
   }
 
   // Tabs (render once) => fixes "must click twice"

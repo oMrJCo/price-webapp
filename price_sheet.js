@@ -6,11 +6,11 @@
    - Tabs: render once, toggle active (fix: no double click needed)
    - Image popup modal
    - PDF button: auto show from categories.json (match tab) -> OPEN PDF (not forced download)
+   - UI tweak: remove brand tag under model + hide image box when no image
    ========================= */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 
-// categories.json (for optional PDF button on price_sheet page)
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
 
@@ -86,7 +86,6 @@ async function setupPdfDownloadButton(tabName) {
     if (!tab) return;
     const tabLower = tab.toLowerCase();
 
-    // match by sheetTab OR price_url contains ?tab=
     const match = cats.find((c) => {
       const st = String(c.sheetTab || "").trim();
       if (st && st.toLowerCase() === tabLower) return true;
@@ -104,7 +103,6 @@ async function setupPdfDownloadButton(tabName) {
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 
-    // UX: open PDF (not forced download)
     btn.href = pdfUrl;
     btn.textContent = "เปิด PDF";
     btn.title = "เปิดไฟล์ PDF";
@@ -236,7 +234,6 @@ function setupImageModal() {
     if (e.key === "Escape") hide();
   });
 
-  // event delegation for thumbs
   document.addEventListener("click", (e) => {
     const t = e.target.closest(".thumb");
     if (!t) return;
@@ -321,7 +318,6 @@ function renderTable(rows) {
   if (el("empty")) el("empty").style.display = "none";
 
   for (const r of rows) {
-    // brand header row
     if (r.__type === "brandHeader") {
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
@@ -336,7 +332,7 @@ function renderTable(rows) {
 
     const img = normalizeImageUrl(r.image_url);
 
-    // ✅ NEW: ถ้าไม่มีรูป -> "ไม่สร้างกล่องรูป" เลย
+    // ✅ ไม่มีรูป = ไม่สร้างกล่องรูป
     const thumbHtml = img
       ? `<div class="thumb" tabindex="0" role="button" aria-label="ดูรูป ${escapeHTML(r.model)}"
               data-full="${escapeHTML(img)}" data-title="${escapeHTML(r.model)}">
@@ -344,7 +340,7 @@ function renderTable(rows) {
          </div>`
       : ``;
 
-    // ✅ NEW: เอาหมวดสินค้า (tag) ออกทั้งหมด
+    // ✅ เอาหมวด/แท็กออก
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>
@@ -368,7 +364,6 @@ function renderTable(rows) {
   el("crumb").textContent = `Sheet › ${tab}`;
   el("pageTitle").textContent = tab;
 
-  // PDF action button
   setupPdfDownloadButton(tab);
 
   const all = await loadSheet(tab);

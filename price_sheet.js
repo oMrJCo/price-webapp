@@ -104,14 +104,12 @@ async function setupPdfDownloadButton(tabName) {
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 
-    // ✅ UX: เปิดอ่าน PDF (แท็บใหม่) ไม่บังคับดาวน์โหลด
+    // UX: open PDF (not forced download)
     btn.href = pdfUrl;
     btn.textContent = "เปิด PDF";
     btn.title = "เปิดไฟล์ PDF";
     btn.target = "_blank";
     btn.rel = "noopener";
-
-    // ✅ สำคัญ: เอา download ออก (มือถือจะไม่เด้ง UI ดาวน์โหลดแบบน่าเกลียด)
     btn.removeAttribute("download");
 
     btn.style.display = "inline-flex";
@@ -238,6 +236,7 @@ function setupImageModal() {
     if (e.key === "Escape") hide();
   });
 
+  // event delegation for thumbs
   document.addEventListener("click", (e) => {
     const t = e.target.closest(".thumb");
     if (!t) return;
@@ -322,6 +321,7 @@ function renderTable(rows) {
   if (el("empty")) el("empty").style.display = "none";
 
   for (const r of rows) {
+    // brand header row
     if (r.__type === "brandHeader") {
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
@@ -335,13 +335,16 @@ function renderTable(rows) {
     }
 
     const img = normalizeImageUrl(r.image_url);
+
+    // ✅ NEW: ถ้าไม่มีรูป -> "ไม่สร้างกล่องรูป" เลย
     const thumbHtml = img
       ? `<div class="thumb" tabindex="0" role="button" aria-label="ดูรูป ${escapeHTML(r.model)}"
               data-full="${escapeHTML(img)}" data-title="${escapeHTML(r.model)}">
             <img src="${escapeHTML(img)}" alt="${escapeHTML(r.model)}" loading="lazy" />
          </div>`
-      : `<div class="thumb" style="cursor:default; opacity:.35"></div>`;
+      : ``;
 
+    // ✅ NEW: เอาหมวดสินค้า (tag) ออกทั้งหมด
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>
@@ -349,9 +352,6 @@ function renderTable(rows) {
           ${thumbHtml}
           <div>
             <div class="model">${escapeHTML(r.model)}</div>
-            <div class="sub">
-              <span class="tag">${escapeHTML(r.brand || "")}</span>
-            </div>
           </div>
         </div>
       </td>
@@ -368,7 +368,7 @@ function renderTable(rows) {
   el("crumb").textContent = `Sheet › ${tab}`;
   el("pageTitle").textContent = tab;
 
-  // PDF action button (auto show if this tab has PDF attached in categories.json)
+  // PDF action button
   setupPdfDownloadButton(tab);
 
   const all = await loadSheet(tab);

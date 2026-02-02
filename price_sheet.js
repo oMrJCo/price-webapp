@@ -275,7 +275,6 @@ function setupImageModal() {
       });
     }
 
-    rows = rows.slice().sort((a,b) => (a.model||"").localeCompare(b.model||"", "en"));
     renderTable(rows);
   }
 

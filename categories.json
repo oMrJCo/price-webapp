@@ -11,7 +11,7 @@
       "titleEN": "Battery",
       "titleTH": "แบตเตอรี่",
       "image": "/price-webapp/assets/uploads/images/b1.jpg",
-      "pdf": "/price-webapp/assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf"
+      "pdf": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery"
     },
     {
       "titleEN": "Battery Power Up",

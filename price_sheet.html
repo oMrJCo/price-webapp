@@ -12,8 +12,9 @@
       --muted:#a1a1aa;
       --brand:#eab308;
 
-      --danger:#ff3b30; /* แดงเด่น */
+      --danger:#ff3b30;
       --border:rgba(255,255,255,.08);
+      --border2:rgba(255,255,255,.12);
       --shadow:0 14px 40px rgb(0 0 0 / .55);
       --max:1160px;
 
@@ -59,13 +60,20 @@
       flex: 1 1 auto;
     }
 
-    /* ✅ actions: hint ซ้าย + ปุ่มขวา (แนวนอน) */
+    /* actions: hint ซ้าย + ปุ่มขวา */
     .actions{
       display:flex;
       align-items:center;
       gap:10px;
       flex: 0 0 auto;
       white-space:nowrap;
+    }
+
+    /* ✅ บังคับปุ่มให้หน้าตา “นิ่งทุกเครื่อง” */
+    .btn, .pill, button{
+      -webkit-appearance: none;
+      appearance: none;
+      font: inherit;
     }
 
     .btn{
@@ -99,7 +107,7 @@
       border-color: rgba(234,179,8,.30);
     }
 
-    /* ✅ แคปชั่นซ้าย + ลูกศรชี้เข้าปุ่ม */
+    /* แคปชั่นซ้าย + ลูกศร */
     .pdfHintLeft{
       display:none;
       align-items:center;
@@ -119,7 +127,6 @@
       0%,100%{ transform: translateX(0); opacity:.75; }
       50%{ transform: translateX(4px); opacity:1; }
     }
-
     .actions.has-pdf .pdfHintLeft{ display:flex; }
 
     .titlebox{ min-width:0; }
@@ -146,15 +153,42 @@
 
     .hint{ font-size:13px; color:var(--muted); margin:0 0 10px; }
 
+    /* ✅ Search: เพิ่ม icon + ชัดขึ้น */
+    .searchWrap{
+      position:relative;
+      width:100%;
+    }
+    .searchIcon{
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform: translateY(-50%);
+      width:18px;
+      height:18px;
+      color: rgba(255,255,255,.70);
+      pointer-events:none;
+      opacity:.95;
+    }
+
     .search{
       width:100%;
       border-radius:999px;
-      padding:12px 14px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.22);
+      padding:12px 14px 12px 44px; /* ✅ เผื่อที่ให้ไอคอน */
+      border:1px solid var(--border2);
+      background: rgba(0,0,0,.30); /* ✅ เข้มขึ้นให้เด่น */
       color:var(--text);
       font-size:14px;
       outline:none;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
+      transition: .15s border-color ease, .15s box-shadow ease, .15s background ease;
+    }
+    .search::placeholder{
+      color: rgba(255,255,255,.55); /* ✅ placeholder ชัดขึ้น */
+    }
+    .search:focus{
+      border-color: rgba(234,179,8,.40);
+      box-shadow: 0 0 0 3px rgba(234,179,8,.10);
+      background: rgba(0,0,0,.36);
     }
 
     .tabs{
@@ -164,25 +198,39 @@
       margin-top:10px;
       margin-bottom:14px;
     }
+
+    /* ✅ Tabs: บังคับสี/สไตล์ให้เหมือนกันทุกเครื่อง */
     .pill{
       display:inline-flex;
       align-items:center;
       gap:8px;
       padding:8px 12px;
       border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      font-weight:800;
+      border:1px solid var(--border2);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.86);
+      font-weight:900;
       font-size:13px;
       cursor:pointer;
       user-select:none;
-      transition:.15s background ease, .15s transform ease;
+      transition:.15s background ease, .15s transform ease, .15s border-color ease;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
     }
-    .pill:hover{ background: rgba(255,255,255,.08); }
+    .pill:hover{
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.18);
+    }
     .pill:active{ transform: translateY(1px); }
-    .pill.active{
-      background: rgba(234,179,8,.15);
+    .pill:focus-visible{
+      outline:none;
+      box-shadow: 0 0 0 3px rgba(234,179,8,.12);
       border-color: rgba(234,179,8,.35);
+    }
+    .pill.active{
+      background: rgba(234,179,8,.16);
+      border-color: rgba(234,179,8,.38);
+      color: rgba(255,255,255,.95);
       box-shadow: 0 0 0 2px rgba(234,179,8,.08) inset;
     }
 
@@ -365,6 +413,9 @@
       .model{ font-size:15px; }
       .pdfHintLeft{ font-size:12.5px; }
       .pdfHintLeft .arrow{ font-size:15px; }
+
+      .search{ padding-left:42px; }
+      .searchIcon{ left:13px; }
     }
 
     @supports (scrollbar-gutter: stable){
@@ -391,7 +442,6 @@
         </div>
       </div>
 
-      <!-- ✅ hint ซ้าย + ปุ่มขวา -->
       <div class="actions" id="actions">
         <div class="pdfHintLeft" id="pdfHintLeft">
           <span>เปิดเพื่อดาวน์โหลด</span>
@@ -410,8 +460,16 @@
     </div>
 
     <div class="card">
-      
-      <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
+      <p class="hint">ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้</p>
+
+      <!-- ✅ Search with icon -->
+      <div class="searchWrap">
+        <svg class="searchIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M10.5 18.5a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
+      </div>
 
       <div class="tabs" id="tabs"></div>
 
@@ -449,7 +507,7 @@
 
   <script src="price_sheet.js"></script>
 
-  <!-- ✅ Sync: ให้ hint โผล่เมื่อปุ่ม PDF โผล่ (เพราะ JS หลักเปิดทีหลัง) -->
+  <!-- Sync: ให้ hint โผล่เมื่อปุ่ม PDF โผล่ -->
   <script>
     (function () {
       const actions = document.getElementById('actions');

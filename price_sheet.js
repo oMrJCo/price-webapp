@@ -109,11 +109,57 @@ function renderTabs(brands, activeKey, onClick) {
   });
 }
 
+/**
+ * ✅ โหมด All: จัดกลุ่มตาม brand แต่ "คงลำดับแถวใน sheet" ภายในแต่ละ brand
+ * - แบรนด์จะเรียงตาม "ลำดับที่เจอครั้งแรก" ในชีต
+ * - ภายในแบรนด์: เรียงตามแถวเดิมในชีต (ไม่มี sort)
+ */
+function groupByBrandPreserveSheetOrder(rows) {
+  const groups = new Map(); // brand -> array
+  const brandOrder = [];
+
+  for (const r of rows) {
+    const b = (r.brand || "").trim() || "Other";
+    if (!groups.has(b)) {
+      groups.set(b, []);
+      brandOrder.push(b);
+    }
+    groups.get(b).push(r);
+  }
+
+  const out = [];
+  for (const b of brandOrder) {
+    // ใส่แถวหัวกลุ่ม
+    out.push({ __type: "brandHeader", brand: b });
+    // ตามด้วยรายการในแบรนด์นั้น (ลำดับเดิม)
+    out.push(...groups.get(b));
+  }
+  return out;
+}
+
 function renderTable(rows) {
   const tbody = el("tbody");
   const empty = el("empty");
 
   tbody.innerHTML = rows.map(r => {
+    // ✅ แถวหัวกลุ่มแบรนด์ (เฉพาะโหมด All)
+    if (r && r.__type === "brandHeader") {
+      return `
+        <tr>
+          <td colspan="2" style="
+            padding:10px 12px;
+            color: rgba(255,255,255,.70);
+            font-weight: 800;
+            letter-spacing: .2px;
+            background: rgba(255,255,255,.04);
+            border-bottom: 1px solid rgba(255,255,255,.06);
+          ">
+            ${escapeHTML(r.brand || "")}
+          </td>
+        </tr>
+      `;
+    }
+
     const img = normalizeImageUrl(r.image_url);
     const hasImg = !!img;
 
@@ -146,7 +192,9 @@ function renderTable(rows) {
     `;
   }).join("");
 
-  empty.style.display = rows.length ? "none" : "block";
+  // ถ้าหลัง filter แล้วเหลือแต่ header (กรณีผิดพลาด) ให้ถือว่าว่าง
+  const hasRealRows = rows.some(r => !(r && r.__type === "brandHeader"));
+  empty.style.display = hasRealRows ? "none" : "block";
 }
 
 async function loadSheet(sheetName) {
@@ -247,12 +295,21 @@ function setupImageModal() {
   function apply() {
     let rows = all;
 
-    // ✅ ถ้า "ไม่ค้นหา" และไม่ได้เลือก All -> กรองตามแบรนด์
+    // ✅ ถ้า "ไม่ค้นหา" และไม่ได้เลือก All -> กรองตามแบรนด์ (คงลำดับ sheet)
     if (!query && activeBrand && activeBrand !== ALL_BRAND_KEY) {
       rows = rows.filter(r => (r.brand || "").trim() === activeBrand);
+      renderTable(rows);
+      return;
     }
 
-    // ✅ ถ้า "ค้นหา" -> ค้นทั้งหมวด (ข้ามแบรนด์) เสมอ
+    // ✅ ถ้า "ไม่ค้นหา" และเลือก All -> จัดกลุ่มตามแบรนด์ แต่คงลำดับ sheet
+    if (!query && activeBrand === ALL_BRAND_KEY) {
+      const grouped = groupByBrandPreserveSheetOrder(rows);
+      renderTable(grouped);
+      return;
+    }
+
+    // ✅ ถ้า "ค้นหา" -> ค้นทั้งหมวด (ข้ามแบรนด์) และไม่จัดกลุ่ม (คงลำดับ sheet)
     if (query) {
       const qLower = query.toLowerCase().trim();
       const qCompact = normalizeSearchCompact(qLower);
@@ -265,14 +322,13 @@ function setupImageModal() {
 
         const hayCompact = normalizeSearchCompact(hay);
 
-        // 1) compact match (iphone15, iphone-15, ip15, promax ฯลฯ)
         if (qCompact && hayCompact.includes(qCompact)) return true;
-
-        // 2) token match ("15 pro" ทุกคำต้องอยู่)
         if (qTokens.length) return qTokens.every(t => hay.includes(t));
-
         return false;
       });
+
+      renderTable(rows);
+      return;
     }
 
     renderTable(rows);
@@ -280,7 +336,6 @@ function setupImageModal() {
 
   renderTabs(brands, activeBrand, (b) => {
     activeBrand = b;
-    // re-render เพื่ออัปเดต active state
     renderTabs(brands, activeBrand, arguments.callee);
     apply();
   });

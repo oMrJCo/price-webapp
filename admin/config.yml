@@ -2,13 +2,9 @@ backend:
   name: git-gateway
   branch: main
 
-# ✅ ต้องเป็น URL ของ "Netlify site ที่เปิด Identity + Git Gateway"
 site_url: https://sprightly-panda-ba302f.netlify.app
-
-# ✅ เว็บจริงที่ให้คนเห็น (GitHub Pages)
 display_url: https://omrjco.github.io/price-webapp
 
-# ✅ โฟลเดอร์อัปโหลดหลัก (ค่า default)
 media_folder: "assets/uploads"
 public_folder: "/price-webapp/assets/uploads"
 
@@ -23,10 +19,7 @@ collections:
         fields:
           - { label: "Site Title", name: "siteTitle", widget: "string", required: false }
           - { label: "Site Subtitle", name: "siteSubtitle", widget: "string", required: false }
-
-          # ✅ จาก string path → อัปโหลดรูปได้เลย
           - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
-
           - { label: "Cover Headline", name: "coverHeadline", widget: "string", required: false }
           - { label: "Cover Subtext", name: "coverSubtext", widget: "string", required: false }
 
@@ -37,7 +30,6 @@ collections:
               - { label: "Title (EN)", name: "titleEN", widget: "string" }
               - { label: "Title (TH)", name: "titleTH", widget: "string" }
 
-              # ✅ Image: อัปโหลด + แยกโฟลเดอร์ images
               - label: "Image"
                 name: "image"
                 widget: "image"
@@ -46,11 +38,18 @@ collections:
                 media_folder: "assets/uploads/images"
                 public_folder: "/price-webapp/assets/uploads/images"
 
-              # ✅ PDF: อัปโหลด + แยกโฟลเดอร์ pdfs
-              - label: "PDF (แนบไฟล์)"
-                name: "pdf"
+              # ✅ NEW: ใช้หน้านี้เป็นหลัก (ฝังลิงก์หน้าเว็บแสดงราคา)
+              - { label: "Sheet Tab (แนะนำ ถ้าใช้ price_sheet)", name: "sheetTab", widget: "string", required: false, hint: "ใส่ชื่อแท็บใน Google Sheet เช่น Battery (ระบบจะพาไป price_sheet.html?tab=Battery อัตโนมัติ)" }
+
+              - { label: "Price Page Link (แนะนำ)", name: "price_url", widget: "string", required: false, hint: "วางลิงก์หน้าแสดงราคา เช่น https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery (ถ้าใส่ ระบบจะใช้ลิงก์นี้ก่อน)" }
+
+              # ✅ Fallback: ยังใช้ PDF ได้ (กรณีบางหมวดยังเป็นไฟล์)
+              - { label: "PDF Link (OPTIONAL)", name: "pdf", widget: "string", required: false, hint: "วางลิงก์ PDF ที่เปิดตรงได้ (ลงท้าย .pdf) — ใช้เมื่อไม่ได้ตั้งค่า Sheet Tab/Price Page Link" }
+
+              - label: "PDF File (Upload) (OPTIONAL)"
+                name: "pdf_file"
                 widget: "file"
-                hint: "แนะนำขนาด 800×800 px (สี่เหลี่ยม)"
+                hint: "แนบไฟล์ PDF ได้ (ระบบจะใช้เมื่อไม่มี Sheet Tab/Price Page Link และ PDF Link ว่าง)"
                 required: false
                 allow_multiple: false
                 media_folder: "assets/uploads/pdfs"

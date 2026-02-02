@@ -1,5 +1,9 @@
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 
+// ใช้คีย์พิเศษสำหรับแท็บ All
+const ALL_BRAND_KEY = "__ALL__";
+const ALL_BRAND_LABEL = "All";
+
 function getParam(name) {
   const u = new URL(window.location.href);
   return u.searchParams.get(name) || "";
@@ -20,20 +24,25 @@ function normalizeImageUrl(url) {
 }
 
 /**
- * ทำข้อความให้เหมาะกับการค้นหาแบบ "ไม่ติดช่องว่าง/ขีด/จุด"
- * ตัวอย่าง:
- *  - "iPhone 15 Pro Max" -> "iphone15promax"
- *  - "iphone-15" -> "iphone15"
+ * ทำข้อความให้เหมาะกับการค้นหาแบบ "ไม่ติดช่องว่าง/สัญลักษณ์"
+ * + alias: ip -> iphone (ip15 => iphone15)
  */
 function normalizeSearchCompact(s) {
   const str = String(s || "").toLowerCase();
-  // ใช้ unicode property escapes ถ้ารองรับ (browser ใหม่ๆ รองรับ)
+
+  let compact;
   try {
-    return str.replace(/[^\p{L}\p{N}]+/gu, ""); // เหลือแค่ตัวอักษร/ตัวเลข
+    compact = str.replace(/[^\p{L}\p{N}]+/gu, "");
   } catch {
-    // fallback (เก่าๆ): ตัด space/ขีด/จุด/underscore/วงเล็บ ฯลฯ แบบพื้นฐาน
-    return str.replace(/[\s\-_.()\/\\]+/g, "");
+    compact = str.replace(/[\s\-_.()\/\\]+/g, "");
   }
+
+  // alias: ip15 -> iphone15
+  if (compact.startsWith("ip") && !compact.startsWith("iphone")) {
+    compact = "iphone" + compact.slice(2);
+  }
+
+  return compact;
 }
 
 function parseCSV(text) {
@@ -84,10 +93,15 @@ function formatPrice(p) {
   return `${escapeHTML(raw)} บาท`;
 }
 
-function renderTabs(brands, activeBrand, onClick) {
+/**
+ * brands = [{ key, label }]
+ */
+function renderTabs(brands, activeKey, onClick) {
   const tabs = el("tabs");
   tabs.innerHTML = brands.map(b => `
-    <button class="tab ${b === activeBrand ? "active" : ""}" data-brand="${escapeHTML(b)}">${escapeHTML(b)}</button>
+    <button class="tab ${b.key === activeKey ? "active" : ""}" data-brand="${escapeHTML(b.key)}">
+      ${escapeHTML(b.label)}
+    </button>
   `).join("");
 
   tabs.querySelectorAll(".tab").forEach(btn => {
@@ -103,7 +117,6 @@ function renderTable(rows) {
     const img = normalizeImageUrl(r.image_url);
     const hasImg = !!img;
 
-    // ใส่ data- เพื่อใช้เปิด popup
     const dataAttrs = hasImg
       ? `data-img="${escapeHTML(img)}" data-title="${escapeHTML(r.model || "รูปสินค้า")}"`
       : "";
@@ -177,21 +190,16 @@ function setupImageModal() {
     document.body.style.overflow = "";
   }
 
-  // ปิดเมื่อคลิกพื้นหลัง (นอกการ์ด)
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModal();
   });
 
   closeBtn.addEventListener("click", closeModal);
 
-  // ปิดด้วย Esc
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("open")) {
-      closeModal();
-    }
+    if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
   });
 
-  // เปิดเมื่อคลิกที่ thumb (ใช้ event delegation)
   document.addEventListener("click", (e) => {
     const thumb = e.target.closest(".thumb");
     if (!thumb) return;
@@ -201,7 +209,6 @@ function setupImageModal() {
     openModal(src, title);
   });
 
-  // เปิดด้วย Enter/Space เมื่อโฟกัส thumb
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" && e.key !== " ") return;
     const active = document.activeElement;
@@ -226,38 +233,44 @@ function setupImageModal() {
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
   el("updateText").textContent = `อัปเดต: ${upd}`;
 
-  const brands = uniq(all.map(r => (r.brand || "").trim())).filter(Boolean);
-  let activeBrand = brands[0] || "";
+  // ✅ สร้างรายการแท็บแบรนด์ + เพิ่ม All ไว้หน้าแรก
+  const brandNames = uniq(all.map(r => (r.brand || "").trim())).filter(Boolean);
+  const brands = [
+    { key: ALL_BRAND_KEY, label: ALL_BRAND_LABEL },
+    ...brandNames.map(b => ({ key: b, label: b }))
+  ];
+
+  // เริ่มต้นให้เป็น All (ใช้งานสะดวกสุด)
+  let activeBrand = ALL_BRAND_KEY;
   let query = "";
 
   function apply() {
     let rows = all;
 
-    // filter ตามแบรนด์
-    if (activeBrand) rows = rows.filter(r => (r.brand || "").trim() === activeBrand);
+    // ✅ ถ้า "ไม่ค้นหา" และไม่ได้เลือก All -> กรองตามแบรนด์
+    if (!query && activeBrand && activeBrand !== ALL_BRAND_KEY) {
+      rows = rows.filter(r => (r.brand || "").trim() === activeBrand);
+    }
 
-    // ✅ Search แบบครอบคลุม:
-    // - iphone15 เจอ iPhone 15
-    // - 15 pro เจอ iPhone 15 Pro
-    // - promax เจอ Pro Max (เพราะ compact)
+    // ✅ ถ้า "ค้นหา" -> ค้นทั้งหมวด (ข้ามแบรนด์) เสมอ
     if (query) {
       const qLower = query.toLowerCase().trim();
       const qCompact = normalizeSearchCompact(qLower);
-      const qTokens = qLower.split(/\s+/).filter(Boolean); // สำหรับค้นหาหลายคำ เช่น "15 pro"
+      const qTokens = qLower.split(/\s+/).filter(Boolean);
 
       rows = rows.filter(r => {
         const brand = String(r.brand || "");
         const model = String(r.model || "");
         const hay = `${brand} ${model}`.toLowerCase();
 
-        // 1) แบบ compact: ตัดเว้นวรรค/สัญลักษณ์
         const hayCompact = normalizeSearchCompact(hay);
+
+        // 1) compact match (iphone15, iphone-15, ip15, promax ฯลฯ)
         if (qCompact && hayCompact.includes(qCompact)) return true;
 
-        // 2) แบบ token: ทุกคำต้องอยู่ในข้อความ (ช่วยเคส "15 pro")
-        if (qTokens.length) {
-          return qTokens.every(t => hay.includes(t));
-        }
+        // 2) token match ("15 pro" ทุกคำต้องอยู่)
+        if (qTokens.length) return qTokens.every(t => hay.includes(t));
+
         return false;
       });
     }
@@ -268,6 +281,7 @@ function setupImageModal() {
 
   renderTabs(brands, activeBrand, (b) => {
     activeBrand = b;
+    // re-render เพื่ออัปเดต active state
     renderTabs(brands, activeBrand, arguments.callee);
     apply();
   });

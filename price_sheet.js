@@ -19,6 +19,23 @@ function normalizeImageUrl(url) {
   return s;
 }
 
+/**
+ * ทำข้อความให้เหมาะกับการค้นหาแบบ "ไม่ติดช่องว่าง/ขีด/จุด"
+ * ตัวอย่าง:
+ *  - "iPhone 15 Pro Max" -> "iphone15promax"
+ *  - "iphone-15" -> "iphone15"
+ */
+function normalizeSearchCompact(s) {
+  const str = String(s || "").toLowerCase();
+  // ใช้ unicode property escapes ถ้ารองรับ (browser ใหม่ๆ รองรับ)
+  try {
+    return str.replace(/[^\p{L}\p{N}]+/gu, ""); // เหลือแค่ตัวอักษร/ตัวเลข
+  } catch {
+    // fallback (เก่าๆ): ตัด space/ขีด/จุด/underscore/วงเล็บ ฯลฯ แบบพื้นฐาน
+    return str.replace(/[\s\-_.()\/\\]+/g, "");
+  }
+}
+
 function parseCSV(text) {
   const rows = [];
   let row = [], cur = "", inQuotes = false;
@@ -216,10 +233,33 @@ function setupImageModal() {
   function apply() {
     let rows = all;
 
+    // filter ตามแบรนด์
     if (activeBrand) rows = rows.filter(r => (r.brand || "").trim() === activeBrand);
+
+    // ✅ Search แบบครอบคลุม:
+    // - iphone15 เจอ iPhone 15
+    // - 15 pro เจอ iPhone 15 Pro
+    // - promax เจอ Pro Max (เพราะ compact)
     if (query) {
-      const q = query.toLowerCase();
-      rows = rows.filter(r => (r.model || "").toLowerCase().includes(q));
+      const qLower = query.toLowerCase().trim();
+      const qCompact = normalizeSearchCompact(qLower);
+      const qTokens = qLower.split(/\s+/).filter(Boolean); // สำหรับค้นหาหลายคำ เช่น "15 pro"
+
+      rows = rows.filter(r => {
+        const brand = String(r.brand || "");
+        const model = String(r.model || "");
+        const hay = `${brand} ${model}`.toLowerCase();
+
+        // 1) แบบ compact: ตัดเว้นวรรค/สัญลักษณ์
+        const hayCompact = normalizeSearchCompact(hay);
+        if (qCompact && hayCompact.includes(qCompact)) return true;
+
+        // 2) แบบ token: ทุกคำต้องอยู่ในข้อความ (ช่วยเคส "15 pro")
+        if (qTokens.length) {
+          return qTokens.every(t => hay.includes(t));
+        }
+        return false;
+      });
     }
 
     rows = rows.slice().sort((a,b) => (a.model||"").localeCompare(b.model||"", "en"));

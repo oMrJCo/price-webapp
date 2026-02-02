@@ -8,23 +8,31 @@
   <style>
     :root{
       --bg:#0b0b0b;
-      --card:#111827;
       --text:#f8fafc;
       --muted:#a1a1aa;
       --brand:#eab308;
       --border:rgba(255,255,255,.08);
       --shadow:0 14px 40px rgb(0 0 0 / .55);
       --max:1160px;
+
+      --rowbg: rgba(0,0,0,.16);
+      --rowbg2: rgba(255,255,255,.02);
+      --rowline: rgba(255,255,255,.06);
+
+      --priceCol: 140px;   /* desktop */
+      --priceColSm: 118px; /* mobile */
     }
+
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Thai", sans-serif;
-      background: radial-gradient(1200px 700px at 50% -10%, rgba(234,179,8,.18), transparent 60%),
-                  radial-gradient(900px 600px at 10% 10%, rgba(56,189,248,.10), transparent 55%),
-                  radial-gradient(900px 600px at 90% 10%, rgba(168,85,247,.10), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 700px at 50% -10%, rgba(234,179,8,.18), transparent 60%),
+        radial-gradient(900px 600px at 10% 10%, rgba(56,189,248,.10), transparent 55%),
+        radial-gradient(900px 600px at 90% 10%, rgba(168,85,247,.10), transparent 55%),
+        var(--bg);
       color:var(--text);
       padding:24px 14px;
     }
@@ -91,11 +99,7 @@
     }
 
     .titlebox{ min-width:0; }
-    .crumb{
-      margin:0;
-      font-size:12px;
-      color:var(--muted);
-    }
+    .crumb{ margin:0; font-size:12px; color:var(--muted); }
     h1{
       margin:2px 0 0;
       font-size:24px;
@@ -105,11 +109,7 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .meta{
-      margin:6px 0 0;
-      font-size:12px;
-      color:var(--muted);
-    }
+    .meta{ margin:6px 0 0; font-size:12px; color:var(--muted); }
 
     .card{
       margin-top:14px;
@@ -119,11 +119,7 @@
       padding:18px;
       box-shadow: var(--shadow);
     }
-    .hint{
-      font-size:13px;
-      color:var(--muted);
-      margin:0 0 10px;
-    }
+    .hint{ font-size:13px; color:var(--muted); margin:0 0 10px; }
     .search{
       width:100%;
       border-radius:999px;
@@ -134,6 +130,7 @@
       font-size:14px;
       outline:none;
     }
+
     .tabs{
       display:flex;
       flex-wrap:wrap;
@@ -163,6 +160,7 @@
       box-shadow: 0 0 0 2px rgba(234,179,8,.08) inset;
     }
 
+    /* ✅ ตารางแบบล็อกคอลัมน์: ไม่แตก block แล้ว */
     table{
       width:100%;
       border-collapse:separate;
@@ -171,7 +169,12 @@
       border:1px solid var(--border);
       border-radius:16px;
       background: rgba(0,0,0,.18);
+      table-layout: fixed; /* สำคัญ: ทำให้คอลัมน์นิ่งทุกอุปกรณ์ */
     }
+
+    col.modelCol{ width: calc(100% - var(--priceCol)); }
+    col.priceCol{ width: var(--priceCol); }
+
     thead th{
       text-align:left;
       padding:12px 12px;
@@ -180,18 +183,26 @@
       border-bottom:1px solid var(--border);
       background: rgba(255,255,255,.03);
     }
+    thead th:last-child{ text-align:right; }
+
+    tbody tr{
+      background: linear-gradient(180deg, var(--rowbg), var(--rowbg2)); /* ✅ BG ต่อกันทั้งแถว */
+    }
+    tbody tr + tr td{ border-top:1px solid var(--rowline); } /* เส้นแบ่งแถว */
+
     tbody td{
       padding:12px 12px;
-      border-bottom:1px solid rgba(255,255,255,.06);
       vertical-align:top;
       font-size:14px;
+      background: transparent; /* ✅ ให้แถวเป็นคนถือ BG */
     }
-    tbody tr:last-child td{ border-bottom:none; }
 
     .model{
-      font-weight:800;
+      font-weight:900;
       font-size:15px;
       margin:0 0 6px;
+      line-height:1.25;
+      overflow-wrap:anywhere; /* ✅ รุ่นยาวไม่ดันคอลัมน์ */
     }
     .sub{
       display:flex;
@@ -209,13 +220,16 @@
       background: rgba(255,255,255,.03);
       color:var(--muted);
       font-size:12px;
-      font-weight:700;
+      font-weight:800;
     }
+
     .price{
-      font-weight:900;
+      font-weight:950;
       color: var(--brand);
       text-align:right;
       white-space:nowrap;
+      font-size:16px;
+      padding-left:8px;
     }
 
     .thumb{
@@ -237,9 +251,11 @@
       display:block;
     }
 
+    /* brand header row */
     .brandHeaderRow td{
       padding:14px 12px;
-      background: rgba(255,255,255,.02);
+      background: rgba(255,255,255,.02) !important;
+      border-top:none !important;
     }
     .brandHeader{
       display:inline-flex;
@@ -249,7 +265,7 @@
       border-radius:999px;
       background: rgba(255,255,255,.04);
       border:1px solid var(--border);
-      font-weight:900;
+      font-weight:950;
       letter-spacing:.2px;
     }
     .dot{
@@ -299,7 +315,7 @@
       border-bottom:1px solid rgba(255,255,255,.10);
     }
     .modalTitle{
-      font-weight:900;
+      font-weight:950;
       font-size:14px;
       color:var(--text);
       margin:0;
@@ -314,7 +330,7 @@
       border-radius:12px;
       padding:8px 10px;
       cursor:pointer;
-      font-weight:800;
+      font-weight:900;
     }
     .modalBody{ padding:14px; }
     .modalImg{
@@ -327,7 +343,7 @@
       display:block;
     }
 
-    /* ✅ Mobile topbar */
+    /* ✅ Mobile: ล็อกคอลัมน์ราคาให้แคบลง + ลด padding เพื่อไม่ล้น */
     @media (max-width: 560px){
       body{ padding:18px 12px; }
       .topbar{
@@ -337,38 +353,19 @@
       }
       .left{ width:100%; }
       h1{ font-size:20px; }
-      .actions{
-        width:100%;
-        justify-content:flex-end;
-      }
-      .btn{ border-radius:14px; }
+      .actions{ width:100%; justify-content:flex-end; }
+
+      :root{ --priceCol: var(--priceColSm); }
+
+      tbody td{ padding:10px 10px; }
+      .price{ font-size:15px; }
+      .thumb{ width:40px; height:40px; }
+      .model{ font-size:15px; }
     }
 
-    /* ✅ สำคัญ: คืน responsive table บนมือถือ (เหมือนของเดิม) */
-    @media (max-width: 640px){
-      thead{ display:none; }
-      table, tbody, tr, td{ display:block; width:100%; }
-      tbody tr{ border-bottom:1px solid rgba(255,255,255,.06); }
-      tbody td{ border-bottom:none; padding:10px 12px; }
-
-      /* ให้แถวหัวแบรนด์ดูดีในโหมด block */
-      .brandHeaderRow td{ padding:12px 12px; }
-
-      /* price โชว์เป็นบรรทัดของตัวเอง + label */
-      td.price{
-        text-align:left;
-        font-size:16px;
-        margin-top:6px;
-      }
-      td.price::before{
-        content:"ราคาส่ง ";
-        color:var(--muted);
-        font-weight:700;
-        margin-right:6px;
-      }
-
-      /* thumbnail ไม่ใหญ่เกิน */
-      .thumb{ width:40px; height:40px; border-radius:12px; }
+    /* ✅ ป้องกัน “ซ้ายขวาขยับ” จาก scrollbar/ตัวอักษรต่างเครื่อง */
+    @supports (scrollbar-gutter: stable){
+      body{ scrollbar-gutter: stable both-edges; }
     }
   </style>
 </head>
@@ -411,10 +408,16 @@
       <div class="tabs" id="tabs"></div>
 
       <table>
+        <!-- ✅ ล็อกโครงคอลัมน์: รุ่น | ราคา (นิ่งทุกอุปกรณ์) -->
+        <colgroup>
+          <col class="modelCol" />
+          <col class="priceCol" />
+        </colgroup>
+
         <thead>
           <tr>
-            <th style="width:70%;">รุ่น</th>
-            <th style="width:30%; text-align:right;">ราคาส่ง</th>
+            <th>รุ่น</th>
+            <th>ราคาส่ง</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>

@@ -7,10 +7,11 @@
 
   <style>
     :root{
-      --bg:#0b0f19;          /* พื้นทึบ */
+      --bg:#0b0f19;
       --text:#f8fafc;
       --muted:#a1a1aa;
       --brand:#eab308;
+      --danger:#ff3b30;
       --border:rgba(255,255,255,.08);
       --shadow:0 14px 40px rgb(0 0 0 / .55);
       --max:1160px;
@@ -41,7 +42,7 @@
       background: rgba(255,255,255,.04);
       border:1px solid var(--border);
       border-radius:22px;
-      padding:18px 18px;
+      padding:18px;
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
@@ -54,14 +55,16 @@
       align-items:flex-start;
       gap:12px;
       min-width:0;
-      flex: 1 1 auto;
+      flex:1 1 auto;
     }
 
+    /* ✅ actions แนวนอน */
     .actions{
       display:flex;
       align-items:center;
       gap:10px;
-      flex: 0 0 auto;
+      flex:0 0 auto;
+      white-space:nowrap;
     }
 
     .btn{
@@ -77,22 +80,39 @@
       font-size:14px;
       cursor:pointer;
       user-select:none;
-      transition:.15s transform ease, .15s background ease, .15s border-color ease;
-      white-space:nowrap;
+      transition:.15s;
     }
     .btn:hover{ background: rgba(255,255,255,.10); }
-    .btn:active{ transform: translateY(1px); }
-    .btn svg{ width:16px; height:16px; display:block; }
-
     .btn-secondary{
-      padding:9px 12px;
+      background: rgba(234,179,8,.12);
+      border-color: rgba(234,179,8,.28);
       font-weight:900;
-      background: rgba(234,179,8,.10);
-      border-color: rgba(234,179,8,.22);
     }
-    .btn-secondary:hover{
-      background: rgba(234,179,8,.16);
-      border-color: rgba(234,179,8,.30);
+
+    /* ✅ แคปชั่นซ้าย + ลูกศร */
+    .pdfHintLeft{
+      display:none;
+      align-items:center;
+      gap:6px;
+      color:var(--danger);
+      font-size:13px;
+      font-weight:900;
+      text-shadow:0 0 10px rgba(255,59,48,.35);
+    }
+
+    .pdfHintLeft .arrow{
+      font-size:16px;
+      animation: nudge 1.4s infinite;
+    }
+
+    @keyframes nudge{
+      0%,100%{ transform: translateX(0); opacity:.7; }
+      50%{ transform: translateX(4px); opacity:1; }
+    }
+
+    /* โชว์ hint เมื่อมี PDF */
+    .actions.has-pdf .pdfHintLeft{
+      display:flex;
     }
 
     .titlebox{ min-width:0; }
@@ -100,242 +120,21 @@
     h1{
       margin:2px 0 0;
       font-size:24px;
-      line-height:1.15;
-      letter-spacing:-.2px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .meta{ margin:6px 0 0; font-size:12px; color:var(--muted); }
+    .meta{ margin-top:6px; font-size:12px; color:var(--muted); }
 
-    .card{
-      margin-top:14px;
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius:22px;
-      padding:18px;
-      box-shadow: var(--shadow);
-    }
-
-    .hint{ font-size:13px; color:var(--muted); margin:0 0 10px; }
-    .search{
-      width:100%;
-      border-radius:999px;
-      padding:12px 14px;
-      border:1px solid var(--border);
-      background: rgba(0,0,0,.22);
-      color:var(--text);
-      font-size:14px;
-      outline:none;
-    }
-
-    .tabs{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:10px;
-      margin-bottom:14px;
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      font-weight:800;
-      font-size:13px;
-      cursor:pointer;
-      user-select:none;
-      transition:.15s background ease, .15s transform ease;
-    }
-    .pill:hover{ background: rgba(255,255,255,.08); }
-    .pill:active{ transform: translateY(1px); }
-    .pill.active{
-      background: rgba(234,179,8,.15);
-      border-color: rgba(234,179,8,.35);
-      box-shadow: 0 0 0 2px rgba(234,179,8,.08) inset;
-    }
-
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      overflow:hidden;
-      border:1px solid var(--border);
-      border-radius:16px;
-      background: rgba(0,0,0,.18);
-      table-layout: fixed; /* ล็อกคอลัมน์ */
-    }
-
-    col.modelCol{ width: calc(100% - var(--priceCol)); }
-    col.priceCol{ width: var(--priceCol); }
-
-    thead th{
-      text-align:left;
-      padding:12px 12px;
-      font-size:13px;
-      color:var(--muted);
-      border-bottom:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-    }
-    thead th:last-child{ text-align:right; }
-
-    tbody tr{
-      background: linear-gradient(180deg, var(--rowbg), var(--rowbg2));
-    }
-    tbody tr + tr td{ border-top:1px solid var(--rowline); }
-
-    tbody td{
-      padding:12px 12px;
-      vertical-align:top;
-      font-size:14px;
-      background: transparent;
-    }
-
-    .model{
-      font-weight:900;
-      font-size:15px;
-      margin:0 0 6px;
-      line-height:1.25;
-      overflow-wrap:anywhere;
-    }
-
-    .price{
-      font-weight:950;
-      color: var(--brand);
-      text-align:right;
-      white-space:nowrap;
-      font-size:16px;
-      padding-left:8px;
-    }
-
-    .thumb{
-      width:44px;
-      height:44px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      overflow:hidden;
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      flex: 0 0 auto;
-    }
-    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-
-    .brandHeaderRow td{
-      padding:14px 12px;
-      background: rgba(255,255,255,.02) !important;
-      border-top:none !important;
-    }
-    .brandHeader{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding:8px 14px;
-      border-radius:999px;
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      font-weight:950;
-      letter-spacing:.2px;
-    }
-    .dot{
-      width:10px; height:10px;
-      border-radius:999px;
-      background: rgba(234,179,8,.85);
-      box-shadow: 0 0 0 3px rgba(234,179,8,.12);
-    }
-
-    .empty{
-      display:none;
-      margin-top:14px;
-      padding:16px;
-      border-radius:16px;
-      border:1px dashed rgba(255,255,255,.16);
-      color:var(--muted);
-      font-size:14px;
-      text-align:center;
-    }
-
-    .modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      background: rgba(0,0,0,.7);
-      z-index:9999;
-    }
-    .modal.show{ display:flex; }
-    .modalCard{
-      width:min(720px, 100%);
-      background: rgba(15,23,42,.92);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:18px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .modalTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 14px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
-    .modalTitle{
-      font-weight:950;
-      font-size:14px;
-      color:var(--text);
-      margin:0;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .modalClose{
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--text);
-      border-radius:12px;
-      padding:8px 10px;
-      cursor:pointer;
-      font-weight:900;
-    }
-    .modalBody{ padding:14px; }
-    .modalImg{
-      width:100%;
-      max-height:70vh;
-      object-fit:contain;
-      background: rgba(0,0,0,.25);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:14px;
-      display:block;
-    }
-
-    @media (max-width: 560px){
-      body{ padding:18px 12px; }
+    /* ---------- responsive ---------- */
+    @media (max-width:560px){
       .topbar{
         flex-direction:column;
         align-items:stretch;
-        gap:10px;
       }
-      .left{ width:100%; }
-      h1{ font-size:20px; }
-      .actions{ width:100%; justify-content:flex-end; }
-
-      :root{ --priceCol: var(--priceColSm); }
-
-      tbody td{ padding:10px 10px; }
-      .price{ font-size:15px; }
-      .thumb{ width:40px; height:40px; }
-      .model{ font-size:15px; }
-    }
-
-    @supports (scrollbar-gutter: stable){
-      body{ scrollbar-gutter: stable both-edges; }
+      .actions{
+        justify-content:flex-end;
+      }
     }
   </style>
 </head>
@@ -344,71 +143,51 @@
   <div class="wrap">
     <div class="topbar">
       <div class="left">
-        <a class="btn" href="index.html" aria-label="กลับหน้าหมวด">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          กลับหน้าหมวด
-        </a>
-
+        <a class="btn" href="index.html">← กลับหน้าหมวด</a>
         <div class="titlebox">
           <p class="crumb" id="crumb">Sheet ›</p>
-          <h1 id="pageTitle">กำลังโหลด…</h1>
+          <h1 id="pageTitle">Battery</h1>
           <p class="meta" id="updateText">อัปเดต: -</p>
         </div>
       </div>
 
-      <div class="actions">
-        <a class="btn btn-secondary" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M7 3h7l3 3v15H7V3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M14 3v4h4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M9 12h6M9 15h6M9 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+      <!-- ✅ แคปชั่นซ้าย + ปุ่ม -->
+      <div class="actions" id="actions">
+        <div class="pdfHintLeft">
+          <span>เปิดเพื่อดาวน์โหลด</span>
+          <span class="arrow">➜</span>
+        </div>
+
+        <a class="btn btn-secondary"
+           id="openPdfBtn"
+           href="#"
+           target="_blank"
+           rel="noopener"
+           style="display:none;">
           เปิด PDF
         </a>
       </div>
     </div>
-
-    <div class="card">
-      <p class="hint">ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้</p>
-
-      <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
-
-      <div class="tabs" id="tabs"></div>
-
-      <table>
-        <colgroup>
-          <col class="modelCol" />
-          <col class="priceCol" />
-        </colgroup>
-
-        <thead>
-          <tr>
-            <th>รุ่น</th>
-            <th>ราคาส่ง</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-
-      <div class="empty" id="empty">ไม่พบข้อมูล</div>
-    </div>
   </div>
 
-  <div class="modal" id="imgModal" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true">
-      <div class="modalTop">
-        <p class="modalTitle" id="modalTitle">รูปสินค้า</p>
-        <button class="modalClose" id="modalClose" type="button">ปิด</button>
-      </div>
-      <div class="modalBody">
-        <img class="modalImg" id="modalImg" alt="รูปสินค้า" />
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ สำคัญ: ต้องเป็น src ไปที่ไฟล์ JS -->
   <script src="price_sheet.js"></script>
+
+  <!-- sync แสดง hint เมื่อปุ่ม PDF โผล่ -->
+  <script>
+    (function(){
+      const actions = document.getElementById('actions');
+      const btn = document.getElementById('openPdfBtn');
+
+      function sync(){
+        if (!actions || !btn) return;
+        const visible = btn.style.display !== 'none' && btn.offsetParent !== null;
+        actions.classList.toggle('has-pdf', visible);
+      }
+
+      sync();
+      setTimeout(sync, 300);
+      setTimeout(sync, 1000);
+    })();
+  </script>
 </body>
 </html>

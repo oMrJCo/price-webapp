@@ -9,15 +9,12 @@
     :root{
       --bg:#0b0b0b;
       --card:#111827;
-      --card2:#0b1220;
       --text:#f8fafc;
       --muted:#a1a1aa;
       --brand:#eab308;
       --border:rgba(255,255,255,.08);
       --shadow:0 14px 40px rgb(0 0 0 / .55);
       --radius:18px;
-      --radius2:14px;
-      --pad:18px;
       --max:1160px;
     }
     *{ box-sizing:border-box; }
@@ -47,12 +44,22 @@
       gap:14px;
       box-shadow: var(--shadow);
     }
+
     .left{
       display:flex;
       align-items:flex-start;
       gap:12px;
       min-width:0;
+      flex: 1 1 auto;
     }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex: 0 0 auto;
+    }
+
     .btn{
       display:inline-flex;
       align-items:center;
@@ -62,15 +69,29 @@
       background: rgba(255,255,255,.06);
       border:1px solid var(--border);
       color:var(--text);
-      font-weight:700;
+      font-weight:800;
       font-size:14px;
       cursor:pointer;
       user-select:none;
-      transition:.15s transform ease, .15s background ease;
+      transition:.15s transform ease, .15s background ease, .15s border-color ease;
       white-space:nowrap;
     }
     .btn:hover{ background: rgba(255,255,255,.10); }
     .btn:active{ transform: translateY(1px); }
+
+    /* ✅ ปุ่ม action รอง (PDF) ให้ดูเบากว่า */
+    .btn-secondary{
+      padding:9px 12px;
+      font-weight:900;
+      background: rgba(234,179,8,.10);
+      border-color: rgba(234,179,8,.22);
+    }
+    .btn-secondary:hover{
+      background: rgba(234,179,8,.16);
+      border-color: rgba(234,179,8,.30);
+    }
+
+    .btn svg{ width:16px; height:16px; display:block; }
 
     .titlebox{ min-width:0; }
     .crumb{
@@ -100,14 +121,6 @@
       border-radius:22px;
       padding:18px;
       box-shadow: var(--shadow);
-    }
-    .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
     }
     .hint{
       font-size:13px;
@@ -305,9 +318,7 @@
       cursor:pointer;
       font-weight:800;
     }
-    .modalBody{
-      padding:14px;
-    }
+    .modalBody{ padding:14px; }
     .modalImg{
       width:100%;
       max-height:70vh;
@@ -317,6 +328,33 @@
       border-radius:14px;
       display:block;
     }
+
+    /* ✅ Mobile polish */
+    @media (max-width: 560px){
+      body{ padding:18px 12px; }
+      .topbar{
+        flex-direction:column;
+        align-items:stretch;
+        gap:10px;
+      }
+      .left{
+        width:100%;
+      }
+      h1{
+        font-size:20px;
+      }
+      .actions{
+        width:100%;
+        justify-content:flex-end;
+      }
+      .btn{
+        padding:10px 12px;
+        border-radius:14px;
+      }
+      .btn-secondary{
+        padding:10px 12px;
+      }
+    }
   </style>
 </head>
 
@@ -324,7 +362,14 @@
   <div class="wrap">
     <div class="topbar">
       <div class="left">
-        <a class="btn" href="index.html">← กลับหน้าหมวด</a>
+        <a class="btn" href="index.html" aria-label="กลับหน้าหมวด">
+          <!-- arrow -->
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          กลับหน้าหมวด
+        </a>
+
         <div class="titlebox">
           <p class="crumb" id="crumb">Sheet ›</p>
           <h1 id="pageTitle">กำลังโหลด…</h1>
@@ -332,8 +377,17 @@
         </div>
       </div>
 
-      <!-- ปุ่มดาวน์โหลด PDF (โชว์เมื่อหมวดนี้มี pdf / pdf_file ใน categories.json) -->
-      <a class="btn" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">ดาวน์โหลด PDF</a>
+      <div class="actions">
+        <!-- ✅ ปุ่ม PDF แบบ action รอง (เปิดอ่านก่อน สวยบนมือถือ) -->
+        <a class="btn btn-secondary" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 3h7l3 3v15H7V3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M14 3v4h4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M9 12h6M9 15h6M9 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          เปิด PDF
+        </a>
+      </div>
     </div>
 
     <div class="card">

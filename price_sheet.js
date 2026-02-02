@@ -5,11 +5,12 @@
    - Search ignores brand filter (search across all brands in this tab)
    - Tabs: render once, toggle active (fix: no double click needed)
    - Image popup modal
+   - PDF button: auto show from categories.json (match tab) -> OPEN PDF (not forced download)
    ========================= */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 
-// categories.json (for optional PDF download button on price_sheet page)
+// categories.json (for optional PDF button on price_sheet page)
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
 
@@ -85,9 +86,7 @@ async function setupPdfDownloadButton(tabName) {
     if (!tab) return;
     const tabLower = tab.toLowerCase();
 
-    // หา category ที่ match กับ tab นี้:
-    // 1) sheetTab == tab
-    // 2) price_url มี ?tab=... (กรณีใส่เป็นลิงก์เต็ม)
+    // match by sheetTab OR price_url contains ?tab=
     const match = cats.find((c) => {
       const st = String(c.sheetTab || "").trim();
       if (st && st.toLowerCase() === tabLower) return true;
@@ -105,13 +104,16 @@ async function setupPdfDownloadButton(tabName) {
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 
+    // ✅ UX: เปิดอ่าน PDF (แท็บใหม่) ไม่บังคับดาวน์โหลด
     btn.href = pdfUrl;
-    btn.textContent = "ดาวน์โหลด PDF";
-    btn.title = "ดาวน์โหลดไฟล์ PDF";
+    btn.textContent = "เปิด PDF";
+    btn.title = "เปิดไฟล์ PDF";
     btn.target = "_blank";
     btn.rel = "noopener";
-    // download อาจใช้ไม่ได้กับบางโดเมน แต่ไม่เสียหาย
-    btn.setAttribute("download", "");
+
+    // ✅ สำคัญ: เอา download ออก (มือถือจะไม่เด้ง UI ดาวน์โหลดแบบน่าเกลียด)
+    btn.removeAttribute("download");
+
     btn.style.display = "inline-flex";
   } catch (e) {
     console.warn("setupPdfDownloadButton failed:", e);
@@ -119,7 +121,6 @@ async function setupPdfDownloadButton(tabName) {
 }
 
 function parseCSV(text) {
-  // simple CSV parser that respects quotes
   const rows = [];
   let row = [];
   let cur = "";
@@ -196,7 +197,6 @@ function normalizeSearchCompact(s) {
   const raw = String(s || "").toLowerCase().trim();
   if (!raw) return "";
 
-  // alias: ip15 -> iphone15
   if (raw.startsWith("ip") && !raw.startsWith("iphone")) {
     const rest = raw.slice(2);
     return ("iphone" + rest).replace(/[^a-z0-9]+/g, "");
@@ -238,7 +238,6 @@ function setupImageModal() {
     if (e.key === "Escape") hide();
   });
 
-  // event delegation for thumbs
   document.addEventListener("click", (e) => {
     const t = e.target.closest(".thumb");
     if (!t) return;
@@ -300,7 +299,6 @@ function renderTabs(brands, activeKey, onSelect) {
     if (b.key === activeKey) btn.classList.add("active");
 
     btn.addEventListener("click", () => {
-      // toggle class without rerender -> fix "click twice"
       root.querySelectorAll(".pill").forEach(x => x.classList.remove("active"));
       btn.classList.add("active");
       onSelect(b.key);
@@ -324,7 +322,6 @@ function renderTable(rows) {
   if (el("empty")) el("empty").style.display = "none";
 
   for (const r of rows) {
-    // brand header row
     if (r.__type === "brandHeader") {
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
@@ -371,7 +368,7 @@ function renderTable(rows) {
   el("crumb").textContent = `Sheet › ${tab}`;
   el("pageTitle").textContent = tab;
 
-  // Optional: show PDF download button if this tab has PDF attached in categories.json
+  // PDF action button (auto show if this tab has PDF attached in categories.json)
   setupPdfDownloadButton(tab);
 
   const all = await loadSheet(tab);
@@ -389,24 +386,19 @@ function renderTable(rows) {
   let query = "";
 
   function apply() {
-    const q = query;
-    const qCompact = normalizeSearchCompact(q);
-    const qTokens = normalizeSearchTokens(q);
-
+    const qCompact = normalizeSearchCompact(query);
+    const qTokens = normalizeSearchTokens(query);
     const isSearching = !!qCompact || qTokens.length > 0;
 
     let rows = all;
 
     if (isSearching) {
-      // search across all brands
       rows = all.filter(r => {
         const hay = `${r.brand || ""} ${r.model || ""}`.toLowerCase();
         const hayCompact = normalizeSearchCompact(hay);
 
         if (qCompact && hayCompact.includes(qCompact)) return true;
-        if (qTokens.length) {
-          return qTokens.every(t => hay.includes(t));
-        }
+        if (qTokens.length) return qTokens.every(t => hay.includes(t));
         return false;
       });
 
@@ -414,23 +406,19 @@ function renderTable(rows) {
       return;
     }
 
-    // not searching -> brand filter
     if (activeBrand !== ALL_BRAND_KEY) {
       rows = all.filter(r => (r.brand || "").trim() === activeBrand);
       renderTable(rows);
     } else {
-      // All -> group by brand preserve sheet order
       renderTable(groupByBrandPreserveSheetOrder(rows));
     }
   }
 
-  // Tabs (render once) => fixes "must click twice"
   renderTabs(brands, activeBrand, (b) => {
     activeBrand = b;
     apply();
   });
 
-  // Search
   el("search").addEventListener("input", (e) => {
     query = e.target.value.trim();
     apply();

@@ -19,25 +19,29 @@
       "titleEN": "Battery Power Up",
       "titleTH": "แบตเตอรี่เพิ่มความจุ",
       "image": "/price-webapp/assets/uploads/images/b2.jpg",
-      "pdf": "pdf/battery-powerup.pdf"
+      "pdf": "pdf/battery-powerup.pdf",
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery%20power%20up"
     },
     {
       "titleEN": "Battery No BSM",
       "titleTH": "แบตเตอรี่ไม่มีขั้ว",
       "image": "/price-webapp/assets/uploads/images/b3.jpg",
-      "pdf": "pdf/battery-no-bsm.pdf"
+      "pdf": "pdf/battery-no-bsm.pdf",
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=No%20BMS"
     },
     {
       "titleEN": "Battery Diagnostics",
       "titleTH": "แบตเตอรี่แจ้งใช้แล้ว",
       "image": "/price-webapp/assets/uploads/images/batt100-.jpg",
-      "pdf": "pdf/battery-diagnostics.pdf"
+      "pdf": "pdf/battery-diagnostics.pdf",
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Batt%20Diagnostics"
     },
     {
       "titleEN": "Battery Genuine",
       "titleTH": "แบตเตอรี่แจ้งของแท้",
       "image": "/price-webapp/assets/uploads/images/batt100-1.jpg",
-      "pdf": "pdf/battery-genuine.pdf"
+      "pdf": "pdf/battery-genuine.pdf",
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Batt%20Diagnostics%20Genuine"
     },
     {
       "titleEN": "Adapter & USB",
@@ -49,7 +53,8 @@
       "titleEN": "LCD Screen",
       "titleTH": "หน้าจอโทรศัพท์",
       "image": "/price-webapp/assets/uploads/images/b8.jpg",
-      "pdf": "/price-webapp/assets/uploads/pdfs/6.ราคาส่ง-lcd-lp.pdf"
+      "pdf": "/price-webapp/assets/uploads/pdfs/6.ราคาส่ง-lcd-lp.pdf",
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=LCD%20Leeplus"
     },
     {
       "titleEN": "Film Protector",

@@ -14,8 +14,8 @@ const GH_BASE = "/price-webapp/";
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
 
-/* ✅ Meta keys (in sheet rows) */
-const META_BRAND = "__META__";
+/* ✅ Meta keys (in sheet rows) — ยืดหยุ่น */
+const META_BRAND_ACCEPT = new Set(["__META__", "__META"]);
 const META_CATEGORY_IMAGE = "__CATEGORY_IMAGE__";
 const META_BRAND_IMAGE = "__BRAND_IMAGE__";
 
@@ -196,19 +196,19 @@ function setupImageModal() {
   const close = el("modalClose");
 
   function hide() {
-    modal.classList.remove("show");
-    modal.setAttribute("aria-hidden", "true");
-    img.src = "";
+    modal?.classList.remove("show");
+    modal?.setAttribute("aria-hidden", "true");
+    if (img) img.src = "";
   }
   function show(src, t) {
-    title.textContent = t || "รูปสินค้า";
-    img.src = src;
-    modal.classList.add("show");
-    modal.setAttribute("aria-hidden", "false");
+    if (title) title.textContent = t || "รูปสินค้า";
+    if (img) img.src = src;
+    modal?.classList.add("show");
+    modal?.setAttribute("aria-hidden", "false");
   }
 
-  close.addEventListener("click", hide);
-  modal.addEventListener("click", (e) => { if (e.target === modal) hide(); });
+  close?.addEventListener("click", hide);
+  modal?.addEventListener("click", (e) => { if (e.target === modal) hide(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
 
   document.addEventListener("click", (e) => {
@@ -230,11 +230,53 @@ function setupImageModal() {
   });
 }
 
-/* ✅ Load sheet and extract:
-   - categoryImageUrl
-   - brandImageMap
-   - product rows (excluding meta rows)
-*/
+/* ✅ ลบ BOM/ช่องว่างพิเศษใน header */
+function cleanHeader(s) {
+  return String(s || "")
+    .replace(/^\uFEFF/, "") // BOM
+    .replace(/\u00A0/g, " ") // nbsp
+    .trim()
+    .toLowerCase();
+}
+
+/* ✅ หา index จาก header, ถ้าไม่เจอ -> fallback ตามตำแหน่ง (0..4) */
+function buildHeaderIndex(headerRow) {
+  const norm = headerRow.map(cleanHeader);
+
+  const idx = {
+    brand: norm.indexOf("brand"),
+    model: norm.indexOf("model"),
+    price: norm.indexOf("price"),
+    image_url: norm.indexOf("image_url"),
+    updated: norm.indexOf("updated"),
+  };
+
+  // fallback alias
+  if (idx.image_url === -1) idx.image_url = norm.indexOf("image url");
+  if (idx.image_url === -1) idx.image_url = norm.indexOf("image");
+
+  const anyMissing = Object.values(idx).some(v => v === -1);
+
+  // ✅ ถ้ายังหาไม่ได้ ให้ fallback แบบ “ตำแหน่งมาตรฐาน” ตามที่พี่จัดแล้ว
+  if (anyMissing) {
+    return {
+      brand: 0,
+      model: 1,
+      price: 2,
+      image_url: 3,
+      updated: 4,
+    };
+  }
+
+  return idx;
+}
+
+function getCell(row, i) {
+  if (i == null || i < 0) return "";
+  return row[i] ?? "";
+}
+
+/* Load sheet and extract meta + data */
 async function loadSheetWithMeta(tab) {
   const url = csvUrlForSheet(tab);
   const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
@@ -244,50 +286,44 @@ async function loadSheetWithMeta(tab) {
   const rows = parseCSV(text);
   if (!rows.length) return { rows: [], categoryImageUrl: "", brandImageMap: new Map() };
 
-  const header = rows[0].map(h => String(h || "").trim());
+  const header = rows[0];
+  const idx = buildHeaderIndex(header);
   const body = rows.slice(1);
 
   const raw = body
     .filter(r => r.some(c => String(c || "").trim() !== ""))
-    .map((r) => {
-      const obj = {};
-      for (let i = 0; i < header.length; i++) obj[header[i]] = r[i] ?? "";
-      return {
-        brand: obj.brand || "",
-        model: obj.model || "",
-        price: obj.price || "",
-        image_url: obj.image_url || "",
-        updated: obj.updated || "",
-      };
-    });
+    .map((r) => ({
+      brand: String(getCell(r, idx.brand) || "").trim(),
+      model: String(getCell(r, idx.model) || "").trim(),
+      price: String(getCell(r, idx.price) || "").trim(),
+      image_url: String(getCell(r, idx.image_url) || "").trim(),
+      updated: String(getCell(r, idx.updated) || "").trim(),
+    }));
 
   let categoryImageUrl = "";
   const brandImageMap = new Map();
 
-  // extract meta
+  // meta extraction
   for (const r of raw) {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
     const img = normalizeImageUrl(r.image_url);
 
-    // category image meta row
-    if (b === META_BRAND && m === META_CATEGORY_IMAGE && img) {
+    if (META_BRAND_ACCEPT.has(b) && m === META_CATEGORY_IMAGE && img) {
       categoryImageUrl = img;
       continue;
     }
-
-    // brand image meta row (brand in r.brand)
     if (m === META_BRAND_IMAGE && b && img) {
       brandImageMap.set(b, img);
       continue;
     }
   }
 
-  // filter out meta rows from products
+  // filter out meta rows
   const products = raw.filter(r => {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
-    if (b === META_BRAND && m === META_CATEGORY_IMAGE) return false;
+    if (META_BRAND_ACCEPT.has(b) && m === META_CATEGORY_IMAGE) return false;
     if (m === META_BRAND_IMAGE) return false;
     return true;
   });
@@ -297,6 +333,7 @@ async function loadSheetWithMeta(tab) {
 
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
+  if (!root) return;
   root.innerHTML = "";
 
   for (const b of brands) {
@@ -305,7 +342,6 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
     btn.className = "pill";
     btn.dataset.key = b.key;
 
-    // ✅ add brand icon in pill (except All)
     if (b.key !== ALL_BRAND_KEY) {
       const img = brandImageMap.get(b.key);
       if (img) {
@@ -334,6 +370,7 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
 
 function renderTable(rows, brandImageMap) {
   const tbody = el("tbody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   if (!rows.length) {
@@ -367,7 +404,6 @@ function renderTable(rows, brandImageMap) {
 
     const productImg = normalizeImageUrl(r.image_url);
 
-    // ✅ rule: show product thumb ONLY if product image_url exists
     const thumbHtml = productImg
       ? `<div class="thumb" tabindex="0" role="button" aria-label="ดูรูป ${escapeHTML(r.model)}"
               data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
@@ -395,21 +431,20 @@ function renderTable(rows, brandImageMap) {
   setupImageModal();
 
   const tab = getParam("tab") || "Battery";
-  el("crumb").textContent = `Sheet › ${tab}`;
-  el("pageTitle").textContent = tab;
+  if (el("crumb")) el("crumb").textContent = `Sheet › ${tab}`;
+  if (el("pageTitle")) el("pageTitle").textContent = tab;
 
   setupPdfDownloadButton(tab);
 
   const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
 
-  // ✅ show category thumbnail if exists
   if (categoryImageUrl && el("catThumb") && el("catThumbImg")) {
     el("catThumbImg").src = categoryImageUrl;
     el("catThumb").style.display = "block";
   }
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
-  el("updateText").textContent = `อัปเดต: ${upd}`;
+  if (el("updateText")) el("updateText").textContent = `อัปเดต: ${upd}`;
 
   const brandNames = uniq(all.map(r => (r.brand || "").trim())).filter(Boolean);
   const brands = [
@@ -443,7 +478,6 @@ function renderTable(rows, brandImageMap) {
 
     if (activeBrand !== ALL_BRAND_KEY) {
       rows = all.filter(r => (r.brand || "").trim() === activeBrand);
-      // ✅ when filtering a single brand, show list as-is (no header rows)
       renderTable(rows, brandImageMap);
     } else {
       renderTable(groupByBrandPreserveSheetOrder(rows), brandImageMap);
@@ -455,7 +489,7 @@ function renderTable(rows, brandImageMap) {
     apply();
   }, brandImageMap);
 
-  el("search").addEventListener("input", (e) => {
+  el("search")?.addEventListener("input", (e) => {
     query = e.target.value.trim();
     apply();
   });

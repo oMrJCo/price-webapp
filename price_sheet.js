@@ -1,9 +1,8 @@
-/* GVIZ_JSON_VERSION: 2026-02-03c (LEEPLUS) ✅
-   FINAL FIX:
-   - Column mapping tolerant (brand/model/price/image_url/updated)
-   - Meta detection: scan whole row for META / CATEGORYIMAGE / BRANDIMAGE
-   - Meta URL extraction: pick first URL from any cell (not only image_url)
-   - Filter meta rows reliably (no more giant logo row)
+/* GVIZ_JSON_VERSION: 2026-02-03d (LEEPLUS) ✅
+   FIX FINAL:
+   - Meta detection: scan whole row for META / CATEGORYIMAGE / BRANDIMAGE (any column)
+   - Brand name extraction for brand-image row: pick best text cell (not url, not meta, not numeric)
+   - Always filter meta rows out (prevents apple.png leaking as product image)
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
@@ -180,7 +179,7 @@ function setupImageModal() {
   });
 }
 
-/* ===== ✅ Meta key: ลบทุกอย่างที่ไม่ใช่ A-Z0-9 ===== */
+/* ===== META ===== */
 function metaKey(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -189,9 +188,53 @@ function metaKey(s) {
     .replace(/[^A-Z0-9]+/g, "");
 }
 
-/* =========================
-   GViz JSON loader
-   ========================= */
+function isProbablyNumber(s) {
+  const t = String(s || "").trim();
+  if (!t) return false;
+  return /^-?\d+(\.\d+)?$/.test(t);
+}
+
+function extractFirstUrlFromRow(values) {
+  for (const v of values) {
+    const s = String(v || "").trim();
+    const u = normalizeImageUrl(s);
+    if (u && isHttpUrl(u)) return u;
+  }
+  return "";
+}
+
+function pickBrandNameFromRow(values) {
+  // เลือก cell ที่ “ดูเป็นชื่อแบรนด์” ที่สุด:
+  // - ไม่ใช่ url
+  // - ไม่ใช่ meta token
+  // - ไม่ใช่ตัวเลขล้วน
+  // - ความยาวสั้นพอควร (กันรุ่นยาว ๆ)
+  const candidates = [];
+  for (const v of values) {
+    const s = String(v || "").trim();
+    if (!s) continue;
+    if (isHttpUrl(normalizeImageUrl(s))) continue;
+    const k = metaKey(s);
+    if (k === "META" || k === "CATEGORYIMAGE" || k === "BRANDIMAGE") continue;
+    if (isProbablyNumber(s)) continue;
+    candidates.push(s);
+  }
+  if (!candidates.length) return "";
+
+  // ให้คะแนน: สั้นกว่าและไม่มี space เยอะ จะได้คะแนนสูงกว่า
+  candidates.sort((a, b) => {
+    const score = (x) => {
+      const len = x.length;
+      const spaces = (x.match(/\s+/g) || []).join("").length;
+      return (spaces * 5) + len;
+    };
+    return score(a) - score(b);
+  });
+
+  return candidates[0].trim();
+}
+
+/* ===== GViz JSON loader ===== */
 function gvizJsonUrl(sheetName) {
   const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
   const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
@@ -219,7 +262,7 @@ function normColName(s) {
     .replace(/\u00A0/g, " ")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ""); // ตัด _ space ออกหมด
+    .replace(/[^a-z0-9]+/g, "");
 }
 
 function pickIndex(cols, candidates) {
@@ -229,15 +272,6 @@ function pickIndex(cols, candidates) {
     if (i !== -1) return i;
   }
   return -1;
-}
-
-function extractFirstUrlFromRow(values) {
-  for (const v of values) {
-    const s = String(v || "").trim();
-    const u = normalizeImageUrl(s);
-    if (u && isHttpUrl(u)) return u;
-  }
-  return "";
 }
 
 async function loadSheetWithMeta(tab) {
@@ -251,7 +285,6 @@ async function loadSheetWithMeta(tab) {
   const cols = Array.isArray(table?.cols) ? table.cols : [];
   const rows = Array.isArray(table?.rows) ? table.rows : [];
 
-  // ✅ mapping ทนทุกชื่อ
   let idx = {
     brand: pickIndex(cols, ["brand", "Brand"]),
     model: pickIndex(cols, ["model", "Model"]),
@@ -259,17 +292,14 @@ async function loadSheetWithMeta(tab) {
     image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
     updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"]),
   };
-
-  // fallback สุดท้าย
   if (Object.values(idx).some(v => v === -1)) idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03c");
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03d");
     console.log("[DEBUG] gviz cols:", cols.map(c => ({ label: c.label, id: c.id, type: c.type })));
     console.log("[DEBUG] idx:", idx);
   }
 
-  // แปลงเป็น rows ปกติ + เก็บ values ทั้งแถวไว้สแกน meta
   const raw = rows.map(r => {
     const c = Array.isArray(r.c) ? r.c : [];
     const allValues = c.map(cellValue).map(s => String(s || "").trim());
@@ -286,48 +316,41 @@ async function loadSheetWithMeta(tab) {
   let categoryImageUrl = "";
   const brandImageMap = new Map();
 
-  // ✅ meta detection: scan both model + whole row
+  // ✅ detect meta rows
   for (const r of raw) {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
     const rowKeys = r.__all.map(metaKey);
 
-    const hasMetaBrand = metaKey(b) === "META" || rowKeys.includes("META");
-    const hasCategoryKey = metaKey(m) === "CATEGORYIMAGE" || rowKeys.includes("CATEGORYIMAGE");
-    const hasBrandKey = metaKey(m) === "BRANDIMAGE" || rowKeys.includes("BRANDIMAGE");
+    const hasMETA = rowKeys.includes("META") || metaKey(b) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(m) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(m) === "BRANDIMAGE" || metaKey(b) === "BRANDIMAGE";
 
-    const imgFromImageCol = normalizeImageUrl(r.image_url);
-    const imgFromAnywhere = extractFirstUrlFromRow(r.__all);
+    const imgFromCol = normalizeImageUrl(r.image_url);
+    const imgAny = extractFirstUrlFromRow(r.__all);
+    const url = imgFromCol || imgAny;
 
-    // category image row
-    if (!categoryImageUrl && hasMetaBrand && hasCategoryKey) {
-      const u = imgFromImageCol || imgFromAnywhere;
-      if (u) categoryImageUrl = u;
+    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) {
+      categoryImageUrl = url;
     }
 
-    // brand image row (brand is brand name)
-    if (hasBrandKey) {
-      const u = imgFromImageCol || imgFromAnywhere;
-      if (b && u) brandImageMap.set(b, u);
+    if (hasBRAND && url) {
+      // brand name อาจอยู่คนละคอลัมน์ → เดาจากทั้งแถว
+      const brandName = (metaKey(b) !== "BRANDIMAGE" && metaKey(b) !== "META" && b) ? b : pickBrandNameFromRow(r.__all);
+      if (brandName) brandImageMap.set(brandName, url);
     }
   }
 
-  // ✅ filter meta rows ออกแบบสแกนทั้งแถว
+  // ✅ filter meta rows out 100%
   const products = raw.filter(r => {
-    const b = (r.brand || "").trim();
-    const m = (r.model || "").trim();
     const rowKeys = r.__all.map(metaKey);
-
-    const isCatMetaRow =
-      (metaKey(b) === "META" && metaKey(m) === "CATEGORYIMAGE") ||
-      (rowKeys.includes("META") && rowKeys.includes("CATEGORYIMAGE"));
-
-    const isBrandMetaRow =
-      (metaKey(m) === "BRANDIMAGE") ||
-      rowKeys.includes("BRANDIMAGE");
-
-    return !(isCatMetaRow || isBrandMetaRow);
-  }).map(({ __all, ...rest }) => rest); // ลบ field internal
+    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    const isCatMeta = hasMETA && hasCATEGORY;
+    const isBrandMeta = hasBRAND;
+    return !(isCatMeta || isBrandMeta);
+  }).map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {
     console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
@@ -386,10 +409,7 @@ function renderTable(rows, brandImageMap) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    if (el("empty")) {
-      el("empty").style.display = "block";
-      el("empty").textContent = "ไม่พบข้อมูล";
-    }
+    if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "ไม่พบข้อมูล"; }
     return;
   }
   if (el("empty")) el("empty").style.display = "none";
@@ -503,8 +523,5 @@ function renderTable(rows, brandImageMap) {
   apply();
 })().catch(err => {
   console.error(err);
-  if (el("empty")) {
-    el("empty").style.display = "block";
-    el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ";
-  }
+  if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ"; }
 });

@@ -83,32 +83,76 @@ async function setupPdfDownloadButton(tabName) {
   }
 }
 
+/* ✅ FIX สำคัญ: parseCSV แบบทน quote ในชื่อรุ่น
+   - quote จะเริ่ม inQuotes เฉพาะเมื่ออยู่ "ต้นฟิลด์"
+   - quote กลางคำ จะถูกมองเป็นตัวอักษรธรรมดา
+*/
 function parseCSV(text) {
   const rows = [];
   let row = [];
   let cur = "";
   let inQuotes = false;
 
+  // true ถ้าเรากำลังอยู่ต้นฟิลด์ (เพิ่งเริ่มบรรทัด หรือเพิ่งผ่าน comma)
+  let atFieldStart = true;
+
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     const next = text[i + 1];
 
-    if (ch === '"' && inQuotes && next === '"') { cur += '"'; i++; continue; }
-    if (ch === '"') { inQuotes = !inQuotes; continue; }
+    // เปิด/ปิด quote เฉพาะกรณีที่ถูกต้อง
+    if (ch === '"') {
+      if (!inQuotes) {
+        // เริ่ม quote เฉพาะตอนอยู่ต้นฟิลด์
+        if (atFieldStart) {
+          inQuotes = true;
+          continue;
+        } else {
+          // quote กลางคำ = ตัวอักษรปกติ
+          cur += ch;
+          atFieldStart = false;
+          continue;
+        }
+      } else {
+        // inQuotes = true
+        if (next === '"') {
+          // escaped quote
+          cur += '"';
+          i++;
+          atFieldStart = false;
+          continue;
+        } else {
+          // ปิด quote
+          inQuotes = false;
+          atFieldStart = false;
+          continue;
+        }
+      }
+    }
 
-    if (ch === "," && !inQuotes) { row.push(cur); cur = ""; continue; }
+    if (ch === "," && !inQuotes) {
+      row.push(cur);
+      cur = "";
+      atFieldStart = true;
+      continue;
+    }
 
     if ((ch === "\n" || ch === "\r") && !inQuotes) {
       if (ch === "\r" && next === "\n") i++;
-      row.push(cur); cur = "";
-      if (row.some(c => c !== "")) rows.push(row);
+      row.push(cur);
+      cur = "";
+      if (row.some(c => String(c).trim() !== "")) rows.push(row);
       row = [];
+      atFieldStart = true;
       continue;
     }
+
     cur += ch;
+    atFieldStart = false;
   }
+
   row.push(cur);
-  if (row.some(c => c !== "")) rows.push(row);
+  if (row.some(c => String(c).trim() !== "")) rows.push(row);
   return rows;
 }
 
@@ -310,18 +354,20 @@ function renderTable(rows, brandImageMap) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "ไม่พบข้อมูล"; }
+    el("empty") && (el("empty").style.display = "block");
     return;
   }
-  if (el("empty")) el("empty").style.display = "none";
+  el("empty") && (el("empty").style.display = "none");
 
   for (const r of rows) {
     if (r.__type === "brandHeader") {
       const b = String(r.brand || "").trim();
       const bimg = brandImageMap.get(b) || "";
+
       const icon = bimg
         ? `<span class="brandImg"><img src="${escapeHTML(bimg)}" alt=""></span>`
         : `<span class="dot"></span>`;
+
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
       tr.innerHTML = `<td colspan="2"><span class="brandHeader">${icon}${escapeHTML(b)}</span></td>`;
@@ -329,9 +375,22 @@ function renderTable(rows, brandImageMap) {
       continue;
     }
 
+    const productImg = normalizeImageUrl(r.image_url);
+    const thumbHtml = productImg
+      ? `<div class="thumb" tabindex="0" role="button"
+              data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
+            <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
+         </div>`
+      : ``;
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><div class="model">${escapeHTML(r.model)}</div></td>
+      <td>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          ${thumbHtml}
+          <div><div class="model">${escapeHTML(r.model)}</div></div>
+        </div>
+      </td>
       <td class="price">${escapeHTML(r.price)} บาท</td>
     `;
     tbody.appendChild(tr);
@@ -349,13 +408,17 @@ function renderTable(rows, brandImageMap) {
 
   const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
 
-  // show category thumb
-  if (categoryImageUrl && el("catThumb") && el("catThumbImg")) {
-    const imgEl = el("catThumbImg");
-    imgEl.onload = () => { el("catThumb").style.display = "block"; };
-    imgEl.onerror = () => { el("catThumb").style.display = "none"; };
-    imgEl.src = categoryImageUrl;
-    el("catThumb").style.display = "block";
+  // รูปหมวด
+  if (el("catThumb") && el("catThumbImg")) {
+    if (categoryImageUrl) {
+      const imgEl = el("catThumbImg");
+      imgEl.onload = () => { el("catThumb").style.display = "block"; };
+      imgEl.onerror = () => { el("catThumb").style.display = "none"; };
+      imgEl.src = categoryImageUrl;
+      el("catThumb").style.display = "block";
+    } else {
+      el("catThumb").style.display = "none";
+    }
   }
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";

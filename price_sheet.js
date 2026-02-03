@@ -1,21 +1,23 @@
 /* =========================
    LEEPLUS Price Sheet POC (FINAL)
-   - All tab (group by brand) + preserve sheet order
-   - Search: flexible (iphone15 / iphone 15 / 15 pro / pro max / ip15)
-   - Search ignores brand filter (search across all brands in this tab)
-   - Tabs: render once, toggle active (fix: no double click needed)
-   - Image popup modal
-   - PDF button: auto show from categories.json (match tab) -> OPEN PDF (not forced download)
-   - UI tweak: remove brand tag under model + hide image box when no image
+   + Category image (meta row in sheet)
+   + Brand image (meta row in sheet)
+   + Product image (same as before)
+   + Fallback: product -> brand -> none
+   + Keep: All tab group by brand, sheet order, search, modal, PDF button
    ========================= */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
-
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
 
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
+
+/* ✅ Meta keys (in sheet rows) */
+const META_BRAND = "__META__";
+const META_CATEGORY_IMAGE = "__CATEGORY_IMAGE__";
+const META_BRAND_IMAGE = "__BRAND_IMAGE__";
 
 function el(id) { return document.getElementById(id); }
 
@@ -126,24 +128,14 @@ function parseCSV(text) {
     const ch = text[i];
     const next = text[i + 1];
 
-    if (ch === '"' && inQuotes && next === '"') {
-      cur += '"';
-      i++;
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-    if (ch === "," && !inQuotes) {
-      row.push(cur);
-      cur = "";
-      continue;
-    }
+    if (ch === '"' && inQuotes && next === '"') { cur += '"'; i++; continue; }
+    if (ch === '"') { inQuotes = !inQuotes; continue; }
+
+    if (ch === "," && !inQuotes) { row.push(cur); cur = ""; continue; }
+
     if ((ch === "\n" || ch === "\r") && !inQuotes) {
       if (ch === "\r" && next === "\n") i++;
-      row.push(cur);
-      cur = "";
+      row.push(cur); cur = "";
       if (row.some(c => c !== "")) rows.push(row);
       row = [];
       continue;
@@ -160,10 +152,7 @@ function uniq(arr) {
   const out = [];
   for (const x of arr) {
     const k = String(x);
-    if (!set.has(k)) {
-      set.add(k);
-      out.push(x);
-    }
+    if (!set.has(k)) { set.add(k); out.push(x); }
   }
   return out;
 }
@@ -174,10 +163,7 @@ function groupByBrandPreserveSheetOrder(rows) {
 
   for (const r of rows) {
     const b = (r.brand || "").trim() || "Unknown";
-    if (!map.has(b)) {
-      map.set(b, []);
-      brandOrder.push(b);
-    }
+    if (!map.has(b)) { map.set(b, []); brandOrder.push(b); }
     map.get(b).push(r);
   }
 
@@ -192,7 +178,6 @@ function groupByBrandPreserveSheetOrder(rows) {
 function normalizeSearchCompact(s) {
   const raw = String(s || "").toLowerCase().trim();
   if (!raw) return "";
-
   if (raw.startsWith("ip") && !raw.startsWith("iphone")) {
     const rest = raw.slice(2);
     return ("iphone" + rest).replace(/[^a-z0-9]+/g, "");
@@ -201,11 +186,7 @@ function normalizeSearchCompact(s) {
 }
 
 function normalizeSearchTokens(s) {
-  return String(s || "")
-    .toLowerCase()
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
 }
 
 function setupImageModal() {
@@ -227,12 +208,8 @@ function setupImageModal() {
   }
 
   close.addEventListener("click", hide);
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) hide();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") hide();
-  });
+  modal.addEventListener("click", (e) => { if (e.target === modal) hide(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
 
   document.addEventListener("click", (e) => {
     const t = e.target.closest(".thumb");
@@ -253,19 +230,24 @@ function setupImageModal() {
   });
 }
 
-async function loadSheet(tab) {
+/* ✅ Load sheet and extract:
+   - categoryImageUrl
+   - brandImageMap
+   - product rows (excluding meta rows)
+*/
+async function loadSheetWithMeta(tab) {
   const url = csvUrlForSheet(tab);
   const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch CSV");
   const text = await res.text();
 
   const rows = parseCSV(text);
-  if (!rows.length) return [];
+  if (!rows.length) return { rows: [], categoryImageUrl: "", brandImageMap: new Map() };
 
   const header = rows[0].map(h => String(h || "").trim());
   const body = rows.slice(1);
 
-  const out = body
+  const raw = body
     .filter(r => r.some(c => String(c || "").trim() !== ""))
     .map((r) => {
       const obj = {};
@@ -279,10 +261,41 @@ async function loadSheet(tab) {
       };
     });
 
-  return out;
+  let categoryImageUrl = "";
+  const brandImageMap = new Map();
+
+  // extract meta
+  for (const r of raw) {
+    const b = (r.brand || "").trim();
+    const m = (r.model || "").trim();
+    const img = normalizeImageUrl(r.image_url);
+
+    // category image meta row
+    if (b === META_BRAND && m === META_CATEGORY_IMAGE && img) {
+      categoryImageUrl = img;
+      continue;
+    }
+
+    // brand image meta row (brand in r.brand)
+    if (m === META_BRAND_IMAGE && b && img) {
+      brandImageMap.set(b, img);
+      continue;
+    }
+  }
+
+  // filter out meta rows from products
+  const products = raw.filter(r => {
+    const b = (r.brand || "").trim();
+    const m = (r.model || "").trim();
+    if (b === META_BRAND && m === META_CATEGORY_IMAGE) return false;
+    if (m === META_BRAND_IMAGE) return false;
+    return true;
+  });
+
+  return { rows: products, categoryImageUrl, brandImageMap };
 }
 
-function renderTabs(brands, activeKey, onSelect) {
+function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
   root.innerHTML = "";
 
@@ -290,8 +303,23 @@ function renderTabs(brands, activeKey, onSelect) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "pill";
-    btn.textContent = b.label;
     btn.dataset.key = b.key;
+
+    // ✅ add brand icon in pill (except All)
+    if (b.key !== ALL_BRAND_KEY) {
+      const img = brandImageMap.get(b.key);
+      if (img) {
+        const wrap = document.createElement("span");
+        wrap.className = "pillImg";
+        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="">`;
+        btn.appendChild(wrap);
+      }
+    }
+
+    const label = document.createElement("span");
+    label.textContent = b.label;
+    btn.appendChild(label);
+
     if (b.key === activeKey) btn.classList.add("active");
 
     btn.addEventListener("click", () => {
@@ -304,7 +332,7 @@ function renderTabs(brands, activeKey, onSelect) {
   }
 }
 
-function renderTable(rows) {
+function renderTable(rows, brandImageMap) {
   const tbody = el("tbody");
   tbody.innerHTML = "";
 
@@ -319,28 +347,34 @@ function renderTable(rows) {
 
   for (const r of rows) {
     if (r.__type === "brandHeader") {
+      const b = String(r.brand || "").trim();
+      const bimg = brandImageMap.get(b) || "";
+
+      const icon = bimg
+        ? `<span class="brandImg"><img src="${escapeHTML(bimg)}" alt=""></span>`
+        : `<span class="dot"></span>`;
+
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
       tr.innerHTML = `
         <td colspan="2">
-          <span class="brandHeader"><span class="dot"></span>${escapeHTML(r.brand)}</span>
+          <span class="brandHeader">${icon}${escapeHTML(b)}</span>
         </td>
       `;
       tbody.appendChild(tr);
       continue;
     }
 
-    const img = normalizeImageUrl(r.image_url);
+    const productImg = normalizeImageUrl(r.image_url);
 
-    // ✅ ไม่มีรูป = ไม่สร้างกล่องรูป
-    const thumbHtml = img
+    // ✅ rule: show product thumb ONLY if product image_url exists
+    const thumbHtml = productImg
       ? `<div class="thumb" tabindex="0" role="button" aria-label="ดูรูป ${escapeHTML(r.model)}"
-              data-full="${escapeHTML(img)}" data-title="${escapeHTML(r.model)}">
-            <img src="${escapeHTML(img)}" alt="${escapeHTML(r.model)}" loading="lazy" />
+              data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
+            <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
          </div>`
       : ``;
 
-    // ✅ เอาหมวด/แท็กออก
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>
@@ -366,7 +400,13 @@ function renderTable(rows) {
 
   setupPdfDownloadButton(tab);
 
-  const all = await loadSheet(tab);
+  const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
+
+  // ✅ show category thumbnail if exists
+  if (categoryImageUrl && el("catThumb") && el("catThumbImg")) {
+    el("catThumbImg").src = categoryImageUrl;
+    el("catThumb").style.display = "block";
+  }
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
   el("updateText").textContent = `อัปเดต: ${upd}`;
@@ -397,22 +437,23 @@ function renderTable(rows) {
         return false;
       });
 
-      renderTable(rows);
+      renderTable(rows, brandImageMap);
       return;
     }
 
     if (activeBrand !== ALL_BRAND_KEY) {
       rows = all.filter(r => (r.brand || "").trim() === activeBrand);
-      renderTable(rows);
+      // ✅ when filtering a single brand, show list as-is (no header rows)
+      renderTable(rows, brandImageMap);
     } else {
-      renderTable(groupByBrandPreserveSheetOrder(rows));
+      renderTable(groupByBrandPreserveSheetOrder(rows), brandImageMap);
     }
   }
 
   renderTabs(brands, activeBrand, (b) => {
     activeBrand = b;
     apply();
-  });
+  }, brandImageMap);
 
   el("search").addEventListener("input", (e) => {
     query = e.target.value.trim();

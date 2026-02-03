@@ -69,7 +69,7 @@
       white-space:nowrap;
     }
 
-    /* ✅ บังคับปุ่มให้หน้าตา “นิ่งทุกเครื่อง” */
+    /* บังคับปุ่มให้หน้าตา “นิ่งทุกเครื่อง” */
     .btn, .pill, button{
       -webkit-appearance: none;
       appearance: none;
@@ -131,6 +131,31 @@
 
     .titlebox{ min-width:0; }
     .crumb{ margin:0; font-size:12px; color:var(--muted); }
+
+    /* ✅ รูปหมวด (Category Image) */
+    .catRow{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      min-width:0;
+    }
+    .catThumb{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+      display:none;
+      flex: 0 0 auto;
+    }
+    .catThumb img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
     h1{
       margin:2px 0 0;
       font-size:24px;
@@ -153,11 +178,8 @@
 
     .hint{ font-size:13px; color:var(--muted); margin:0 0 10px; }
 
-    /* ✅ Search: เพิ่ม icon + ชัดขึ้น */
-    .searchWrap{
-      position:relative;
-      width:100%;
-    }
+    /* Search: icon + ชัดขึ้น */
+    .searchWrap{ position:relative; width:100%; }
     .searchIcon{
       position:absolute;
       left:14px;
@@ -169,22 +191,19 @@
       pointer-events:none;
       opacity:.95;
     }
-
     .search{
       width:100%;
       border-radius:999px;
-      padding:12px 14px 12px 44px; /* ✅ เผื่อที่ให้ไอคอน */
+      padding:12px 14px 12px 44px;
       border:1px solid var(--border2);
-      background: rgba(0,0,0,.30); /* ✅ เข้มขึ้นให้เด่น */
+      background: rgba(0,0,0,.30);
       color:var(--text);
       font-size:14px;
       outline:none;
       box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
       transition: .15s border-color ease, .15s box-shadow ease, .15s background ease;
     }
-    .search::placeholder{
-      color: rgba(255,255,255,.55); /* ✅ placeholder ชัดขึ้น */
-    }
+    .search::placeholder{ color: rgba(255,255,255,.55); }
     .search:focus{
       border-color: rgba(234,179,8,.40);
       box-shadow: 0 0 0 3px rgba(234,179,8,.10);
@@ -199,7 +218,7 @@
       margin-bottom:14px;
     }
 
-    /* ✅ Tabs: บังคับสี/สไตล์ให้เหมือนกันทุกเครื่อง */
+    /* Tabs: สีคงที่ทุกอุปกรณ์ */
     .pill{
       display:inline-flex;
       align-items:center;
@@ -234,6 +253,23 @@
       box-shadow: 0 0 0 2px rgba(234,179,8,.08) inset;
     }
 
+    /* ✅ ไอคอนใน pill (brand image) */
+    .pillImg{
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      background: rgba(0,0,0,.25);
+      flex: 0 0 auto;
+    }
+    .pillImg img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
     table{
       width:100%;
       border-collapse:separate;
@@ -244,7 +280,6 @@
       background: rgba(0,0,0,.18);
       table-layout: fixed;
     }
-
     col.modelCol{ width: calc(100% - var(--priceCol)); }
     col.priceCol{ width: var(--priceCol); }
 
@@ -258,9 +293,7 @@
     }
     thead th:last-child{ text-align:right; }
 
-    tbody tr{
-      background: linear-gradient(180deg, var(--rowbg), var(--rowbg2));
-    }
+    tbody tr{ background: linear-gradient(180deg, var(--rowbg), var(--rowbg2)); }
     tbody tr + tr td{ border-top:1px solid var(--rowline); }
 
     tbody td{
@@ -322,6 +355,23 @@
       border-radius:999px;
       background: rgba(234,179,8,.85);
       box-shadow: 0 0 0 3px rgba(234,179,8,.12);
+    }
+
+    /* ✅ รูปใน Brand Header */
+    .brandImg{
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      overflow:hidden;
+      background: rgba(0,0,0,.25);
+      flex: 0 0 auto;
+    }
+    .brandImg img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
     }
 
     .empty{
@@ -394,28 +444,20 @@
 
     @media (max-width: 560px){
       body{ padding:18px 12px; }
-      .topbar{
-        flex-direction:column;
-        align-items:stretch;
-        gap:10px;
-      }
+      .topbar{ flex-direction:column; align-items:stretch; gap:10px; }
       .left{ width:100%; }
       h1{ font-size:20px; }
-
-      /* actions ชิดขวาเหมือนเดิม */
       .actions{ width:100%; justify-content:flex-end; }
-
       :root{ --priceCol: var(--priceColSm); }
-
       tbody td{ padding:10px 10px; }
       .price{ font-size:15px; }
       .thumb{ width:40px; height:40px; }
       .model{ font-size:15px; }
       .pdfHintLeft{ font-size:12.5px; }
       .pdfHintLeft .arrow{ font-size:15px; }
-
       .search{ padding-left:42px; }
       .searchIcon{ left:13px; }
+      .catThumb{ width:42px; height:42px; border-radius:13px; }
     }
 
     @supports (scrollbar-gutter: stable){
@@ -437,8 +479,14 @@
 
         <div class="titlebox">
           <p class="crumb" id="crumb">Sheet ›</p>
-          <h1 id="pageTitle">กำลังโหลด…</h1>
-          <p class="meta" id="updateText">อัปเดต: -</p>
+
+          <div class="catRow">
+            <div class="catThumb" id="catThumb"><img id="catThumbImg" alt="หมวดสินค้า" /></div>
+            <div style="min-width:0;">
+              <h1 id="pageTitle">กำลังโหลด…</h1>
+              <p class="meta" id="updateText">อัปเดต: -</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -460,8 +508,8 @@
     </div>
 
     <div class="card">
+      <p class="hint">ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้</p>
 
-      <!-- ✅ Search with icon -->
       <div class="searchWrap">
         <svg class="searchIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M10.5 18.5a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" stroke="currentColor" stroke-width="2"/>
@@ -491,7 +539,6 @@
     </div>
   </div>
 
-  <!-- Image modal -->
   <div class="modal" id="imgModal" aria-hidden="true">
     <div class="modalCard" role="dialog" aria-modal="true">
       <div class="modalTop">
@@ -506,7 +553,6 @@
 
   <script src="price_sheet.js"></script>
 
-  <!-- Sync: ให้ hint โผล่เมื่อปุ่ม PDF โผล่ -->
   <script>
     (function () {
       const actions = document.getElementById('actions');

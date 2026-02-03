@@ -14,11 +14,6 @@ const GH_BASE = "/price-webapp/";
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
 
-/* ✅ Meta keys (in sheet rows) — ยืดหยุ่น */
-const META_BRAND_ACCEPT = new Set(["__META__", "__META"]);
-const META_CATEGORY_IMAGE = "__CATEGORY_IMAGE__";
-const META_BRAND_IMAGE = "__BRAND_IMAGE__";
-
 function el(id) { return document.getElementById(id); }
 
 function getParam(name) {
@@ -35,7 +30,7 @@ function csvUrlForSheet(sheetName) {
 function escapeHTML(s) {
   return String(s ?? "")
     .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;") 
+    .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
@@ -230,19 +225,17 @@ function setupImageModal() {
   });
 }
 
-/* ✅ ลบ BOM/ช่องว่างพิเศษใน header */
+/* ===== Header robust ===== */
 function cleanHeader(s) {
   return String(s || "")
-    .replace(/^\uFEFF/, "") // BOM
+    .replace(/^\uFEFF/, "")  // BOM
     .replace(/\u00A0/g, " ") // nbsp
     .trim()
     .toLowerCase();
 }
 
-/* ✅ หา index จาก header, ถ้าไม่เจอ -> fallback ตามตำแหน่ง (0..4) */
 function buildHeaderIndex(headerRow) {
   const norm = headerRow.map(cleanHeader);
-
   const idx = {
     brand: norm.indexOf("brand"),
     model: norm.indexOf("model"),
@@ -250,30 +243,47 @@ function buildHeaderIndex(headerRow) {
     image_url: norm.indexOf("image_url"),
     updated: norm.indexOf("updated"),
   };
-
-  // fallback alias
   if (idx.image_url === -1) idx.image_url = norm.indexOf("image url");
   if (idx.image_url === -1) idx.image_url = norm.indexOf("image");
 
   const anyMissing = Object.values(idx).some(v => v === -1);
-
-  // ✅ ถ้ายังหาไม่ได้ ให้ fallback แบบ “ตำแหน่งมาตรฐาน” ตามที่พี่จัดแล้ว
   if (anyMissing) {
-    return {
-      brand: 0,
-      model: 1,
-      price: 2,
-      image_url: 3,
-      updated: 4,
-    };
+    // fallback standard columns A..E
+    return { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
   }
-
   return idx;
 }
 
 function getCell(row, i) {
   if (i == null || i < 0) return "";
   return row[i] ?? "";
+}
+
+/* ===== Meta robust matching (สำคัญรอบนี้) ===== */
+function metaNorm(s) {
+  // ทำให้เทียบง่าย: ลบช่องว่าง, รวม underscore, uppercase
+  return String(s || "")
+    .replace(/\u00A0/g, " ")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")     // remove spaces
+    .replace(/_+/g, "_");    // collapse underscores
+}
+function metaNormLoose(s) {
+  // แบบหลวม: เอา underscore ออกหมด
+  return metaNorm(s).replaceAll("_", "");
+}
+function isMetaBrand(brand) {
+  const k = metaNormLoose(brand);
+  return k === "META"; // __META__ / __META / ___META___
+}
+function isCategoryImageModel(model) {
+  const k = metaNormLoose(model);
+  return k === "CATEGORYIMAGE"; // __CATEGORY_IMAGE__ ฯลฯ
+}
+function isBrandImageModel(model) {
+  const k = metaNormLoose(model);
+  return k === "BRANDIMAGE"; // __BRAND_IMAGE__ ฯลฯ
 }
 
 /* Load sheet and extract meta + data */
@@ -303,17 +313,18 @@ async function loadSheetWithMeta(tab) {
   let categoryImageUrl = "";
   const brandImageMap = new Map();
 
-  // meta extraction
+  // meta extraction (robust)
   for (const r of raw) {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
     const img = normalizeImageUrl(r.image_url);
 
-    if (META_BRAND_ACCEPT.has(b) && m === META_CATEGORY_IMAGE && img) {
+    if (isMetaBrand(b) && isCategoryImageModel(m) && img) {
       categoryImageUrl = img;
       continue;
     }
-    if (m === META_BRAND_IMAGE && b && img) {
+    if (isBrandImageModel(m) && b && img) {
+      // b = brand name จริง (เช่น iPhone)
       brandImageMap.set(b, img);
       continue;
     }
@@ -323,8 +334,8 @@ async function loadSheetWithMeta(tab) {
   const products = raw.filter(r => {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
-    if (META_BRAND_ACCEPT.has(b) && m === META_CATEGORY_IMAGE) return false;
-    if (m === META_BRAND_IMAGE) return false;
+    if (isMetaBrand(b) && isCategoryImageModel(m)) return false;
+    if (isBrandImageModel(m)) return false;
     return true;
   });
 
@@ -438,8 +449,13 @@ function renderTable(rows, brandImageMap) {
 
   const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
 
+  // ✅ show category thumb
   if (categoryImageUrl && el("catThumb") && el("catThumbImg")) {
-    el("catThumbImg").src = categoryImageUrl;
+    const imgEl = el("catThumbImg");
+    imgEl.onload = () => { el("catThumb").style.display = "block"; };
+    imgEl.onerror = () => { el("catThumb").style.display = "none"; };
+    imgEl.src = categoryImageUrl;
+    // เผื่อ onload ไม่ทัน: แสดงไว้ก่อน ถ้า error ค่อยซ่อน
     el("catThumb").style.display = "block";
   }
 

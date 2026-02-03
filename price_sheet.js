@@ -1,12 +1,6 @@
-/* =========================
-   LEEPLUS Price Sheet POC (FINAL)
-   - Data source: Google Sheet (GViz JSON) ✅ (เลิกใช้ CSV)
-   - Meta rows in sheet:
-     1) brand="__META__", model="__CATEGORY_IMAGE__"  => image_url = category image
-     2) model="__BRAND_IMAGE__" (brand = brand name)  => image_url = brand image
-   - Features: Tabs (brand + All), All grouped by brand, preserve sheet order,
-               search across brands, modal image, PDF button from categories.json
-   ========================= */
+/* GVIZ_JSON_VERSION: 2026-02-03 (LEEPLUS) ✅
+   IMPORTANT: ถ้าเปิด debug=1 ต้องเห็น [DEBUG] gviz cols:
+*/
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
@@ -99,7 +93,7 @@ async function setupPdfDownloadButton(tabName) {
   }
 }
 
-/* ===== Search helpers ===== */
+/* ===== search helpers ===== */
 function uniq(arr) {
   const set = new Set();
   const out = [];
@@ -140,7 +134,7 @@ function normalizeSearchTokens(s) {
   return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
 }
 
-/* ===== Modal ===== */
+/* ===== modal ===== */
 function setupImageModal() {
   const modal = el("imgModal");
   const img = el("modalImg");
@@ -170,19 +164,9 @@ function setupImageModal() {
     const name = t.getAttribute("data-title") || "";
     if (src) show(src, name);
   });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-    const t = e.target.closest(".thumb");
-    if (!t) return;
-    e.preventDefault();
-    const src = t.getAttribute("data-full") || "";
-    const name = t.getAttribute("data-title") || "";
-    if (src) show(src, name);
-  });
 }
 
-/* ===== Meta matching (หลวม) ===== */
+/* ===== meta matching ===== */
 function metaNorm(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -196,32 +180,24 @@ function isMetaBrand(brand) { return metaNormLoose(brand) === "META"; }
 function isCategoryImageModel(model) { return metaNormLoose(model) === "CATEGORYIMAGE"; }
 function isBrandImageModel(model) { return metaNormLoose(model) === "BRANDIMAGE"; }
 
-/* =========================
-   ✅ GViz JSON loader (แทน CSV)
-   ========================= */
+/* ===== GViz JSON loader ===== */
 function gvizJsonUrl(sheetName) {
-  // tqx=out:json จะได้ response แบบ: google.visualization.Query.setResponse({...});
   const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
   const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
   return `${base}?${params.toString()}`;
 }
 
 function parseGvizResponse(text) {
-  // ตัด wrapper "google.visualization.Query.setResponse(" ... ");"
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start < 0 || end < 0 || end <= start) throw new Error("Invalid GViz response");
   return JSON.parse(text.slice(start, end + 1));
 }
 
-function colLabel(c) {
-  // บางที label ว่าง จะมี id แทน
-  return String(c.label || c.id || "").trim();
-}
+function colLabel(c) { return String(c.label || c.id || "").trim(); }
 
 function cellValue(v) {
   if (!v) return "";
-  // gviz cell object: {v:..., f:...}
   if (typeof v.f === "string" && v.f.trim() !== "") return v.f;
   if (v.v == null) return "";
   return String(v.v);
@@ -239,7 +215,7 @@ async function loadSheetWithMeta(tab) {
   const rows = Array.isArray(table?.rows) ? table.rows : [];
 
   const labels = cols.map(colLabel).map(s => s.toLowerCase());
-  const idx = {
+  let idx = {
     brand: labels.indexOf("brand"),
     model: labels.indexOf("model"),
     price: labels.indexOf("price"),
@@ -247,13 +223,12 @@ async function loadSheetWithMeta(tab) {
     updated: labels.indexOf("updated"),
   };
 
-  // fallback ถ้า label หาย
-  const anyMissing = Object.values(idx).some(v => v === -1);
-  if (anyMissing) {
-    idx.brand = 0; idx.model = 1; idx.price = 2; idx.image_url = 3; idx.updated = 4;
+  if (Object.values(idx).some(v => v === -1)) {
+    idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
   }
 
   if (DEBUG) {
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03");
     console.log("[DEBUG] gviz cols:", cols.map(c => ({ label: c.label, id: c.id, type: c.type })));
     console.log("[DEBUG] idx:", idx);
   }
@@ -267,7 +242,7 @@ async function loadSheetWithMeta(tab) {
       image_url: cellValue(c[idx.image_url]).trim(),
       updated: cellValue(c[idx.updated]).trim(),
     };
-  }).filter(r => (r.brand || r.model || r.price || r.image_url || r.updated).trim?.() !== "" || true);
+  });
 
   let categoryImageUrl = "";
   const brandImageMap = new Map();
@@ -276,7 +251,6 @@ async function loadSheetWithMeta(tab) {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
     const img = normalizeImageUrl(r.image_url);
-
     if (isMetaBrand(b) && isCategoryImageModel(m) && img) categoryImageUrl = img;
     if (isBrandImageModel(m) && b && img) brandImageMap.set(b, img);
   }
@@ -298,7 +272,7 @@ async function loadSheetWithMeta(tab) {
   return { rows: products, categoryImageUrl, brandImageMap };
 }
 
-/* ===== Render ===== */
+/* ===== render ===== */
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
   if (!root) return;
@@ -342,10 +316,7 @@ function renderTable(rows, brandImageMap) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    if (el("empty")) {
-      el("empty").style.display = "block";
-      el("empty").textContent = "ไม่พบข้อมูล";
-    }
+    if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "ไม่พบข้อมูล"; }
     return;
   }
   if (el("empty")) el("empty").style.display = "none";
@@ -354,11 +325,9 @@ function renderTable(rows, brandImageMap) {
     if (r.__type === "brandHeader") {
       const b = String(r.brand || "").trim();
       const bimg = brandImageMap.get(b) || "";
-
       const icon = bimg
         ? `<span class="brandImg"><img src="${escapeHTML(bimg)}" alt=""></span>`
         : `<span class="dot"></span>`;
-
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
       tr.innerHTML = `<td colspan="2"><span class="brandHeader">${icon}${escapeHTML(b)}</span></td>`;
@@ -368,9 +337,8 @@ function renderTable(rows, brandImageMap) {
 
     const productImg = normalizeImageUrl(r.image_url);
     const thumbHtml = productImg
-      ? `<div class="thumb" tabindex="0" role="button"
-              data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
-            <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
+      ? `<div class="thumb" tabindex="0" role="button" data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
+           <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
          </div>`
       : ``;
 
@@ -399,7 +367,7 @@ function renderTable(rows, brandImageMap) {
 
   const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
 
-  // รูปหมวด
+  // category thumb
   if (el("catThumb") && el("catThumbImg")) {
     if (categoryImageUrl) {
       const imgEl = el("catThumbImg");
@@ -453,9 +421,5 @@ function renderTable(rows, brandImageMap) {
   apply();
 })().catch(err => {
   console.error(err);
-  if (el("tbody")) el("tbody").innerHTML = "";
-  if (el("empty")) {
-    el("empty").style.display = "block";
-    el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ (เช็ก public / ชื่อแท็บ / SPREADSHEET_ID)";
-  }
+  if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ"; }
 });

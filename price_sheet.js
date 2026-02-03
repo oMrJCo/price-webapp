@@ -1,3 +1,13 @@
+/* =========================
+   LEEPLUS Price Sheet POC (FINAL)
+   - Data source: Google Sheet (GViz JSON) ✅ (เลิกใช้ CSV)
+   - Meta rows in sheet:
+     1) brand="__META__", model="__CATEGORY_IMAGE__"  => image_url = category image
+     2) model="__BRAND_IMAGE__" (brand = brand name)  => image_url = brand image
+   - Features: Tabs (brand + All), All grouped by brand, preserve sheet order,
+               search across brands, modal image, PDF button from categories.json
+   ========================= */
+
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
@@ -9,27 +19,22 @@ function el(id) { return document.getElementById(id); }
 function getParam(name) { return new URL(window.location.href).searchParams.get(name) || ""; }
 const DEBUG = getParam("debug") === "1";
 
-function csvUrlForSheet(sheetName) {
-  const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
-  const params = new URLSearchParams({ tqx: "out:csv", sheet: sheetName });
-  return `${base}?${params.toString()}`;
-}
-
 function escapeHTML(s) {
   return String(s ?? "")
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
+function isHttpUrl(url) { return typeof url === "string" && /^https?:\/\//i.test(url.trim()); }
+
 function normalizeImageUrl(url) {
   const s = (url || "").trim();
   if (!s) return "";
-  if (/^https?:\/\//i.test(s)) return s;
+  if (isHttpUrl(s)) return s;
   if (s.startsWith("/")) return `https://omrjco.github.io${s}`;
   return s;
 }
 
-function isHttpUrl(url) { return typeof url === "string" && /^https?:\/\//i.test(url.trim()); }
 function normalizeMaybeRelativeUrl(url) {
   const u = String(url || "").trim();
   if (!u) return "";
@@ -37,19 +42,27 @@ function normalizeMaybeRelativeUrl(url) {
   if (u.startsWith("/")) return u;
   return GH_BASE + u;
 }
+
 function tryGetTabFromPriceUrl(priceUrl) {
   const s = String(priceUrl || "").trim();
   if (!s) return "";
-  try { return new URL(s, window.location.origin).searchParams.get("tab") || ""; } catch { return ""; }
+  try {
+    const u = new URL(s, window.location.origin);
+    return u.searchParams.get("tab") || "";
+  } catch {
+    return "";
+  }
 }
 
 async function setupPdfDownloadButton(tabName) {
   const btn = el("openPdfBtn");
   if (!btn) return;
   btn.style.display = "none";
+
   try {
     const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) return;
+
     const data = await res.json();
     const cats = Array.isArray(data.categories) ? data.categories : [];
 
@@ -60,11 +73,14 @@ async function setupPdfDownloadButton(tabName) {
     const match = cats.find((c) => {
       const st = String(c.sheetTab || "").trim();
       if (st && st.toLowerCase() === tabLower) return true;
+
       const purl = String(c.price_url || "").trim();
       const t = tryGetTabFromPriceUrl(purl);
       if (t && String(t).trim().toLowerCase() === tabLower) return true;
+
       return false;
     });
+
     if (!match) return;
 
     const pdf = match.pdf || match.pdf_file || "";
@@ -83,79 +99,7 @@ async function setupPdfDownloadButton(tabName) {
   }
 }
 
-/* ✅ FIX สำคัญ: parseCSV แบบทน quote ในชื่อรุ่น
-   - quote จะเริ่ม inQuotes เฉพาะเมื่ออยู่ "ต้นฟิลด์"
-   - quote กลางคำ จะถูกมองเป็นตัวอักษรธรรมดา
-*/
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let cur = "";
-  let inQuotes = false;
-
-  // true ถ้าเรากำลังอยู่ต้นฟิลด์ (เพิ่งเริ่มบรรทัด หรือเพิ่งผ่าน comma)
-  let atFieldStart = true;
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    const next = text[i + 1];
-
-    // เปิด/ปิด quote เฉพาะกรณีที่ถูกต้อง
-    if (ch === '"') {
-      if (!inQuotes) {
-        // เริ่ม quote เฉพาะตอนอยู่ต้นฟิลด์
-        if (atFieldStart) {
-          inQuotes = true;
-          continue;
-        } else {
-          // quote กลางคำ = ตัวอักษรปกติ
-          cur += ch;
-          atFieldStart = false;
-          continue;
-        }
-      } else {
-        // inQuotes = true
-        if (next === '"') {
-          // escaped quote
-          cur += '"';
-          i++;
-          atFieldStart = false;
-          continue;
-        } else {
-          // ปิด quote
-          inQuotes = false;
-          atFieldStart = false;
-          continue;
-        }
-      }
-    }
-
-    if (ch === "," && !inQuotes) {
-      row.push(cur);
-      cur = "";
-      atFieldStart = true;
-      continue;
-    }
-
-    if ((ch === "\n" || ch === "\r") && !inQuotes) {
-      if (ch === "\r" && next === "\n") i++;
-      row.push(cur);
-      cur = "";
-      if (row.some(c => String(c).trim() !== "")) rows.push(row);
-      row = [];
-      atFieldStart = true;
-      continue;
-    }
-
-    cur += ch;
-    atFieldStart = false;
-  }
-
-  row.push(cur);
-  if (row.some(c => String(c).trim() !== "")) rows.push(row);
-  return rows;
-}
-
+/* ===== Search helpers ===== */
 function uniq(arr) {
   const set = new Set();
   const out = [];
@@ -191,8 +135,12 @@ function normalizeSearchCompact(s) {
   }
   return raw.replace(/[^a-z0-9]+/g, "");
 }
-function normalizeSearchTokens(s) { return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean); }
 
+function normalizeSearchTokens(s) {
+  return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
+}
+
+/* ===== Modal ===== */
 function setupImageModal() {
   const modal = el("imgModal");
   const img = el("modalImg");
@@ -222,65 +170,104 @@ function setupImageModal() {
     const name = t.getAttribute("data-title") || "";
     if (src) show(src, name);
   });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target.closest(".thumb");
+    if (!t) return;
+    e.preventDefault();
+    const src = t.getAttribute("data-full") || "";
+    const name = t.getAttribute("data-title") || "";
+    if (src) show(src, name);
+  });
 }
 
-function cleanHeader(s) {
-  return String(s || "").replace(/^\uFEFF/, "").replace(/\u00A0/g, " ").trim().toLowerCase();
-}
-function buildHeaderIndex(headerRow) {
-  const norm = headerRow.map(cleanHeader);
-  const idx = {
-    brand: norm.indexOf("brand"),
-    model: norm.indexOf("model"),
-    price: norm.indexOf("price"),
-    image_url: norm.indexOf("image_url"),
-    updated: norm.indexOf("updated"),
-  };
-  if (idx.image_url === -1) idx.image_url = norm.indexOf("image url");
-  if (idx.image_url === -1) idx.image_url = norm.indexOf("image");
-
-  const anyMissing = Object.values(idx).some(v => v === -1);
-  if (anyMissing) return { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
-  return idx;
-}
-function getCell(row, i) { return (i == null || i < 0) ? "" : (row[i] ?? ""); }
-
-/* meta matching หลวม */
+/* ===== Meta matching (หลวม) ===== */
 function metaNorm(s) {
-  return String(s || "").replace(/\u00A0/g, " ").trim().toUpperCase().replace(/\s+/g, "").replace(/_+/g, "_");
+  return String(s || "")
+    .replace(/\u00A0/g, " ")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/_+/g, "_");
 }
 function metaNormLoose(s) { return metaNorm(s).replaceAll("_", ""); }
 function isMetaBrand(brand) { return metaNormLoose(brand) === "META"; }
 function isCategoryImageModel(model) { return metaNormLoose(model) === "CATEGORYIMAGE"; }
 function isBrandImageModel(model) { return metaNormLoose(model) === "BRANDIMAGE"; }
 
+/* =========================
+   ✅ GViz JSON loader (แทน CSV)
+   ========================= */
+function gvizJsonUrl(sheetName) {
+  // tqx=out:json จะได้ response แบบ: google.visualization.Query.setResponse({...});
+  const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
+  const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
+  return `${base}?${params.toString()}`;
+}
+
+function parseGvizResponse(text) {
+  // ตัด wrapper "google.visualization.Query.setResponse(" ... ");"
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end < 0 || end <= start) throw new Error("Invalid GViz response");
+  return JSON.parse(text.slice(start, end + 1));
+}
+
+function colLabel(c) {
+  // บางที label ว่าง จะมี id แทน
+  return String(c.label || c.id || "").trim();
+}
+
+function cellValue(v) {
+  if (!v) return "";
+  // gviz cell object: {v:..., f:...}
+  if (typeof v.f === "string" && v.f.trim() !== "") return v.f;
+  if (v.v == null) return "";
+  return String(v.v);
+}
+
 async function loadSheetWithMeta(tab) {
-  const url = csvUrlForSheet(tab);
+  const url = gvizJsonUrl(tab);
   const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch CSV");
+  if (!res.ok) throw new Error("Failed to fetch GViz JSON");
   const text = await res.text();
 
-  const rows = parseCSV(text);
-  if (!rows.length) return { rows: [], categoryImageUrl: "", brandImageMap: new Map() };
+  const json = parseGvizResponse(text);
+  const table = json?.table;
+  const cols = Array.isArray(table?.cols) ? table.cols : [];
+  const rows = Array.isArray(table?.rows) ? table.rows : [];
 
-  const header = rows[0];
-  const idx = buildHeaderIndex(header);
-  const body = rows.slice(1);
+  const labels = cols.map(colLabel).map(s => s.toLowerCase());
+  const idx = {
+    brand: labels.indexOf("brand"),
+    model: labels.indexOf("model"),
+    price: labels.indexOf("price"),
+    image_url: labels.indexOf("image_url"),
+    updated: labels.indexOf("updated"),
+  };
 
-  if (DEBUG) {
-    console.log("[DEBUG] header raw:", header);
-    console.log("[DEBUG] header idx:", idx);
+  // fallback ถ้า label หาย
+  const anyMissing = Object.values(idx).some(v => v === -1);
+  if (anyMissing) {
+    idx.brand = 0; idx.model = 1; idx.price = 2; idx.image_url = 3; idx.updated = 4;
   }
 
-  const raw = body
-    .filter(r => r.some(c => String(c || "").trim() !== ""))
-    .map((r) => ({
-      brand: String(getCell(r, idx.brand) || "").trim(),
-      model: String(getCell(r, idx.model) || "").trim(),
-      price: String(getCell(r, idx.price) || "").trim(),
-      image_url: String(getCell(r, idx.image_url) || "").trim(),
-      updated: String(getCell(r, idx.updated) || "").trim(),
-    }));
+  if (DEBUG) {
+    console.log("[DEBUG] gviz cols:", cols.map(c => ({ label: c.label, id: c.id, type: c.type })));
+    console.log("[DEBUG] idx:", idx);
+  }
+
+  const raw = rows.map(r => {
+    const c = Array.isArray(r.c) ? r.c : [];
+    return {
+      brand: cellValue(c[idx.brand]).trim(),
+      model: cellValue(c[idx.model]).trim(),
+      price: cellValue(c[idx.price]).trim(),
+      image_url: cellValue(c[idx.image_url]).trim(),
+      updated: cellValue(c[idx.updated]).trim(),
+    };
+  }).filter(r => (r.brand || r.model || r.price || r.image_url || r.updated).trim?.() !== "" || true);
 
   let categoryImageUrl = "";
   const brandImageMap = new Map();
@@ -311,6 +298,7 @@ async function loadSheetWithMeta(tab) {
   return { rows: products, categoryImageUrl, brandImageMap };
 }
 
+/* ===== Render ===== */
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
   if (!root) return;
@@ -354,10 +342,13 @@ function renderTable(rows, brandImageMap) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    el("empty") && (el("empty").style.display = "block");
+    if (el("empty")) {
+      el("empty").style.display = "block";
+      el("empty").textContent = "ไม่พบข้อมูล";
+    }
     return;
   }
-  el("empty") && (el("empty").style.display = "none");
+  if (el("empty")) el("empty").style.display = "none";
 
   for (const r of rows) {
     if (r.__type === "brandHeader") {
@@ -460,4 +451,11 @@ function renderTable(rows, brandImageMap) {
   renderTabs(brands, activeBrand, (b) => { activeBrand = b; apply(); }, brandImageMap);
   el("search")?.addEventListener("input", (e) => { query = e.target.value.trim(); apply(); });
   apply();
-})().catch(err => console.error(err));
+})().catch(err => {
+  console.error(err);
+  if (el("tbody")) el("tbody").innerHTML = "";
+  if (el("empty")) {
+    el("empty").style.display = "block";
+    el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ (เช็ก public / ชื่อแท็บ / SPREADSHEET_ID)";
+  }
+});

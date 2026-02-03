@@ -1,5 +1,8 @@
-/* GVIZ_JSON_VERSION: 2026-02-03 (LEEPLUS) ✅
-   IMPORTANT: ถ้าเปิด debug=1 ต้องเห็น [DEBUG] gviz cols:
+/* GVIZ_JSON_VERSION: 2026-02-03b (LEEPLUS) ✅
+   FIX:
+   - Meta keys tolerant: "__BRAND_IMAGE__;" "__CATEGORY_IMAGE__ " etc.
+   - Filter meta rows correctly (no more giant apple row)
+   - Thumbnail has inline size to avoid CSS missing (.thumb)
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
@@ -93,7 +96,7 @@ async function setupPdfDownloadButton(tabName) {
   }
 }
 
-/* ===== search helpers ===== */
+/* ===== helpers ===== */
 function uniq(arr) {
   const set = new Set();
   const out = [];
@@ -164,21 +167,32 @@ function setupImageModal() {
     const name = t.getAttribute("data-title") || "";
     if (src) show(src, name);
   });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target.closest(".thumb");
+    if (!t) return;
+    e.preventDefault();
+    const src = t.getAttribute("data-full") || "";
+    const name = t.getAttribute("data-title") || "";
+    if (src) show(src, name);
+  });
 }
 
-/* ===== meta matching ===== */
-function metaNorm(s) {
+/* ===== ✅ Meta matching (แข็งแรงสุด) =====
+   ลบทุกอย่างที่ไม่ใช่ A-Z0-9 ก่อนเทียบ
+   "__BRAND_IMAGE__;" -> "BRANDIMAGE"
+*/
+function metaKey(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
     .trim()
     .toUpperCase()
-    .replace(/\s+/g, "")
-    .replace(/_+/g, "_");
+    .replace(/[^A-Z0-9]+/g, ""); // เอาเฉพาะ A-Z0-9
 }
-function metaNormLoose(s) { return metaNorm(s).replaceAll("_", ""); }
-function isMetaBrand(brand) { return metaNormLoose(brand) === "META"; }
-function isCategoryImageModel(model) { return metaNormLoose(model) === "CATEGORYIMAGE"; }
-function isBrandImageModel(model) { return metaNormLoose(model) === "BRANDIMAGE"; }
+function isMetaBrand(brand) { return metaKey(brand) === "META"; }
+function isCategoryImageModel(model) { return metaKey(model) === "CATEGORYIMAGE"; }
+function isBrandImageModel(model) { return metaKey(model) === "BRANDIMAGE"; }
 
 /* ===== GViz JSON loader ===== */
 function gvizJsonUrl(sheetName) {
@@ -222,13 +236,10 @@ async function loadSheetWithMeta(tab) {
     image_url: labels.indexOf("image_url"),
     updated: labels.indexOf("updated"),
   };
-
-  if (Object.values(idx).some(v => v === -1)) {
-    idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
-  }
+  if (Object.values(idx).some(v => v === -1)) idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03");
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03b");
     console.log("[DEBUG] gviz cols:", cols.map(c => ({ label: c.label, id: c.id, type: c.type })));
     console.log("[DEBUG] idx:", idx);
   }
@@ -251,10 +262,12 @@ async function loadSheetWithMeta(tab) {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
     const img = normalizeImageUrl(r.image_url);
+
     if (isMetaBrand(b) && isCategoryImageModel(m) && img) categoryImageUrl = img;
     if (isBrandImageModel(m) && b && img) brandImageMap.set(b, img);
   }
 
+  // ✅ filter meta rows ออก (กันแถว apple หลุด)
   const products = raw.filter(r => {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
@@ -264,6 +277,11 @@ async function loadSheetWithMeta(tab) {
   });
 
   if (DEBUG) {
+    console.log("[DEBUG] metaKey examples:", {
+      brand_meta: metaKey("__META__"),
+      model_cat: metaKey("__CATEGORY_IMAGE__"),
+      model_brand: metaKey("__BRAND_IMAGE__;")
+    });
     console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
     console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
     console.log("[DEBUG] first 5 rows:", products.slice(0, 5));
@@ -287,9 +305,11 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
     if (b.key !== ALL_BRAND_KEY) {
       const img = brandImageMap.get(b.key);
       if (img) {
+        // ✅ inline style กัน CSS ไม่ครบ
         const wrap = document.createElement("span");
         wrap.className = "pillImg";
-        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="">`;
+        wrap.style.cssText = "width:18px;height:18px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;";
+        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
         btn.appendChild(wrap);
       }
     }
@@ -316,7 +336,10 @@ function renderTable(rows, brandImageMap) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "ไม่พบข้อมูล"; }
+    if (el("empty")) {
+      el("empty").style.display = "block";
+      el("empty").textContent = "ไม่พบข้อมูล";
+    }
     return;
   }
   if (el("empty")) el("empty").style.display = "none";
@@ -325,20 +348,34 @@ function renderTable(rows, brandImageMap) {
     if (r.__type === "brandHeader") {
       const b = String(r.brand || "").trim();
       const bimg = brandImageMap.get(b) || "";
-      const icon = bimg
-        ? `<span class="brandImg"><img src="${escapeHTML(bimg)}" alt=""></span>`
-        : `<span class="dot"></span>`;
+
+      let iconHtml = `<span class="dot"></span>`;
+      if (bimg) {
+        iconHtml = `
+          <span class="brandImg" style="width:20px;height:20px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;">
+            <img src="${escapeHTML(bimg)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </span>`;
+      }
+
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
-      tr.innerHTML = `<td colspan="2"><span class="brandHeader">${icon}${escapeHTML(b)}</span></td>`;
+      tr.innerHTML = `
+        <td colspan="2">
+          <span class="brandHeader">${iconHtml}${escapeHTML(b)}</span>
+        </td>`;
       tbody.appendChild(tr);
       continue;
     }
 
     const productImg = normalizeImageUrl(r.image_url);
+
+    // ✅ inline size กันรูปใหญ่
     const thumbHtml = productImg
-      ? `<div class="thumb" tabindex="0" role="button" data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
-           <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
+      ? `<div class="thumb" tabindex="0" role="button"
+              data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}"
+              style="width:54px;height:54px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);flex:0 0 auto;cursor:pointer;">
+            <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy"
+                 style="width:100%;height:100%;object-fit:cover;display:block;" />
          </div>`
       : ``;
 
@@ -421,5 +458,8 @@ function renderTable(rows, brandImageMap) {
   apply();
 })().catch(err => {
   console.error(err);
-  if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ"; }
+  if (el("empty")) {
+    el("empty").style.display = "block";
+    el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ";
+  }
 });

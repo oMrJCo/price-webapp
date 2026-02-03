@@ -1,8 +1,9 @@
-/* GVIZ_JSON_VERSION: 2026-02-03b (LEEPLUS) ✅
-   FIX:
-   - Meta keys tolerant: "__BRAND_IMAGE__;" "__CATEGORY_IMAGE__ " etc.
-   - Filter meta rows correctly (no more giant apple row)
-   - Thumbnail has inline size to avoid CSS missing (.thumb)
+/* GVIZ_JSON_VERSION: 2026-02-03c (LEEPLUS) ✅
+   FINAL FIX:
+   - Column mapping tolerant (brand/model/price/image_url/updated)
+   - Meta detection: scan whole row for META / CATEGORYIMAGE / BRANDIMAGE
+   - Meta URL extraction: pick first URL from any cell (not only image_url)
+   - Filter meta rows reliably (no more giant logo row)
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
@@ -179,22 +180,18 @@ function setupImageModal() {
   });
 }
 
-/* ===== ✅ Meta matching (แข็งแรงสุด) =====
-   ลบทุกอย่างที่ไม่ใช่ A-Z0-9 ก่อนเทียบ
-   "__BRAND_IMAGE__;" -> "BRANDIMAGE"
-*/
+/* ===== ✅ Meta key: ลบทุกอย่างที่ไม่ใช่ A-Z0-9 ===== */
 function metaKey(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, ""); // เอาเฉพาะ A-Z0-9
+    .replace(/[^A-Z0-9]+/g, "");
 }
-function isMetaBrand(brand) { return metaKey(brand) === "META"; }
-function isCategoryImageModel(model) { return metaKey(model) === "CATEGORYIMAGE"; }
-function isBrandImageModel(model) { return metaKey(model) === "BRANDIMAGE"; }
 
-/* ===== GViz JSON loader ===== */
+/* =========================
+   GViz JSON loader
+   ========================= */
 function gvizJsonUrl(sheetName) {
   const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
   const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
@@ -217,6 +214,32 @@ function cellValue(v) {
   return String(v.v);
 }
 
+function normColName(s) {
+  return String(s || "")
+    .replace(/\u00A0/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ""); // ตัด _ space ออกหมด
+}
+
+function pickIndex(cols, candidates) {
+  const names = cols.map(c => normColName(colLabel(c)));
+  for (const cand of candidates) {
+    const i = names.indexOf(normColName(cand));
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+function extractFirstUrlFromRow(values) {
+  for (const v of values) {
+    const s = String(v || "").trim();
+    const u = normalizeImageUrl(s);
+    if (u && isHttpUrl(u)) return u;
+  }
+  return "";
+}
+
 async function loadSheetWithMeta(tab) {
   const url = gvizJsonUrl(tab);
   const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
@@ -228,60 +251,85 @@ async function loadSheetWithMeta(tab) {
   const cols = Array.isArray(table?.cols) ? table.cols : [];
   const rows = Array.isArray(table?.rows) ? table.rows : [];
 
-  const labels = cols.map(colLabel).map(s => s.toLowerCase());
+  // ✅ mapping ทนทุกชื่อ
   let idx = {
-    brand: labels.indexOf("brand"),
-    model: labels.indexOf("model"),
-    price: labels.indexOf("price"),
-    image_url: labels.indexOf("image_url"),
-    updated: labels.indexOf("updated"),
+    brand: pickIndex(cols, ["brand", "Brand"]),
+    model: pickIndex(cols, ["model", "Model"]),
+    price: pickIndex(cols, ["price", "Price"]),
+    image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
+    updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"]),
   };
+
+  // fallback สุดท้าย
   if (Object.values(idx).some(v => v === -1)) idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03b");
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03c");
     console.log("[DEBUG] gviz cols:", cols.map(c => ({ label: c.label, id: c.id, type: c.type })));
     console.log("[DEBUG] idx:", idx);
   }
 
+  // แปลงเป็น rows ปกติ + เก็บ values ทั้งแถวไว้สแกน meta
   const raw = rows.map(r => {
     const c = Array.isArray(r.c) ? r.c : [];
+    const allValues = c.map(cellValue).map(s => String(s || "").trim());
     return {
-      brand: cellValue(c[idx.brand]).trim(),
-      model: cellValue(c[idx.model]).trim(),
-      price: cellValue(c[idx.price]).trim(),
-      image_url: cellValue(c[idx.image_url]).trim(),
-      updated: cellValue(c[idx.updated]).trim(),
+      brand: String(cellValue(c[idx.brand]) || "").trim(),
+      model: String(cellValue(c[idx.model]) || "").trim(),
+      price: String(cellValue(c[idx.price]) || "").trim(),
+      image_url: String(cellValue(c[idx.image_url]) || "").trim(),
+      updated: String(cellValue(c[idx.updated]) || "").trim(),
+      __all: allValues
     };
   });
 
   let categoryImageUrl = "";
   const brandImageMap = new Map();
 
+  // ✅ meta detection: scan both model + whole row
   for (const r of raw) {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
-    const img = normalizeImageUrl(r.image_url);
+    const rowKeys = r.__all.map(metaKey);
 
-    if (isMetaBrand(b) && isCategoryImageModel(m) && img) categoryImageUrl = img;
-    if (isBrandImageModel(m) && b && img) brandImageMap.set(b, img);
+    const hasMetaBrand = metaKey(b) === "META" || rowKeys.includes("META");
+    const hasCategoryKey = metaKey(m) === "CATEGORYIMAGE" || rowKeys.includes("CATEGORYIMAGE");
+    const hasBrandKey = metaKey(m) === "BRANDIMAGE" || rowKeys.includes("BRANDIMAGE");
+
+    const imgFromImageCol = normalizeImageUrl(r.image_url);
+    const imgFromAnywhere = extractFirstUrlFromRow(r.__all);
+
+    // category image row
+    if (!categoryImageUrl && hasMetaBrand && hasCategoryKey) {
+      const u = imgFromImageCol || imgFromAnywhere;
+      if (u) categoryImageUrl = u;
+    }
+
+    // brand image row (brand is brand name)
+    if (hasBrandKey) {
+      const u = imgFromImageCol || imgFromAnywhere;
+      if (b && u) brandImageMap.set(b, u);
+    }
   }
 
-  // ✅ filter meta rows ออก (กันแถว apple หลุด)
+  // ✅ filter meta rows ออกแบบสแกนทั้งแถว
   const products = raw.filter(r => {
     const b = (r.brand || "").trim();
     const m = (r.model || "").trim();
-    if (isMetaBrand(b) && isCategoryImageModel(m)) return false;
-    if (isBrandImageModel(m)) return false;
-    return true;
-  });
+    const rowKeys = r.__all.map(metaKey);
+
+    const isCatMetaRow =
+      (metaKey(b) === "META" && metaKey(m) === "CATEGORYIMAGE") ||
+      (rowKeys.includes("META") && rowKeys.includes("CATEGORYIMAGE"));
+
+    const isBrandMetaRow =
+      (metaKey(m) === "BRANDIMAGE") ||
+      rowKeys.includes("BRANDIMAGE");
+
+    return !(isCatMetaRow || isBrandMetaRow);
+  }).map(({ __all, ...rest }) => rest); // ลบ field internal
 
   if (DEBUG) {
-    console.log("[DEBUG] metaKey examples:", {
-      brand_meta: metaKey("__META__"),
-      model_cat: metaKey("__CATEGORY_IMAGE__"),
-      model_brand: metaKey("__BRAND_IMAGE__;")
-    });
     console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
     console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
     console.log("[DEBUG] first 5 rows:", products.slice(0, 5));
@@ -305,11 +353,13 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
     if (b.key !== ALL_BRAND_KEY) {
       const img = brandImageMap.get(b.key);
       if (img) {
-        // ✅ inline style กัน CSS ไม่ครบ
         const wrap = document.createElement("span");
         wrap.className = "pillImg";
-        wrap.style.cssText = "width:18px;height:18px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;";
-        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+        wrap.style.cssText =
+          "width:18px;height:18px;border-radius:999px;overflow:hidden;" +
+          "border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;";
+        wrap.innerHTML =
+          `<img src="${escapeHTML(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
         btn.appendChild(wrap);
       }
     }
@@ -351,25 +401,20 @@ function renderTable(rows, brandImageMap) {
 
       let iconHtml = `<span class="dot"></span>`;
       if (bimg) {
-        iconHtml = `
-          <span class="brandImg" style="width:20px;height:20px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;">
-            <img src="${escapeHTML(bimg)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
-          </span>`;
+        iconHtml =
+          `<span class="brandImg" style="width:20px;height:20px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;">` +
+          `<img src="${escapeHTML(bimg)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">` +
+          `</span>`;
       }
 
       const tr = document.createElement("tr");
       tr.className = "brandHeaderRow";
-      tr.innerHTML = `
-        <td colspan="2">
-          <span class="brandHeader">${iconHtml}${escapeHTML(b)}</span>
-        </td>`;
+      tr.innerHTML = `<td colspan="2"><span class="brandHeader">${iconHtml}${escapeHTML(b)}</span></td>`;
       tbody.appendChild(tr);
       continue;
     }
 
     const productImg = normalizeImageUrl(r.image_url);
-
-    // ✅ inline size กันรูปใหญ่
     const thumbHtml = productImg
       ? `<div class="thumb" tabindex="0" role="button"
               data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}"

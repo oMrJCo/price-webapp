@@ -35,7 +35,7 @@ function csvUrlForSheet(sheetName) {
 function escapeHTML(s) {
   return String(s ?? "")
     .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
+    .replaceAll("<","&lt;") 
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");

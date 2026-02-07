@@ -1,8 +1,7 @@
-/* GVIZ_JSON_VERSION: 2026-02-03d (LEEPLUS) ✅
-   FIX FINAL:
-   - Meta detection: scan whole row for META / CATEGORYIMAGE / BRANDIMAGE (any column)
-   - Brand name extraction for brand-image row: pick best text cell (not url, not meta, not numeric)
-   - Always filter meta rows out (prevents apple.png leaking as product image)
+/* GVIZ_JSON_VERSION: 2026-02-03e (LEEPLUS) ✅
+   + Category layout polish:
+   - show category thumb bubble
+   - set header blurred background via CSS var (--cat-bg-url)
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
@@ -21,7 +20,6 @@ function escapeHTML(s) {
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
-
 function isHttpUrl(url) { return typeof url === "string" && /^https?:\/\//i.test(url.trim()); }
 
 function normalizeImageUrl(url) {
@@ -53,8 +51,10 @@ function tryGetTabFromPriceUrl(priceUrl) {
 
 async function setupPdfDownloadButton(tabName) {
   const btn = el("openPdfBtn");
+  const hint = el("pdfHint");
   if (!btn) return;
   btn.style.display = "none";
+  if (hint) hint.style.display = "none";
 
   try {
     const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, { cache: "no-store" });
@@ -91,6 +91,7 @@ async function setupPdfDownloadButton(tabName) {
     btn.rel = "noopener";
     btn.removeAttribute("download");
     btn.style.display = "inline-flex";
+    if (hint) hint.style.display = "inline-flex";
   } catch (e) {
     console.warn("setupPdfDownloadButton failed:", e);
   }
@@ -187,13 +188,6 @@ function metaKey(s) {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "");
 }
-
-function isProbablyNumber(s) {
-  const t = String(s || "").trim();
-  if (!t) return false;
-  return /^-?\d+(\.\d+)?$/.test(t);
-}
-
 function extractFirstUrlFromRow(values) {
   for (const v of values) {
     const s = String(v || "").trim();
@@ -202,13 +196,12 @@ function extractFirstUrlFromRow(values) {
   }
   return "";
 }
-
+function isProbablyNumber(s) {
+  const t = String(s || "").trim();
+  if (!t) return false;
+  return /^-?\d+(\.\d+)?$/.test(t);
+}
 function pickBrandNameFromRow(values) {
-  // เลือก cell ที่ “ดูเป็นชื่อแบรนด์” ที่สุด:
-  // - ไม่ใช่ url
-  // - ไม่ใช่ meta token
-  // - ไม่ใช่ตัวเลขล้วน
-  // - ความยาวสั้นพอควร (กันรุ่นยาว ๆ)
   const candidates = [];
   for (const v of values) {
     const s = String(v || "").trim();
@@ -220,43 +213,29 @@ function pickBrandNameFromRow(values) {
     candidates.push(s);
   }
   if (!candidates.length) return "";
-
-  // ให้คะแนน: สั้นกว่าและไม่มี space เยอะ จะได้คะแนนสูงกว่า
-  candidates.sort((a, b) => {
-    const score = (x) => {
-      const len = x.length;
-      const spaces = (x.match(/\s+/g) || []).join("").length;
-      return (spaces * 5) + len;
-    };
-    return score(a) - score(b);
-  });
-
+  candidates.sort((a,b) => (a.length + (a.match(/\s/g)?.length||0)*5) - (b.length + (b.match(/\s/g)?.length||0)*5));
   return candidates[0].trim();
 }
 
-/* ===== GViz JSON loader ===== */
+/* ===== GViz ===== */
 function gvizJsonUrl(sheetName) {
   const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
   const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
   return `${base}?${params.toString()}`;
 }
-
 function parseGvizResponse(text) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start < 0 || end < 0 || end <= start) throw new Error("Invalid GViz response");
   return JSON.parse(text.slice(start, end + 1));
 }
-
 function colLabel(c) { return String(c.label || c.id || "").trim(); }
-
 function cellValue(v) {
   if (!v) return "";
   if (typeof v.f === "string" && v.f.trim() !== "") return v.f;
   if (v.v == null) return "";
   return String(v.v);
 }
-
 function normColName(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -264,7 +243,6 @@ function normColName(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "");
 }
-
 function pickIndex(cols, candidates) {
   const names = cols.map(c => normColName(colLabel(c)));
   for (const cand of candidates) {
@@ -294,12 +272,6 @@ async function loadSheetWithMeta(tab) {
   };
   if (Object.values(idx).some(v => v === -1)) idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
 
-  if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03d");
-    console.log("[DEBUG] gviz cols:", cols.map(c => ({ label: c.label, id: c.id, type: c.type })));
-    console.log("[DEBUG] idx:", idx);
-  }
-
   const raw = rows.map(r => {
     const c = Array.isArray(r.c) ? r.c : [];
     const allValues = c.map(cellValue).map(s => String(s || "").trim());
@@ -316,46 +288,36 @@ async function loadSheetWithMeta(tab) {
   let categoryImageUrl = "";
   const brandImageMap = new Map();
 
-  // ✅ detect meta rows
   for (const r of raw) {
-    const b = (r.brand || "").trim();
-    const m = (r.model || "").trim();
     const rowKeys = r.__all.map(metaKey);
 
-    const hasMETA = rowKeys.includes("META") || metaKey(b) === "META";
-    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(m) === "CATEGORYIMAGE";
-    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(m) === "BRANDIMAGE" || metaKey(b) === "BRANDIMAGE";
+    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
 
-    const imgFromCol = normalizeImageUrl(r.image_url);
-    const imgAny = extractFirstUrlFromRow(r.__all);
-    const url = imgFromCol || imgAny;
+    const url = normalizeImageUrl(r.image_url) || extractFirstUrlFromRow(r.__all);
 
-    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) {
-      categoryImageUrl = url;
-    }
+    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) categoryImageUrl = url;
 
     if (hasBRAND && url) {
-      // brand name อาจอยู่คนละคอลัมน์ → เดาจากทั้งแถว
-      const brandName = (metaKey(b) !== "BRANDIMAGE" && metaKey(b) !== "META" && b) ? b : pickBrandNameFromRow(r.__all);
-      if (brandName) brandImageMap.set(brandName, url);
+      const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand) ? r.brand : pickBrandNameFromRow(r.__all);
+      if (b) brandImageMap.set(b, url);
     }
   }
 
-  // ✅ filter meta rows out 100%
   const products = raw.filter(r => {
     const rowKeys = r.__all.map(metaKey);
     const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
     const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
     const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
-    const isCatMeta = hasMETA && hasCATEGORY;
-    const isBrandMeta = hasBRAND;
-    return !(isCatMeta || isBrandMeta);
+    return !((hasMETA && hasCATEGORY) || hasBRAND);
   }).map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03e");
+    console.log("[DEBUG] idx:", idx);
     console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
     console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
-    console.log("[DEBUG] first 5 rows:", products.slice(0, 5));
   }
 
   return { rows: products, categoryImageUrl, brandImageMap };
@@ -377,12 +339,9 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
       const img = brandImageMap.get(b.key);
       if (img) {
         const wrap = document.createElement("span");
-        wrap.className = "pillImg";
         wrap.style.cssText =
-          "width:18px;height:18px;border-radius:999px;overflow:hidden;" +
-          "border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;";
-        wrap.innerHTML =
-          `<img src="${escapeHTML(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+          "width:18px;height:18px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;";
+        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
         btn.appendChild(wrap);
       }
     }
@@ -421,10 +380,10 @@ function renderTable(rows, brandImageMap) {
 
       let iconHtml = `<span class="dot"></span>`;
       if (bimg) {
-        iconHtml =
-          `<span class="brandImg" style="width:20px;height:20px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;">` +
-          `<img src="${escapeHTML(bimg)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">` +
-          `</span>`;
+        iconHtml = `
+          <span style="width:20px;height:20px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;">
+            <img src="${escapeHTML(bimg)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </span>`;
       }
 
       const tr = document.createElement("tr");
@@ -458,6 +417,28 @@ function renderTable(rows, brandImageMap) {
   }
 }
 
+/* ===== category visuals ===== */
+function applyCategoryVisuals(categoryImageUrl) {
+  const thumb = el("catThumb");
+  const img = el("catThumbImg");
+
+  if (!thumb || !img) return;
+
+  if (categoryImageUrl) {
+    img.onload = () => { thumb.style.display = "block"; };
+    img.onerror = () => { thumb.style.display = "none"; };
+
+    img.src = categoryImageUrl;
+    thumb.style.display = "block";
+
+    // set blurred header background
+    document.documentElement.style.setProperty("--cat-bg-url", `url("${categoryImageUrl}")`);
+  } else {
+    thumb.style.display = "none";
+    document.documentElement.style.setProperty("--cat-bg-url", "none");
+  }
+}
+
 (async function init() {
   setupImageModal();
 
@@ -468,19 +449,7 @@ function renderTable(rows, brandImageMap) {
   setupPdfDownloadButton(tab);
 
   const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
-
-  // category thumb
-  if (el("catThumb") && el("catThumbImg")) {
-    if (categoryImageUrl) {
-      const imgEl = el("catThumbImg");
-      imgEl.onload = () => { el("catThumb").style.display = "block"; };
-      imgEl.onerror = () => { el("catThumb").style.display = "none"; };
-      imgEl.src = categoryImageUrl;
-      el("catThumb").style.display = "block";
-    } else {
-      el("catThumb").style.display = "none";
-    }
-  }
+  applyCategoryVisuals(categoryImageUrl);
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
   el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);

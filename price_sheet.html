@@ -2,495 +2,456 @@
 <html lang="th">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LEEPLUS ราคา (Sheet)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LEEPLUS Price Sheet</title>
 
   <style>
     :root{
-      --bg:#0b0f19;
-      --text:#f8fafc;
-      --muted:#a1a1aa;
-      --brand:#eab308;
-
+      --bg:#070b12;
+      --card:#0d1422;
+      --line:rgba(255,255,255,.08);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --pill:rgba(255,255,255,.06);
+      --pillLine:rgba(255,255,255,.10);
+      --accent:#f6c845;
+      --price:#ffcc00;
       --danger:#ff3b30;
-      --border:rgba(255,255,255,.08);
-      --border2:rgba(255,255,255,.12);
-      --shadow:0 14px 40px rgb(0 0 0 / .55);
-      --max:1160px;
+      --radius:22px;
 
-      --rowbg: rgba(0,0,0,.16);
-      --rowbg2: rgba(255,255,255,.02);
-      --rowline: rgba(255,255,255,.06);
-
-      --priceCol: 140px;
-      --priceColSm: 118px;
+      /* category bg from JS */
+      --cat-bg-url: none;
     }
 
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-
+    *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Thai", sans-serif;
-      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 800px at 50% -100px, rgba(85,135,255,.16), transparent 55%),
+                  radial-gradient(1000px 600px at 20% 20%, rgba(255,200,69,.12), transparent 55%),
+                  var(--bg);
       color:var(--text);
-      padding:24px 14px;
+      overflow-x:hidden;
     }
 
-    a{ color:inherit; text-decoration:none; }
-    .wrap{ max-width:var(--max); margin:0 auto; }
+    .wrap{
+      max-width: 1080px;
+      margin: 28px auto 60px;
+      padding: 0 18px;
+    }
 
-    .topbar{
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius:22px;
-      padding:18px 18px;
+    .card{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius: var(--radius);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+
+    /* ===== Header (Category area) ===== */
+    .header{
+      position:relative;
+      padding: 18px 18px 16px;
+    }
+
+    /* blurred category background overlay */
+    .header::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image: var(--cat-bg-url);
+      background-size: cover;
+      background-position: center;
+      filter: blur(18px);
+      opacity: .16;
+      transform: scale(1.06);
+      pointer-events:none;
+    }
+    .header::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(900px 300px at 35% 0%, rgba(255,255,255,.08), transparent 65%),
+                  linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
+      pointer-events:none;
+    }
+
+    .headerInner{
+      position:relative;
       display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
       gap:14px;
-      box-shadow: var(--shadow);
+      align-items:center;
+      justify-content:space-between;
+      min-height: 92px;
     }
 
-    .left{
+    .leftGroup{
       display:flex;
-      align-items:flex-start;
-      gap:12px;
-      min-width:0;
+      gap:14px;
+      align-items:center;
+      min-width: 0;
       flex: 1 1 auto;
     }
 
-    .actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex: 0 0 auto;
-      white-space:nowrap;
-    }
-
-    .btn, .pill, button{
-      -webkit-appearance: none;
-      appearance: none;
-      font: inherit;
-    }
-
-    .btn{
+    .backBtn{
       display:inline-flex;
       align-items:center;
-      gap:8px;
-      padding:10px 12px;
-      border-radius:12px;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border:1px solid var(--line);
       background: rgba(255,255,255,.06);
-      border:1px solid var(--border);
       color:var(--text);
-      font-weight:800;
-      font-size:14px;
-      cursor:pointer;
-      user-select:none;
-      transition:.15s transform ease, .15s background ease, .15s border-color ease;
+      text-decoration:none;
       white-space:nowrap;
     }
-    .btn:hover{ background: rgba(255,255,255,.10); }
-    .btn:active{ transform: translateY(1px); }
-    .btn svg{ width:16px; height:16px; display:block; }
+    .backBtn:hover{ background: rgba(255,255,255,.09); }
 
-    .btn-secondary{
-      padding:9px 12px;
-      font-weight:900;
-      background: rgba(234,179,8,.10);
-      border-color: rgba(234,179,8,.22);
-    }
-    .btn-secondary:hover{
-      background: rgba(234,179,8,.16);
-      border-color: rgba(234,179,8,.30);
-    }
-
-    .pdfHintLeft{
+    /* Category thumb bubble (only show if image exists) */
+    #catThumb{
       display:none;
-      align-items:center;
-      gap:6px;
-      color: var(--danger);
-      font-size:13px;
-      font-weight:950;
-      letter-spacing:.2px;
-      text-shadow: 0 0 10px rgba(255,59,48,.25);
-    }
-    .pdfHintLeft .arrow{
-      font-size:16px;
-      animation: nudge 1.4s infinite;
-      line-height:1;
-    }
-    @keyframes nudge{
-      0%,100%{ transform: translateX(0); opacity:.75; }
-      50%{ transform: translateX(4px); opacity:1; }
-    }
-    .actions.has-pdf .pdfHintLeft{ display:flex; }
-
-    .titlebox{ min-width:0; }
-    .crumb{ margin:0; font-size:12px; color:var(--muted); }
-
-    /* รูปหมวด */
-    .catRow{
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      min-width:0;
-    }
-    .catThumb{
-      width:46px;
-      height:46px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
       overflow:hidden;
-      display:none;
       flex: 0 0 auto;
+      box-shadow: 0 12px 24px rgba(0,0,0,.35);
     }
-    .catThumb img{
+    #catThumb img{
       width:100%;
       height:100%;
-      object-fit:cover;
+      object-fit: cover;
       display:block;
     }
 
-    h1{
-      margin:2px 0 0;
-      font-size:24px;
-      line-height:1.15;
-      letter-spacing:-.2px;
+    .titleBlock{
+      min-width: 0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .crumb{
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+      letter-spacing:.2px;
+    }
+    .h1{
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 800;
+      margin:0;
+      word-break: break-word;
+    }
+    .updated{
+      font-size: 12px;
+      color: rgba(255,255,255,.60);
+    }
+
+    .rightGroup{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex: 0 0 auto;
+    }
+
+    .hint{
+      display:none;
+      align-items:center;
+      gap:8px;
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 13px;
       white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
     }
-    .meta{ margin:6px 0 0; font-size:12px; color:var(--muted); }
+    .hint .arrow{ font-size: 16px; line-height: 1; }
 
-    .card{
-      margin-top:14px;
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius:22px;
-      padding:18px;
-      box-shadow: var(--shadow);
+    .pdfBtn{
+      display:none; /* JS will show */
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(246,200,69,.45);
+      background: rgba(246,200,69,.10);
+      color: rgba(255,255,255,.92);
+      font-weight: 800;
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .pdfBtn:hover{ background: rgba(246,200,69,.16); }
+
+    .divider{
+      height:1px;
+      background: var(--line);
     }
 
-    .hint{ font-size:13px; color:var(--muted); margin:0 0 10px; }
+    /* ===== Content ===== */
+    .content{
+      margin-top: 14px;
+      padding: 16px 18px 18px;
+    }
 
-    .searchWrap{ position:relative; width:100%; }
-    .searchIcon{
+    .note{
+      color: rgba(255,255,255,.70);
+      font-size: 13px;
+      margin: 0 0 10px;
+    }
+
+    .searchWrap{
+      position:relative;
+      margin: 10px 0 12px;
+    }
+
+    .searchWrap .icon{
       position:absolute;
-      left:14px;
-      top:50%;
+      left: 14px;
+      top: 50%;
       transform: translateY(-50%);
       width:18px;
       height:18px;
-      color: rgba(255,255,255,.70);
+      opacity:.75;
       pointer-events:none;
-      opacity:.95;
-    }
-    .search{
-      width:100%;
-      border-radius:999px;
-      padding:12px 14px 12px 44px;
-      border:1px solid var(--border2);
-      background: rgba(0,0,0,.30);
-      color:var(--text);
-      font-size:14px;
-      outline:none;
-      box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
-      transition: .15s border-color ease, .15s box-shadow ease, .15s background ease;
-    }
-    .search::placeholder{ color: rgba(255,255,255,.55); }
-    .search:focus{
-      border-color: rgba(234,179,8,.40);
-      box-shadow: 0 0 0 3px rgba(234,179,8,.10);
-      background: rgba(0,0,0,.36);
     }
 
-    .tabs{
+    #search{
+      width: 100%;
+      padding: 13px 14px 13px 44px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+      font-size: 14px;
+    }
+    #search:focus{
+      border-color: rgba(246,200,69,.45);
+      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
+    }
+
+    #tabs{
       display:flex;
       flex-wrap:wrap;
-      gap:8px;
-      margin-top:10px;
-      margin-bottom:14px;
+      gap:10px;
+      margin: 10px 0 14px;
     }
 
     .pill{
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid var(--border2);
-      background: rgba(255,255,255,.05);
-      color: rgba(255,255,255,.86);
-      font-weight:900;
-      font-size:13px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border:1px solid var(--pillLine);
+      background: var(--pill);
+      color: rgba(255,255,255,.88);
       cursor:pointer;
       user-select:none;
-      transition:.15s background ease, .15s transform ease, .15s border-color ease;
-      text-rendering: geometricPrecision;
-      -webkit-font-smoothing: antialiased;
+      font-weight: 700;
+      font-size: 13px;
     }
-    .pill:hover{
-      background: rgba(255,255,255,.09);
-      border-color: rgba(255,255,255,.18);
-    }
-    .pill:active{ transform: translateY(1px); }
+    .pill:hover{ background: rgba(255,255,255,.08); }
     .pill.active{
-      background: rgba(234,179,8,.16);
-      border-color: rgba(234,179,8,.38);
+      border-color: rgba(246,200,69,.55);
+      background: rgba(246,200,69,.10);
       color: rgba(255,255,255,.95);
-      box-shadow: 0 0 0 2px rgba(234,179,8,.08) inset;
-    }
-
-    /* ไอคอนใน pill */
-    .pillImg{
-      width:18px;
-      height:18px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      overflow:hidden;
-      background: rgba(0,0,0,.25);
-      flex: 0 0 auto;
-    }
-    .pillImg img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
+      box-shadow: 0 0 0 4px rgba(246,200,69,.06);
     }
 
     table{
       width:100%;
-      border-collapse:separate;
-      border-spacing:0;
+      border-collapse: separate;
+      border-spacing: 0;
       overflow:hidden;
-      border:1px solid var(--border);
-      border-radius:16px;
-      background: rgba(0,0,0,.18);
-      table-layout: fixed;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(0,0,0,.20);
     }
-    col.modelCol{ width: calc(100% - var(--priceCol)); }
-    col.priceCol{ width: var(--priceCol); }
-
     thead th{
       text-align:left;
-      padding:12px 12px;
-      font-size:13px;
-      color:var(--muted);
-      border-bottom:1px solid var(--border);
+      font-size: 13px;
+      color: rgba(255,255,255,.72);
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--line);
       background: rgba(255,255,255,.03);
     }
     thead th:last-child{ text-align:right; }
 
-    tbody tr{ background: linear-gradient(180deg, var(--rowbg), var(--rowbg2)); }
-    tbody tr + tr td{ border-top:1px solid var(--rowline); }
-
-    tbody td{
-      padding:12px 12px;
-      vertical-align:top;
-      font-size:14px;
-      background: transparent;
+    tbody tr td{
+      padding: 14px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      vertical-align: middle;
     }
+    tbody tr:last-child td{ border-bottom: none; }
 
     .model{
-      font-weight:900;
-      font-size:15px;
-      margin:0;
-      line-height:1.25;
-      overflow-wrap:anywhere;
+      font-weight: 900;
+      letter-spacing:.2px;
     }
-
     .price{
-      font-weight:950;
-      color: var(--brand);
       text-align:right;
-      white-space:nowrap;
-      font-size:16px;
-      padding-left:8px;
+      font-weight: 900;
+      color: var(--price);
+      white-space: nowrap;
     }
 
     .brandHeaderRow td{
-      padding:14px 12px;
-      background: rgba(255,255,255,.02) !important;
-      border-top:none !important;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.03);
     }
+
     .brandHeader{
       display:inline-flex;
       align-items:center;
       gap:10px;
-      padding:8px 14px;
-      border-radius:999px;
-      background: rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      font-weight:950;
-      letter-spacing:.2px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      font-weight: 900;
     }
     .dot{
-      width:10px; height:10px;
-      border-radius:999px;
-      background: rgba(234,179,8,.85);
-      box-shadow: 0 0 0 3px rgba(234,179,8,.12);
-    }
-    .brandImg{
-      width:20px;
-      height:20px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      overflow:hidden;
-      background: rgba(0,0,0,.25);
-      flex: 0 0 auto;
-    }
-    .brandImg img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
+      width: 10px;
+      height: 10px;
+      border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(246,200,69,.10);
     }
 
-    .empty{
+    #empty{
       display:none;
-      margin-top:14px;
-      padding:16px;
-      border-radius:16px;
-      border:1px dashed rgba(255,255,255,.16);
-      color:var(--muted);
-      font-size:14px;
-      text-align:center;
+      margin-top: 12px;
+      color: rgba(255,255,255,.70);
+      font-size: 14px;
+      padding: 14px 12px;
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 16px;
     }
 
-    /* modal */
+    /* ===== Modal ===== */
     .modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      background: rgba(0,0,0,.7);
-      z-index:9999;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.62);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
     }
     .modal.show{ display:flex; }
     .modalCard{
-      width:min(720px, 100%);
-      background: rgba(15,23,42,.92);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:18px;
-      box-shadow: var(--shadow);
+      width: min(860px, 95vw);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,22,.92);
       overflow:hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,.55);
     }
-    .modalTop{
+    .modalHead{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
-      padding:12px 14px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
-    .modalTitle{
-      font-weight:950;
-      font-size:14px;
-      color:var(--text);
-      margin:0;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      gap:12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.92);
+      font-weight: 900;
     }
     .modalClose{
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      color:var(--text);
-      border-radius:12px;
-      padding:8px 10px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.90);
+      border-radius: 12px;
+      padding: 8px 10px;
       cursor:pointer;
-      font-weight:900;
+      font-weight: 900;
     }
-    .modalBody{ padding:14px; }
-    .modalImg{
-      width:100%;
-      max-height:70vh;
-      object-fit:contain;
+    .modalBody{
+      padding: 14px;
       background: rgba(0,0,0,.25);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius:14px;
+    }
+    .modalBody img{
+      width:100%;
+      height:auto;
       display:block;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
     }
 
-    @media (max-width: 560px){
-      body{ padding:18px 12px; }
-      .topbar{ flex-direction:column; align-items:stretch; gap:10px; }
-      .left{ width:100%; }
-      h1{ font-size:20px; }
-      .actions{ width:100%; justify-content:flex-end; }
-      :root{ --priceCol: var(--priceColSm); }
-      tbody td{ padding:10px 10px; }
-      .price{ font-size:15px; }
-      .model{ font-size:15px; }
-      .pdfHintLeft{ font-size:12.5px; }
-      .pdfHintLeft .arrow{ font-size:15px; }
-      .search{ padding-left:42px; }
-      .searchIcon{ left:13px; }
-      .catThumb{ width:42px; height:42px; border-radius:13px; }
+    /* ===== Responsive ===== */
+    @media (max-width: 720px){
+      .wrap{ margin-top: 16px; }
+      .header{ padding: 14px 14px 12px; }
+      .headerInner{ min-height: 88px; gap: 12px; }
+      #catThumb{ width: 48px; height: 48px; }
+      .h1{ font-size: 22px; }
+      .rightGroup{ gap: 10px; }
+      .hint{ display:flex; }
+      .backBtn{ padding: 9px 12px; }
+      .pdfBtn{ padding: 9px 12px; }
+      .content{ padding: 14px 14px 16px; }
+      thead th, tbody tr td{ padding: 12px 12px; }
+    }
+
+    @media (max-width: 480px){
+      .leftGroup{ gap: 10px; }
+      .crumb{ display:none; }
+      .hint{ font-size: 12px; }
+      .hint .arrow{ font-size: 15px; }
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="left">
-        <a class="btn" href="index.html" aria-label="กลับหน้าหมวด">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          กลับหน้าหมวด
-        </a>
+    <div class="card header">
+      <div class="headerInner">
+        <div class="leftGroup">
+          <a class="backBtn" href="./index.html">
+            <span aria-hidden="true">‹</span>
+            <span>กลับหน้าหมวด</span>
+          </a>
 
-        <div class="titlebox">
-          <p class="crumb" id="crumb">Sheet ›</p>
+          <div id="catThumb" aria-label="รูปหมวด">
+            <img id="catThumbImg" alt="category" />
+          </div>
 
-          <div class="catRow">
-            <div class="catThumb" id="catThumb">
-              <img id="catThumbImg" alt="หมวดสินค้า" />
-            </div>
-            <div style="min-width:0;">
-              <h1 id="pageTitle">กำลังโหลด…</h1>
-              <p class="meta" id="updateText">อัปเดต: -</p>
-            </div>
+          <div class="titleBlock">
+            <div class="crumb" id="crumb">Sheet › ...</div>
+            <h1 class="h1" id="pageTitle">...</h1>
+            <div class="updated" id="updateText">อัปเดต: -</div>
           </div>
         </div>
-      </div>
 
-      <div class="actions" id="actions">
-        <div class="pdfHintLeft" id="pdfHintLeft">
-          <span>เปิดเพื่อดาวน์โหลด</span>
-          <span class="arrow">➜</span>
+        <div class="rightGroup">
+          <div class="hint" id="pdfHint">
+            <span>เปิดเพื่อดาวน์โหลด</span>
+            <span class="arrow">→</span>
+          </div>
+          <a id="openPdfBtn" class="pdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
         </div>
-
-        <a class="btn btn-secondary" id="openPdfBtn" href="#" target="_blank" rel="noopener" style="display:none;">
-          เปิด PDF
-        </a>
       </div>
     </div>
 
-    <div class="card">
-      <p class="hint">ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้</p>
+    <div class="card content">
+      <p class="note">ตารางนี้ดึงข้อมูลสดจาก Google Sheet (แท็บตามหมวด) + ค้นหาได้</p>
 
       <div class="searchWrap">
-        <svg class="searchIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M10.5 18.5a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" stroke="currentColor" stroke-width="2"/>
-          <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                stroke="rgba(255,255,255,.78)" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <input id="search" class="search" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
+        <input id="search" type="search" autocomplete="off" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
       </div>
 
-      <div class="tabs" id="tabs"></div>
+      <div id="tabs"></div>
 
       <table>
-        <colgroup>
-          <col class="modelCol" />
-          <col class="priceCol" />
-        </colgroup>
         <thead>
           <tr>
             <th>รุ่น</th>
@@ -500,50 +461,23 @@
         <tbody id="tbody"></tbody>
       </table>
 
-      <div class="empty" id="empty">ไม่พบข้อมูล</div>
+      <div id="empty"></div>
     </div>
   </div>
 
-  <!-- Image modal -->
-  <div class="modal" id="imgModal" aria-hidden="true">
-    <div class="modalCard" role="dialog" aria-modal="true">
-      <div class="modalTop">
-        <p class="modalTitle" id="modalTitle">รูปสินค้า</p>
-        <button class="modalClose" id="modalClose" type="button">ปิด</button>
+  <!-- modal -->
+  <div id="imgModal" class="modal" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalHead">
+        <div id="modalTitle">รูปสินค้า</div>
+        <button id="modalClose" class="modalClose" type="button">ปิด</button>
       </div>
       <div class="modalBody">
-        <img class="modalImg" id="modalImg" alt="รูปสินค้า" />
+        <img id="modalImg" alt="preview"/>
       </div>
     </div>
   </div>
 
-  <!-- ✅ โหลด JS แบบกันแคช -->
-  <script>
-    (function () {
-      const sp = new URLSearchParams(location.search);
-      const v = sp.get("v") || String(Date.now());
-      const s = document.createElement("script");
-      s.src = "price_sheet.js?v=" + encodeURIComponent(v);
-      s.defer = true;
-      document.body.appendChild(s);
-    })();
-  </script>
-
-  <!-- ให้ hint โผล่เมื่อปุ่ม PDF โผล่ -->
-  <script>
-    (function () {
-      const actions = document.getElementById('actions');
-      const btn = document.getElementById('openPdfBtn');
-      function sync() {
-        if (!actions || !btn) return;
-        const visible = btn.style.display !== 'none' && btn.offsetParent !== null;
-        actions.classList.toggle('has-pdf', visible);
-      }
-      sync();
-      setTimeout(sync, 200);
-      setTimeout(sync, 800);
-      setTimeout(sync, 1500);
-    })();
-  </script>
+  <script src="./price_sheet.js"></script>
 </body>
 </html>

@@ -48,8 +48,9 @@
       "titleEN": "Adapter & USB",
       "titleTH": "อุปกรณ์ชาร์จ",
       "image": "/price-webapp/assets/uploads/images/b6.jpg",
-      "pdf": "pdf/adapter-usb.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Adaptor%20USB"
+      "pdf": "",
+      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Adaptor%20USB",
+      "pdf_file": "/price-webapp/assets/uploads/pdfs/adapter-usb.pdf"
     },
     {
       "titleEN": "LCD Screen",

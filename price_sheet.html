@@ -24,9 +24,10 @@
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
-      background: radial-gradient(1200px 800px at 50% -100px, rgba(85,135,255,.14), transparent 55%),
-                  radial-gradient(1000px 600px at 20% 20%, rgba(255,200,69,.10), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 800px at 50% -100px, rgba(85,135,255,.14), transparent 55%),
+        radial-gradient(1000px 600px at 20% 20%, rgba(255,200,69,.10), transparent 55%),
+        var(--bg);
       color:var(--text);
       overflow-x:hidden;
     }
@@ -45,7 +46,7 @@
       overflow:hidden;
     }
 
-    /* ===== Header (Style A: solid / clean) ===== */
+    /* ===== Header (clean) ===== */
     .header{
       position:relative;
       padding: 18px 18px 16px;
@@ -81,10 +82,10 @@
       color:var(--text);
       text-decoration:none;
       white-space:nowrap;
+      flex: 0 0 auto;
     }
     .backBtn:hover{ background: rgba(255,255,255,.09); }
 
-    /* Category thumb (bubble) */
     #catThumb{
       display:none;
       width: 56px;
@@ -108,6 +109,7 @@
       display:flex;
       flex-direction:column;
       gap:4px;
+      flex: 1 1 auto;
     }
     .crumb{
       font-size: 12px;
@@ -117,9 +119,10 @@
     .h1{
       font-size: 26px;
       line-height: 1.1;
-      font-weight: 800;
+      font-weight: 900;
       margin:0;
       word-break: break-word;
+      white-space: normal;
     }
     .updated{
       font-size: 12px;
@@ -234,11 +237,13 @@
       width:100%;
       border-collapse: separate;
       border-spacing: 0;
-      overflow:hidden;
       border: 1px solid var(--line);
       border-radius: 18px;
       background: rgba(0,0,0,.20);
+      /* สำคัญ: อย่า overflow hidden บนมือถือ (จะตัด price) */
+      overflow: visible;
     }
+
     thead th{
       text-align:left;
       font-size: 13px;
@@ -261,10 +266,22 @@
       letter-spacing:.2px;
     }
 
-    /* ✅ เฉพาะคำว่า (NEW) เป็นสีแดง */
-    .newTag{
+    /* ✅ NEW badge */
+    .badgeNew{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-left: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(255,59,48,.16);
+      border: 1px solid rgba(255,59,48,.55);
       color: var(--danger);
       font-weight: 900;
+      font-size: 12px;
+      line-height: 1;
+      vertical-align: middle;
+      white-space: nowrap;
     }
 
     .price{
@@ -359,25 +376,71 @@
       background: rgba(255,255,255,.03);
     }
 
-    /* ===== Responsive ===== */
+    /* ===== Responsive (แก้ 2 ปัญหา: title โดนบีบ + ราคาไม่ขึ้น) ===== */
     @media (max-width: 720px){
       .wrap{ margin-top: 16px; }
       .header{ padding: 14px 14px 12px; }
-      .headerInner{ min-height: 88px; gap: 12px; }
       #catThumb{ width: 48px; height: 48px; }
       .h1{ font-size: 22px; }
-      .rightGroup{ gap: 10px; }
       .hint{ display:flex; }
       .backBtn{ padding: 9px 12px; }
       .pdfBtn{ padding: 9px 12px; }
       .content{ padding: 14px 14px 16px; }
-      thead th, tbody tr td{ padding: 12px 12px; }
     }
 
-    @media (max-width: 480px){
+    /* ⭐ มือถือเล็ก: เปลี่ยนตารางเป็น list layout เพื่อให้ "ราคา" ไม่หาย */
+    @media (max-width: 520px){
+      .headerInner{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        min-height: unset;
+      }
+      .leftGroup{
+        width: 100%;
+      }
+      .rightGroup{
+        width: 100%;
+        justify-content: flex-end;
+      }
       .crumb{ display:none; }
-      .hint{ font-size: 12px; }
-      .hint .arrow{ font-size: 15px; }
+
+      thead{ display:none; }
+      tbody tr{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+      }
+      tbody tr td{
+        border-bottom:none;
+        padding: 14px 12px;
+      }
+      tbody tr{
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+      tbody tr:last-child{
+        border-bottom: none;
+      }
+      tbody tr td:first-child{
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      tbody tr td:last-child{
+        flex: 0 0 auto;
+        text-align:right;
+        white-space: nowrap;
+      }
+
+      /* brand header row ให้ไม่เพี้ยน */
+      .brandHeaderRow{
+        display:block !important;
+      }
+      .brandHeaderRow td{
+        display:block !important;
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
     }
   </style>
 </head>
@@ -440,7 +503,6 @@
     </div>
   </div>
 
-  <!-- modal -->
   <div id="imgModal" class="modal" aria-hidden="true">
     <div class="modalCard">
       <div class="modalHead">

@@ -1,6 +1,6 @@
-/* GVIZ_JSON_VERSION: 2026-02-03f (LEEPLUS) ✅
-   - Style A: no header background image (keep clean)
-   - If model contains "(NEW)" => wrap only that token with <span class="newTag">(NEW)</span>
+/* GVIZ_JSON_VERSION: 2026-02-03g (LEEPLUS) ✅
+   - NEW badge: replace "(NEW)" with small badge <span class="badgeNew">NEW</span>
+   - Keep all existing logic: tabs, all grouping, search, pdf button, meta images
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
@@ -137,11 +137,11 @@ function normalizeSearchTokens(s) {
   return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
 }
 
-/* ✅ wrap (NEW) in red, only that token */
+/* ✅ NEW badge: turn "(NEW)" into a small badge NEW (case-insensitive) */
 function formatModelHTML(model) {
   const safe = escapeHTML(model || "");
-  // case-insensitive match for "(NEW)" exactly
-  return safe.replace(/\(NEW\)/gi, (m) => `<span class="newTag">${m}</span>`);
+  // Replace every occurrence of (NEW) / (new) etc.
+  return safe.replace(/\(NEW\)/gi, () => `<span class="badgeNew">NEW</span>`);
 }
 
 /* ===== modal ===== */
@@ -320,7 +320,7 @@ async function loadSheetWithMeta(tab) {
   }).map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03f");
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03g");
     console.log("[DEBUG] idx:", idx);
     console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
     console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
@@ -414,7 +414,7 @@ function renderTable(rows, brandImageMap) {
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px;">
           ${thumbHtml}
-          <div><div class="model">${formatModelHTML(r.model)}</div></div>
+          <div class="model">${formatModelHTML(r.model)}</div>
         </div>
       </td>
       <td class="price">${escapeHTML(r.price)} บาท</td>
@@ -423,7 +423,7 @@ function renderTable(rows, brandImageMap) {
   }
 }
 
-/* ===== category visuals (Style A) ===== */
+/* ===== category thumb ===== */
 function applyCategoryThumb(categoryImageUrl) {
   const thumb = el("catThumb");
   const img = el("catThumbImg");

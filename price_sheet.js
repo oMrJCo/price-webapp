@@ -1,7 +1,6 @@
-/* GVIZ_JSON_VERSION: 2026-02-03e (LEEPLUS) ✅
-   + Category layout polish:
-   - show category thumb bubble
-   - set header blurred background via CSS var (--cat-bg-url)
+/* GVIZ_JSON_VERSION: 2026-02-03f (LEEPLUS) ✅
+   - Style A: no header background image (keep clean)
+   - If model contains "(NEW)" => wrap only that token with <span class="newTag">(NEW)</span>
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
@@ -136,6 +135,13 @@ function normalizeSearchCompact(s) {
 
 function normalizeSearchTokens(s) {
   return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
+}
+
+/* ✅ wrap (NEW) in red, only that token */
+function formatModelHTML(model) {
+  const safe = escapeHTML(model || "");
+  // case-insensitive match for "(NEW)" exactly
+  return safe.replace(/\(NEW\)/gi, (m) => `<span class="newTag">${m}</span>`);
 }
 
 /* ===== modal ===== */
@@ -314,7 +320,7 @@ async function loadSheetWithMeta(tab) {
   }).map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03e");
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03f");
     console.log("[DEBUG] idx:", idx);
     console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
     console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
@@ -408,7 +414,7 @@ function renderTable(rows, brandImageMap) {
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px;">
           ${thumbHtml}
-          <div><div class="model">${escapeHTML(r.model)}</div></div>
+          <div><div class="model">${formatModelHTML(r.model)}</div></div>
         </div>
       </td>
       <td class="price">${escapeHTML(r.price)} บาท</td>
@@ -417,25 +423,19 @@ function renderTable(rows, brandImageMap) {
   }
 }
 
-/* ===== category visuals ===== */
-function applyCategoryVisuals(categoryImageUrl) {
+/* ===== category visuals (Style A) ===== */
+function applyCategoryThumb(categoryImageUrl) {
   const thumb = el("catThumb");
   const img = el("catThumbImg");
-
   if (!thumb || !img) return;
 
   if (categoryImageUrl) {
     img.onload = () => { thumb.style.display = "block"; };
     img.onerror = () => { thumb.style.display = "none"; };
-
     img.src = categoryImageUrl;
     thumb.style.display = "block";
-
-    // set blurred header background
-    document.documentElement.style.setProperty("--cat-bg-url", `url("${categoryImageUrl}")`);
   } else {
     thumb.style.display = "none";
-    document.documentElement.style.setProperty("--cat-bg-url", "none");
   }
 }
 
@@ -449,7 +449,7 @@ function applyCategoryVisuals(categoryImageUrl) {
   setupPdfDownloadButton(tab);
 
   const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
-  applyCategoryVisuals(categoryImageUrl);
+  applyCategoryThumb(categoryImageUrl);
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
   el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);

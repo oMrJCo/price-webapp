@@ -8,7 +8,6 @@
   <style>
     :root{
       --bg:#070b12;
-      --card:#0d1422;
       --line:rgba(255,255,255,.08);
       --text:rgba(255,255,255,.92);
       --muted:rgba(255,255,255,.65);
@@ -18,9 +17,6 @@
       --price:#ffcc00;
       --danger:#ff3b30;
       --radius:22px;
-
-      /* category bg from JS */
-      --cat-bg-url: none;
     }
 
     *{box-sizing:border-box}
@@ -28,8 +24,8 @@
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
-      background: radial-gradient(1200px 800px at 50% -100px, rgba(85,135,255,.16), transparent 55%),
-                  radial-gradient(1000px 600px at 20% 20%, rgba(255,200,69,.12), transparent 55%),
+      background: radial-gradient(1200px 800px at 50% -100px, rgba(85,135,255,.14), transparent 55%),
+                  radial-gradient(1000px 600px at 20% 20%, rgba(255,200,69,.10), transparent 55%),
                   var(--bg);
       color:var(--text);
       overflow-x:hidden;
@@ -49,36 +45,16 @@
       overflow:hidden;
     }
 
-    /* ===== Header (Category area) ===== */
+    /* ===== Header (Style A: solid / clean) ===== */
     .header{
       position:relative;
       padding: 18px 18px 16px;
-    }
-
-    /* blurred category background overlay */
-    .header::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background-image: var(--cat-bg-url);
-      background-size: cover;
-      background-position: center;
-      filter: blur(18px);
-      opacity: .16;
-      transform: scale(1.06);
-      pointer-events:none;
-    }
-    .header::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: radial-gradient(900px 300px at 35% 0%, rgba(255,255,255,.08), transparent 65%),
-                  linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
-      pointer-events:none;
+      background:
+        radial-gradient(900px 320px at 35% 0%, rgba(255,255,255,.08), transparent 65%),
+        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.50));
     }
 
     .headerInner{
-      position:relative;
       display:flex;
       gap:14px;
       align-items:center;
@@ -108,7 +84,7 @@
     }
     .backBtn:hover{ background: rgba(255,255,255,.09); }
 
-    /* Category thumb bubble (only show if image exists) */
+    /* Category thumb (bubble) */
     #catThumb{
       display:none;
       width: 56px;
@@ -162,7 +138,7 @@
       align-items:center;
       gap:8px;
       color: var(--danger);
-      font-weight: 800;
+      font-weight: 900;
       font-size: 13px;
       white-space:nowrap;
     }
@@ -178,16 +154,11 @@
       border:1px solid rgba(246,200,69,.45);
       background: rgba(246,200,69,.10);
       color: rgba(255,255,255,.92);
-      font-weight: 800;
+      font-weight: 900;
       text-decoration:none;
       white-space:nowrap;
     }
     .pdfBtn:hover{ background: rgba(246,200,69,.16); }
-
-    .divider{
-      height:1px;
-      background: var(--line);
-    }
 
     /* ===== Content ===== */
     .content{
@@ -205,7 +176,6 @@
       position:relative;
       margin: 10px 0 12px;
     }
-
     .searchWrap .icon{
       position:absolute;
       left: 14px;
@@ -216,7 +186,6 @@
       opacity:.75;
       pointer-events:none;
     }
-
     #search{
       width: 100%;
       padding: 13px 14px 13px 44px;
@@ -250,7 +219,7 @@
       color: rgba(255,255,255,.88);
       cursor:pointer;
       user-select:none;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 13px;
     }
     .pill:hover{ background: rgba(255,255,255,.08); }
@@ -291,6 +260,13 @@
       font-weight: 900;
       letter-spacing:.2px;
     }
+
+    /* ✅ เฉพาะคำว่า (NEW) เป็นสีแดง */
+    .newTag{
+      color: var(--danger);
+      font-weight: 900;
+    }
+
     .price{
       text-align:right;
       font-weight: 900;
@@ -399,7 +375,6 @@
     }
 
     @media (max-width: 480px){
-      .leftGroup{ gap: 10px; }
       .crumb{ display:none; }
       .hint{ font-size: 12px; }
       .hint .arrow{ font-size: 15px; }

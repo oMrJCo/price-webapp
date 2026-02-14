@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function startAuto(){
       stopAuto();
       if (slides.length <= 1) return;
-      timer = setInterval(() => go(active + 1), 4200);
+      timer = setInterval(() => go(active + 1), 3000);
     }
 
     function go(i, userAction=false){

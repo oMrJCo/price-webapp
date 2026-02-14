@@ -77,7 +77,8 @@
     /* Cover */
     .cover-box{
       width:100%;
-      height:220px;
+      height: clamp(170px, 22vw, 280px);
+      aspect-ratio: 16 / 9;
       border-radius:var(--radius);
       overflow:hidden;
       position:relative;
@@ -90,7 +91,8 @@
       width:100%;
       height:100%;
       object-fit:cover;
-      transform:scale(1.02);
+      object-position:center;
+
       filter:saturate(1.05) contrast(1.05);
     }
     .cover-box::after{
@@ -143,7 +145,8 @@
       width:100%;
       height:100%;
       object-fit:cover;
-      transform:scale(1.02);
+      object-position:center;
+
       filter:saturate(1.05) contrast(1.05);
       user-select:none;
       -webkit-user-drag:none;
@@ -248,6 +251,7 @@
       width:100%;
       height:100%;
       object-fit:cover;
+      object-position:center;
       transition:transform .4s ease;
     }
     .card:hover .thumb img{
@@ -295,6 +299,7 @@
       width:100%;
       height:100%;
       object-fit:cover;
+      object-position:center;
     }
     .placeholder{
       position:absolute; inset:0;
@@ -345,7 +350,7 @@
 
       .wrap{ padding:18px 14px 34px; }
       h1{ font-size:18px; }
-      .cover-box{ height:180px; }
+      .cover-box{ height: clamp(160px, 40vw, 220px); }
       .grid{ grid-template-columns:1fr; gap:14px; }
     }
   </style>

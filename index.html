@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ราคาสินค้า LEEPLUS</title>
+  <meta name="description" content="ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ ราคาส่ง อัปเดตตลอด">
+  <meta property="og:title" content="LEEPLUS ราคาสินค้า">
+  <meta property="og:description" content="เช็คราคา เช็คสต็อก แอดไลน์ได้ทันที">
+  <meta property="og:type" content="website">
 
   <!-- Auto redirect สำหรับ Netlify Identity recovery -->
   <script>
@@ -372,15 +376,12 @@
       box-shadow: 0 -6px 18px rgba(0,0,0,.35);
       display: none;
     }
-    .line-sticky:active{
-      transform: scale(.98);
-    }
+    .line-sticky:active{ transform: scale(.98); }
 
     @media (max-width: 768px){
       .line-sticky{ display:block; }
       body{ padding-bottom:70px; } /* prevent overlap */
     }
-
 </style>
 </head>
 
@@ -424,16 +425,16 @@
     <img src="assets/line-icon.png" alt="LINE" style="width:30px; height:30px;">
   </button>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 
   <!-- Sticky LINE CTA (Mobile) -->
   <a id="lineSticky"
      href="#"
      target="_blank"
      rel="noopener"
-     class="line-sticky">
+     class="line-sticky"
+     aria-label="แอดไลน์เพื่อเช็คราคาและเช็คสต็อก">
      💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที
   </a>
-
 </body>
 </html>

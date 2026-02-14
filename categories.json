@@ -5,23 +5,6 @@
   "siteTitle": "📦 ราคาสินค้า LEEPLUS ครบทุกอย่าง",
   "lineQr": "assets/line-qr.png",
   "coverSubtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
-  "coverSlides": [
-    {
-      "image": "/price-webapp/assets/uploads/promotel.jpg",
-      "headline": "ศูนย์รวมอะไหล่มือถือ",
-      "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
-      "link": "https://line.me/R/ti/p/@leeplus"
-    },
-    {
-      "image": "/price-webapp/assets/uploads/t1.jpg"
-    },
-    {
-      "image": "/price-webapp/assets/uploads/t2.jpg"
-    },
-    {
-      "image": "/price-webapp/assets/uploads/t3.jpg"
-    }
-  ],
   "lineUrl": "https://line.me/R/ti/p/@leeplus",
   "categories": [
     {
@@ -99,5 +82,16 @@
       "titleTH": "test"
     }
   ],
-  "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"
+  "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด",
+  "coverInterval": 3,
+  "lineStickyEnabled": true,
+  "lineCtaText": "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
+  "coverSlides": [
+    {
+      "image": "/price-webapp/assets/uploads/promotel.jpg",
+      "headline": "ศูนย์รวมอะไหล่มือถือ",
+      "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
+      "link": "https://line.me/R/ti/p/@leeplus"
+    }
+  ]
 }

@@ -67,6 +67,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       }))
       .filter(s => !!String(s.image || "").trim());
 
+    const coverIntervalSecRaw = Number(data.coverInterval);
+    const coverIntervalSec = Number.isFinite(coverIntervalSecRaw) ? Math.min(10, Math.max(2, coverIntervalSecRaw)) : 3;
+    const coverIntervalMs = Math.round(coverIntervalSec * 1000);
+
     function setCoverText(i){
       const s = slides[i] || {};
       if (coverHeadlineEl) coverHeadlineEl.textContent = s.headline || "";
@@ -130,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function startAuto(){
       stopAuto();
       if (slides.length <= 1) return;
-      timer = setInterval(() => go(active + 1), 3000);
+      timer = setInterval(() => go(active + 1), coverIntervalMs);
     }
 
     function go(i, userAction=false){
@@ -194,10 +198,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     
-    // Bind Sticky LINE CTA
+    // Sticky LINE CTA (configurable from CMS)
     const lineSticky = document.getElementById("lineSticky");
-    if (lineSticky && data.lineUrl) {
-      lineSticky.href = data.lineUrl;
+    const stickyEnabled = (typeof data.lineStickyEnabled === "boolean") ? data.lineStickyEnabled : true;
+    const stickyText = (data.lineCtaText || "").trim() || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที";
+    if (lineSticky) {
+      if (!stickyEnabled) {
+        lineSticky.style.display = "none";
+      } else {
+        lineSticky.textContent = stickyText;
+        if (data.lineUrl) lineSticky.href = data.lineUrl;
+      }
     }
 
 // ===== LINE =====

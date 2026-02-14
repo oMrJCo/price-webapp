@@ -22,6 +22,32 @@ collections:
       name: siteSubtitle
       widget: string
       required: false
+    - label: LINE OA URL
+      name: lineUrl
+      widget: string
+      required: false
+      hint: เช่น https://line.me/R/ti/p/@leeplus
+    - label: LINE Icon
+      name: lineIcon
+      widget: image
+      required: false
+      hint: ไอคอนปุ่ม LINE (เช่น assets/line-icon.png)
+    - label: LINE QR Image
+      name: lineQr
+      widget: image
+      required: false
+      hint: รูป QR สำหรับสแกน (เช่น assets/line-qr.png)
+    - label: Sticky LINE Button Enabled
+      name: lineStickyEnabled
+      widget: boolean
+      required: false
+      default: true
+    - label: Sticky LINE CTA Text
+      name: lineCtaText
+      widget: string
+      required: false
+      default: 💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที
+      hint: ข้อความบนปุ่มด้านล่างมือถือ
     - label: Cover Image
       name: coverImage
       widget: image
@@ -55,6 +81,14 @@ collections:
         name: link
         widget: string
         required: false
+    - label: Cover Auto Slide (seconds)
+      name: coverInterval
+      widget: number
+      required: false
+      default: 3
+      min: 2
+      max: 10
+      hint: จำนวนวินาทีต่อ 1 สไลด์ (แนะนำ 3-5)
     - label: Categories
       name: categories
       widget: list

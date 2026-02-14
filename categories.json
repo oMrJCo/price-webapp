@@ -1,11 +1,31 @@
 {
+  "lineStickyEnabled": true,
   "coverImage": "/price-webapp/assets/uploads/promotel.jpg",
+  "lineCtaText": "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
   "coverHeadline": "ศูนย์รวมอะไหล่มือถือ",
-  "lineIcon": "assets/line-icon.png",
+  "lineIcon": "/price-webapp/assets/uploads/line-icon.png",
   "siteTitle": "📦 ราคาสินค้า LEEPLUS ครบทุกอย่าง",
-  "lineQr": "assets/line-qr.png",
+  "lineQr": "/price-webapp/assets/uploads/l_gainfriends_2dbarcodes_bw.png",
   "coverSubtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
-  "lineUrl": "https://line.me/R/ti/p/@leeplus",
+  "coverSlides": [
+    {
+      "image": "/price-webapp/assets/uploads/promotel.jpg",
+      "headline": "ศูนย์รวมอะไหล่มือถือ",
+      "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
+      "link": "https://lin.ee/3AnPIwp"
+    },
+    {
+      "image": "/price-webapp/assets/uploads/t1.jpg"
+    },
+    {
+      "image": "/price-webapp/assets/uploads/t2.jpg"
+    },
+    {
+      "image": "/price-webapp/assets/uploads/t3.jpg"
+    }
+  ],
+  "lineUrl": "https://lin.ee/3AnPIwp",
+  "coverInterval": 3,
   "categories": [
     {
       "titleEN": "Battery",
@@ -82,16 +102,5 @@
       "titleTH": "test"
     }
   ],
-  "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด",
-  "coverInterval": 3,
-  "lineStickyEnabled": true,
-  "lineCtaText": "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
-  "coverSlides": [
-    {
-      "image": "/price-webapp/assets/uploads/promotel.jpg",
-      "headline": "ศูนย์รวมอะไหล่มือถือ",
-      "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
-      "link": "https://line.me/R/ti/p/@leeplus"
-    }
-  ]
+  "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"
 }

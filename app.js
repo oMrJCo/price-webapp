@@ -193,7 +193,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       sliderEl?.parentElement?.addEventListener("mouseleave", startAuto);
     }
 
-    // ===== LINE =====
+    
+    // Bind Sticky LINE CTA
+    const lineSticky = document.getElementById("lineSticky");
+    if (lineSticky && data.lineUrl) {
+      lineSticky.href = data.lineUrl;
+    }
+
+// ===== LINE =====
     const lineFab = document.getElementById("lineFab");
     const lineBox = document.getElementById("lineBox");
 

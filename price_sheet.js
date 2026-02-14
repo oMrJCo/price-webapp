@@ -407,12 +407,12 @@ function renderTable(rows, brandImageMap) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>
-        <div style="display:flex; align-items:flex-start; gap:10px;">
+        <div style="display:flex; align-items:flex-start; gap:10px; min-width:0;">
           ${thumbHtml}
           <div class="model">${formatModelHTML(r.model)}</div>
         </div>
       </td>
-      <td class="price">${escapeHTML(r.price)} บาท</td>
+      <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
     `;
     tbody.appendChild(tr);
   }

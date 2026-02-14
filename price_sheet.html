@@ -331,6 +331,8 @@
       color: var(--price);
       white-space: nowrap;
     }
+    .priceValue{ display:inline; }
+    .priceUnit{ display:inline; opacity:.85; font-weight: 800; }
 
     .brandHeaderRow td{
       padding: 12px 14px;
@@ -490,6 +492,19 @@
       tbody tr{ gap:10px; }
       tbody tr td{ padding: 13px 12px; }
       .price{ font-size: 14px; }
+
+
+      /* Price fit fix: prevent overflow on small phones */
+      tbody tr td:last-child{ padding-left: 6px; }
+      .price{ font-size: 13px; }
+      .priceUnit{ font-size: 12px; opacity:.8; }
+      /* If still tight, allow unit to wrap under number */
+      @supports (text-wrap: balance){ }
+      .priceUnit{ display:inline; }
+      @media (max-width: 360px){
+        .priceUnit{ display:block; margin-top:2px; }
+        .price{ text-align:right; }
+      }
 
     }
   </style>

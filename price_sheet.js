@@ -345,11 +345,10 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
       const img = brandImageMap.get(b.key);
       if (img) {
         const wrap = document.createElement("span");
-        wrap.style.cssText =
-          "width:18px;height:18px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;";
-        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+        wrap.className = "tabIcon";
+        wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" class="tabIconImg">`;
         btn.appendChild(wrap);
-      }
+}
     }
 
     const label = document.createElement("span");
@@ -387,9 +386,7 @@ function renderTable(rows, brandImageMap) {
       let iconHtml = `<span class="dot"></span>`;
       if (bimg) {
         iconHtml = `
-          <span style="width:20px;height:20px;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);flex:0 0 auto;">
-            <img src="${escapeHTML(bimg)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
-          </span>`;
+          <span class="brandIcon"><img src="${escapeHTML(bimg)}" alt="" class="brandIconImg"></span>`;
       }
 
       const tr = document.createElement("tr");
@@ -402,10 +399,8 @@ function renderTable(rows, brandImageMap) {
     const productImg = normalizeImageUrl(r.image_url);
     const thumbHtml = productImg
       ? `<div class="thumb" tabindex="0" role="button"
-              data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}"
-              style="width:54px;height:54px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);flex:0 0 auto;cursor:pointer;">
-            <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy"
-                 style="width:100%;height:100%;object-fit:cover;display:block;" />
+              data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
+            <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
          </div>`
       : ``;
 

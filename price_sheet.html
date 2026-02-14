@@ -46,6 +46,9 @@
       overflow:hidden;
     }
 
+    /* Allow list rows to render without being clipped */
+    .card.content{ overflow: visible; }
+
     /* ===== Header (clean) ===== */
     .header{
       position:relative;
@@ -505,6 +508,18 @@
         .priceUnit{ display:block; margin-top:2px; }
         .price{ text-align:right; }
       }
+
+
+      /* Universal mobile list layout (better cross-device, incl. iOS Safari) */
+      table{ display:block; width:100%; }
+      tbody{ display:block; width:100%; }
+      tbody tr{ display:flex; width:100%; }
+      tbody tr td{ display:block; }
+      tbody tr td:first-child{ flex: 1 1 58%; min-width: 0; }
+      tbody tr td:last-child{ flex: 0 0 auto; max-width: 42%; }
+
+      /* Ensure long model names wrap and don't push price out */
+      .model{ overflow-wrap:anywhere; }
 
     }
   </style>

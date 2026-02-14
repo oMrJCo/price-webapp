@@ -5,7 +5,7 @@
   "coverHeadline": "ศูนย์รวมอะไหล่มือถือ",
   "lineIcon": "/price-webapp/assets/uploads/line-icon.png",
   "siteTitle": "📦 ราคาสินค้า LEEPLUS ครบทุกอย่าง",
-  "lineQr": "<img src=\"https://qr-official.line.me/gs/M_210bobdj_BW.png?oat_content=qr\">",
+  "lineQr": "/price-webapp/assets/uploads/l_gainfriends_2dbarcodes_bw.png",
   "coverSubtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
   "coverSlides": [
     {
@@ -13,6 +13,15 @@
       "headline": "ศูนย์รวมอะไหล่มือถือ",
       "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
       "link": "https://line.me/R/ti/p/@leeplus"
+    },
+    {
+      "image": "/price-webapp/assets/uploads/t1.jpg"
+    },
+    {
+      "image": "/price-webapp/assets/uploads/t2.jpg"
+    },
+    {
+      "image": "/price-webapp/assets/uploads/t3.jpg"
     }
   ],
   "lineUrl": "https://lin.ee/3AnPIwp",

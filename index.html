@@ -330,7 +330,7 @@
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 16px;
+      bottom: 28px;
 
       background: linear-gradient(90deg, #06C755, #04a548);
       color: #fff;
@@ -354,6 +354,8 @@
     .line-sticky:hover{ filter: brightness(1.05); }
     .line-sticky:active{ transform: translateX(-50%) scale(.98); }
 
+    body{ padding-bottom:120px; } /* desktop prevent overlap */
+
     /* Mobile: full-width bar like native CTA */
     @media (max-width: 768px){
       .line-sticky{
@@ -367,7 +369,7 @@
         border-left: 0;
         border-right: 0;
       }
-      body{ padding-bottom:70px; } /* prevent overlap */
+      body{ padding-bottom:90px; } /* mobile prevent overlap */
     }
 /* prevent overlap */
     }

@@ -211,28 +211,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-// ===== LINE =====
-    const lineFab = document.getElementById("lineFab");
-    const lineBox = document.getElementById("lineBox");
+    // ===== LINE =====
+    // LINE fields are used by Sticky CTA (and optional cover slide links)
 
-    if (data.lineUrl && lineFab) lineFab.href = data.lineUrl;
-
-    if (data.lineIcon) {
-      const el = document.getElementById("lineIcon");
-      if (el) el.src = data.lineIcon;
-    }
-
-    if (data.lineQr) {
-      const el = document.getElementById("lineQr");
-      if (el) el.src = data.lineQr;
-    }
-
-    const qrToggle = document.getElementById("qrToggle");
-    if (qrToggle && lineBox) {
-      qrToggle.addEventListener("click", () => {
-        lineBox.classList.toggle("show");
-      });
-    }
 
     // ===== Categories =====
     const items = data.categories || [];

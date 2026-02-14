@@ -117,6 +117,95 @@
       line-height:1.45;
     }
 
+
+    /* ===== Cover Slider (Hi-tech) ===== */
+    .cover-slider{
+      position:absolute;
+      inset:0;
+      display:flex;
+      width:100%;
+      height:100%;
+      transform: translateX(0);
+      transition: transform .42s ease;
+      will-change: transform;
+    }
+    .cover-slide{
+      min-width:100%;
+      height:100%;
+      position:relative;
+    }
+    .cover-slide a, .cover-slide div{
+      display:block;
+      width:100%;
+      height:100%;
+    }
+    .cover-slide img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transform:scale(1.02);
+      filter:saturate(1.05) contrast(1.05);
+      user-select:none;
+      -webkit-user-drag:none;
+      pointer-events:none; /* drag on container */
+    }
+
+    .cover-nav{
+      position:absolute;
+      top:50%;
+      transform: translateY(-50%);
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.35);
+      color: rgba(255,255,255,.92);
+      font-size:26px;
+      line-height: 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      z-index: 2;
+      backdrop-filter: blur(6px);
+    }
+    .cover-nav:hover{ background: rgba(0,0,0,.48); border-color: rgba(234,179,8,.40); }
+    .cover-nav.prev{ left:12px; }
+    .cover-nav.next{ right:12px; }
+
+    .cover-dots{
+      position:absolute;
+      left:16px;
+      right:16px;
+      bottom:12px;
+      display:flex;
+      gap:8px;
+      justify-content:center;
+      z-index:2;
+      pointer-events:auto;
+    }
+    .cover-dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      cursor:pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .cover-dot.active{
+      background: rgba(234,179,8,.75);
+      border-color: rgba(234,179,8,.85);
+      transform: scale(1.25);
+    }
+
+    /* Hide arrows on very small screens; swipe still works */
+    @media (max-width: 640px){
+      .cover-nav{ display:none; }
+      .cover-dots{ bottom:10px; }
+      .cover-txt{ left:14px; right:14px; bottom:16px; }
+    }
+
     /* Grid */
     .grid{
       display:grid;
@@ -148,6 +237,8 @@
     /* Image */
     .thumb{
       aspect-ratio:16 / 9;
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
       background:rgba(255,255,255,.04);
       position:relative;
       overflow:hidden;
@@ -165,39 +256,37 @@
       content:"";
       position:absolute;
       inset:0;
-      background:linear-gradient(180deg, transparent 45%, rgba(0,0,0,.75) 100%);
+      /* subtle top/bottom vignette (keeps image premium but does NOT hold text) */
+      background:linear-gradient(180deg, rgba(0,0,0,.20) 0%, transparent 40%, rgba(0,0,0,.35) 100%);
+      pointer-events:none;
     }
+
+    /* Caption area UNDER image */
     .label{
-      position:absolute;
-      left:14px;
-      right:14px;
-      bottom:14px;
-      z-index:2;
+      padding: 12px 14px 14px;
       display:flex;
       flex-direction:column;
       gap:4px;
+      background: linear-gradient(180deg, rgba(12,16,26,.70), rgba(10,14,22,.85));
+      border-top: 1px solid rgba(255,255,255,.06);
     }
     .title-en{
-      font-size:14px;
-      font-weight:800;
-      letter-spacing:.5px;
+      font-size:13px;
+      font-weight:850;
+      letter-spacing:.6px;
       color:#eab308;
       text-transform:uppercase;
+      line-height:1.15;
     }
     .title-th{
       font-size:15px;
       font-weight:900;
       line-height:1.35;
       color:#fff;
-    }
-    .label::after{
-      content:"";
-      position:absolute;
-      inset:-8px -10px;
-      border-radius:14px;
-      background:rgba(0,0,0,.35);
-      backdrop-filter:blur(6px);
-      z-index:-1;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
     }
 
     /* removed old content/title styles */
@@ -250,6 +339,9 @@
 
     /* Mobile */
     @media (max-width:640px){
+      /* caption tighter */
+      .label{ padding: 11px 12px 13px; }
+
       .wrap{ padding:18px 14px 34px; }
       h1{ font-size:18px; }
       .cover-box{ height:180px; }
@@ -268,8 +360,16 @@
       </div>
     </header>
 
-    <div class="cover-box">
-      <img id="coverImage" src="" alt="">
+    <div class="cover-box" aria-label="โปรโมชั่นและสินค้าแนะนำ">
+      <div id="coverSlider" class="cover-slider" role="region" aria-roledescription="carousel" aria-label="Cover Slider">
+        <!-- slides injected by app.js -->
+      </div>
+
+      <button class="cover-nav prev" id="coverPrev" type="button" aria-label="รูปก่อนหน้า">‹</button>
+      <button class="cover-nav next" id="coverNext" type="button" aria-label="รูปถัดไป">›</button>
+
+      <div class="cover-dots" id="coverDots" aria-label="ตัวบ่งชี้สไลด์"></div>
+
       <div class="cover-txt">
         <h2 id="coverHeadline"></h2>
         <p id="coverSubtext"></p>

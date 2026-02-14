@@ -38,9 +38,160 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ===== Header / Cover =====
     if (data.siteTitle) document.getElementById("siteTitle").textContent = data.siteTitle;
     if (data.siteSubtitle) document.getElementById("siteSubtitle").textContent = data.siteSubtitle;
-    if (data.coverImage) document.getElementById("coverImage").src = data.coverImage;
-    if (data.coverHeadline) document.getElementById("coverHeadline").textContent = data.coverHeadline;
-    if (data.coverSubtext) document.getElementById("coverSubtext").textContent = data.coverSubtext;
+
+    // Cover: รองรับทั้งแบบรูปเดียว (coverImage) และแบบสไลด์ (coverSlides/coverImages)
+    const coverHeadlineEl = document.getElementById("coverHeadline");
+    const coverSubtextEl = document.getElementById("coverSubtext");
+    const sliderEl = document.getElementById("coverSlider");
+    const dotsEl = document.getElementById("coverDots");
+    const prevBtn = document.getElementById("coverPrev");
+    const nextBtn = document.getElementById("coverNext");
+
+    const singleCover = data.coverImage ? [{
+      image: data.coverImage,
+      headline: data.coverHeadline || "",
+      subtext: data.coverSubtext || "",
+      link: data.coverLink || ""
+    }] : [];
+
+    const slidesRaw = Array.isArray(data.coverSlides) ? data.coverSlides
+                    : Array.isArray(data.coverImages) ? data.coverImages
+                    : [];
+
+    const slides = (slidesRaw.length ? slidesRaw : singleCover)
+      .map(s => ({
+        image: (s && (s.image || s.src || s.url)) ? (s.image || s.src || s.url) : "",
+        headline: (s && (s.headline || s.title || s.text)) ? (s.headline || s.title || s.text) : "",
+        subtext: (s && (s.subtext || s.subtitle || s.desc)) ? (s.subtext || s.subtitle || s.desc) : "",
+        link: (s && (s.link || s.href)) ? (s.link || s.href) : ""
+      }))
+      .filter(s => !!String(s.image || "").trim());
+
+    function setCoverText(i){
+      const s = slides[i] || {};
+      if (coverHeadlineEl) coverHeadlineEl.textContent = s.headline || "";
+      if (coverSubtextEl) coverSubtextEl.textContent = s.subtext || "";
+    }
+
+    function renderSlider(){
+      if (!sliderEl) return;
+      sliderEl.innerHTML = "";
+      if (dotsEl) dotsEl.innerHTML = "";
+
+      slides.forEach((s, idx) => {
+        const slide = document.createElement("div");
+        slide.className = "cover-slide";
+
+        const inner = document.createElement(s.link ? "a" : "div");
+        if (s.link) {
+          inner.href = s.link;
+          inner.target = "_blank";
+          inner.rel = "noopener";
+        }
+
+        const img = document.createElement("img");
+        img.src = s.image;
+        img.alt = s.headline || "cover";
+        img.loading = "eager";
+
+        inner.appendChild(img);
+        slide.appendChild(inner);
+        sliderEl.appendChild(slide);
+
+        if (dotsEl) {
+          const d = document.createElement("button");
+          d.type = "button";
+          d.className = "cover-dot";
+          d.setAttribute("aria-label", `ไปยังสไลด์ที่ ${idx + 1}`);
+          d.addEventListener("click", () => go(idx, true));
+          dotsEl.appendChild(d);
+        }
+      });
+    }
+
+    let active = 0;
+    let timer = null;
+    let isDragging = false;
+    let startX = 0;
+    let dx = 0;
+
+    function updateUI(){
+      if (!sliderEl) return;
+      sliderEl.style.transform = `translateX(${-active * 100}%)`;
+      if (dotsEl) {
+        [...dotsEl.children].forEach((el, i) => el.classList.toggle("active", i === active));
+      }
+      setCoverText(active);
+    }
+
+    function stopAuto(){
+      if (timer) { clearInterval(timer); timer = null; }
+    }
+    function startAuto(){
+      stopAuto();
+      if (slides.length <= 1) return;
+      timer = setInterval(() => go(active + 1), 4200);
+    }
+
+    function go(i, userAction=false){
+      if (!slides.length) return;
+      active = (i + slides.length) % slides.length;
+      updateUI();
+      if (userAction) {
+        // user interacted -> restart auto
+        startAuto();
+      }
+    }
+
+    renderSlider();
+    // ถ้าไม่มีสไลด์ ให้ fallback เป็นข้อความเดิม
+    if (!slides.length) {
+      if (coverHeadlineEl) coverHeadlineEl.textContent = data.coverHeadline || "";
+      if (coverSubtextEl) coverSubtextEl.textContent = data.coverSubtext || "";
+    } else {
+      updateUI();
+      startAuto();
+
+      // Swipe support
+      const coverBox = sliderEl?.parentElement;
+      if (coverBox && slides.length > 1) {
+        coverBox.addEventListener("pointerdown", (e) => {
+          isDragging = true;
+          startX = e.clientX;
+          dx = 0;
+          stopAuto();
+          coverBox.setPointerCapture?.(e.pointerId);
+        });
+
+        coverBox.addEventListener("pointermove", (e) => {
+          if (!isDragging) return;
+          dx = e.clientX - startX;
+          // small resistance; do not actually drag transform to keep it simple & stable
+        });
+
+        const endDrag = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          const threshold = 42; // px
+          if (dx > threshold) go(active - 1, true);
+          else if (dx < -threshold) go(active + 1, true);
+          else startAuto();
+          dx = 0;
+        };
+
+        coverBox.addEventListener("pointerup", endDrag);
+        coverBox.addEventListener("pointercancel", endDrag);
+        coverBox.addEventListener("pointerleave", endDrag);
+
+        // Pause autoplay when user holds finger
+        coverBox.addEventListener("touchstart", () => stopAuto(), { passive: true });
+        coverBox.addEventListener("touchend", () => startAuto(), { passive: true });
+      }
+
+      // Pause on hover (desktop)
+      sliderEl?.parentElement?.addEventListener("mouseenter", stopAuto);
+      sliderEl?.parentElement?.addEventListener("mouseleave", startAuto);
+    }
 
     // ===== LINE =====
     const lineFab = document.getElementById("lineFab");

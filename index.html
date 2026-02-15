@@ -353,45 +353,14 @@
 
     /* Mobile: full-width bar like native CTA */
     @media (max-width: 768px){
-.line-sticky{
-        left: 0;
-        right: 0;
-        bottom: 0;
-        transform: none;
-        max-width: none;
-        width: 100%;
-        border-radius: 0;
-        border-left: 0;
-        border-right: 0;
-      }
-      body{ padding-bottom:90px; } /* mobile prevent overlap */
-    }
-
-    /* ===== Soft Pulse Animation (Conversion Boost) ===== */
-    @keyframes softPulse {
-      0%, 100% { 
-        transform: translateX(-50%) scale(1); 
-        box-shadow: 0 12px 28px rgba(0,0,0,.48);
-      }
-      50% { 
-        transform: translateX(-50%) scale(1.02); 
-        box-shadow: 0 14px 34px rgba(0,0,0,.55), 0 0 0 6px rgba(6,199,85,.10);
-      }
-
-    .line-sticky.pulse {
-      animation: softPulse 6s ease-in-out infinite;
-    }
-
-    @media (max-width: 768px){
-@keyframes softPulseMobile {
+      @keyframes softPulseMobile {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.02); }
-
+      }
       .line-sticky.pulse {
         animation: softPulseMobile 6s ease-in-out infinite;
       }
     }
-
     @media (prefers-reduced-motion: reduce){
       .line-sticky.pulse { animation: none; }
     }

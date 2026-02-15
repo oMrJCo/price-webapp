@@ -33,68 +33,68 @@
       "image": "assets/uploads/images/b1.jpg",
       "pdf": "",
       "pdf_file": "assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery"
+      "price_url": "price_sheet.html?tab=Battery"
     },
     {
       "titleEN": "Battery Power Up",
       "titleTH": "แบตเตอรี่เพิ่มความจุ",
-      "image": "/price-webapp/assets/uploads/images/b2.jpg",
+      "image": "assets/uploads/images/b2.jpg",
       "pdf": "pdf/battery-powerup.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery%20power%20up",
-      "pdf_file": "/price-webapp/assets/uploads/pdfs/battery-powerup.pdf"
+      "price_url": "price_sheet.html?tab=Battery%20power%20up",
+      "pdf_file": "assets/uploads/pdfs/battery-powerup.pdf"
     },
     {
       "titleEN": "Battery No BSM",
       "titleTH": "แบตเตอรี่ไม่มีขั้ว",
-      "image": "/price-webapp/assets/uploads/images/b3.jpg",
+      "image": "assets/uploads/images/b3.jpg",
       "pdf": "pdf/battery-no-bsm.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=No%20BMS"
+      "price_url": "price_sheet.html?tab=No%20BMS"
     },
     {
       "titleEN": "Battery Diagnostics",
       "titleTH": "แบตเตอรี่แจ้งใช้แล้ว",
-      "image": "/price-webapp/assets/uploads/images/batt100-.jpg",
+      "image": "assets/uploads/images/batt100-.jpg",
       "pdf": "pdf/battery-diagnostics.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Batt%20Diagnostics"
+      "price_url": "price_sheet.html?tab=Batt%20Diagnostics"
     },
     {
       "titleEN": "Battery Genuine",
       "titleTH": "แบตเตอรี่แจ้งของแท้",
-      "image": "/price-webapp/assets/uploads/images/batt100-1.jpg",
+      "image": "assets/uploads/images/batt100-1.jpg",
       "pdf": "pdf/battery-genuine.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Batt%20Diagnostics%20Genuine"
+      "price_url": "price_sheet.html?tab=Batt%20Diagnostics%20Genuine"
     },
     {
       "titleEN": "Adapter & USB",
       "titleTH": "อุปกรณ์ชาร์จ",
-      "image": "/price-webapp/assets/uploads/images/b6.jpg",
+      "image": "assets/uploads/images/b6.jpg",
       "pdf": "",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Adaptor%20USB",
-      "pdf_file": "/price-webapp/assets/uploads/pdfs/adapter-usb.pdf"
+      "price_url": "price_sheet.html?tab=Adaptor%20USB",
+      "pdf_file": "assets/uploads/pdfs/adapter-usb.pdf"
     },
     {
       "titleEN": "LCD Screen",
       "titleTH": "หน้าจอโทรศัพท์",
-      "image": "/price-webapp/assets/uploads/images/b8.jpg",
-      "pdf": "/price-webapp/assets/uploads/pdfs/6.ราคาส่ง-lcd-lp.pdf",
-      "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=LCD%20Leeplus"
+      "image": "assets/uploads/images/b8.jpg",
+      "pdf": "assets/uploads/pdfs/6.ราคาส่ง-lcd-lp.pdf",
+      "price_url": "price_sheet.html?tab=LCD%20Leeplus"
     },
     {
       "titleEN": "Film Protector",
       "titleTH": "ฟิล์มกระจกกันรอย",
-      "image": "/price-webapp/assets/uploads/images/b5.jpg",
+      "image": "assets/uploads/images/b5.jpg",
       "pdf": "pdf/film-protector.pdf"
     },
     {
       "titleEN": "Hydrogel Film",
       "titleTH": "ฟิล์มไฮโดรเจล",
-      "image": "/price-webapp/assets/uploads/images/hydrop.jpg",
+      "image": "assets/uploads/images/hydrop.jpg",
       "pdf": "pdf/hydrogel-film.pdf"
     },
     {
       "titleEN": "LCD Screen AAA",
       "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
-      "image": "/price-webapp/assets/uploads/images/lcd.jpg",
+      "image": "assets/uploads/images/lcd.jpg",
       "pdf": "pdf/lcd-aaa.pdf"
     },
     {

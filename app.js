@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const CATEGORIES_URL =
     "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 
-  // base อัตโนมัติ: GitHub Pages จะอยู่ใต้ /price-webapp/ แต่ custom domain จะอยู่ที่ root /
-  const GH_BASE = (location.hostname.endsWith("github.io") ? "/price-webapp/" : "/");
+  // base สำหรับ GitHub Pages (เพื่อทำ relative path ให้ชัวร์)
+  const GH_BASE = "/";
 
   function buildPriceSheetUrlFromTab(tabName) {
     // ใช้ relative จะได้ทำงานทั้งบน GH Pages และกรณีมี custom domain ในอนาคต
@@ -17,18 +17,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function normalizeMaybeRelativeUrl(url) {
-    if (!url) return "";
-    const u = String(url).trim();
-    if (!u) return "";
-    // ถ้าเป็น http(s) ให้ใช้ได้เลย
-    if (isLikelyHttpUrl(u)) return u;
-
-    // ทำให้เป็น relative เสมอ + ลบ base เก่า (/price-webapp/) ถ้ามี
-    let p = u.replace(/^\/price-webapp\//, "");
-    p = p.replace(/^\/+/, "");
-
-    // ประกอบกลับด้วย base ปัจจุบัน
-    return GH_BASE + p;
+   if (!url) return "";
+   const u = String(url).trim();
+   if (!u) return "";
+   if (/^https?:\/\//i.test(u)) return u;
+   return u.replace(/^\/+/, "");
   }
 
   try {

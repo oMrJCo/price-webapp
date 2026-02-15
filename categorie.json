@@ -1,0 +1,106 @@
+{
+  "lineStickyEnabled": true,
+  "coverImage": "assets/uploads/promotel.jpg",
+  "lineCtaText": "💬 แอดไลน์สั่งซื้อสินค้าได้เลย",
+  "coverHeadline": "ศูนย์รวมอะไหล่มือถือ",
+  "lineIcon": "assets/uploads/line-icon.png",
+  "siteTitle": "📦 ราคาสินค้า LEEPLUS",
+  "lineQr": "assets/uploads/l_gainfriends_2dbarcodes_bw.png",
+  "coverSubtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
+  "coverSlides": [
+    {
+      "image": "assets/uploads/promotel.jpg",
+      "headline": "ศูนย์รวมอะไหล่มือถือ",
+      "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
+      "link": "https://lin.ee/3AnPIwp"
+    },
+    {
+      "image": "assets/uploads/t1.jpg"
+    },
+    {
+      "image": "assets/uploads/t2.jpg"
+    },
+    {
+      "image": "assets/uploads/t3.jpg"
+    }
+  ],
+  "lineUrl": "https://lin.ee/3AnPIwp",
+  "coverInterval": 3,
+  "categories": [
+    {
+      "titleEN": "Battery",
+      "titleTH": "แบตเตอรี่",
+      "image": "assets/uploads/images/b1.jpg",
+      "pdf": "",
+      "pdf_file": "assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf",
+      "price_url": "price_sheet.html?tab=Battery"
+    },
+    {
+      "titleEN": "Battery Power Up",
+      "titleTH": "แบตเตอรี่เพิ่มความจุ",
+      "image": "assets/uploads/images/b2.jpg",
+      "pdf": "pdf/battery-powerup.pdf",
+      "price_url": "price_sheet.html?tab=Battery%20power%20up",
+      "pdf_file": "assets/uploads/pdfs/battery-powerup.pdf"
+    },
+    {
+      "titleEN": "Battery No BSM",
+      "titleTH": "แบตเตอรี่ไม่มีขั้ว",
+      "image": "assets/uploads/images/b3.jpg",
+      "pdf": "pdf/battery-no-bsm.pdf",
+      "price_url": "price_sheet.html?tab=No%20BMS"
+    },
+    {
+      "titleEN": "Battery Diagnostics",
+      "titleTH": "แบตเตอรี่แจ้งใช้แล้ว",
+      "image": "assets/uploads/images/batt100-.jpg",
+      "pdf": "pdf/battery-diagnostics.pdf",
+      "price_url": "price_sheet.html?tab=Batt%20Diagnostics"
+    },
+    {
+      "titleEN": "Battery Genuine",
+      "titleTH": "แบตเตอรี่แจ้งของแท้",
+      "image": "assets/uploads/images/batt100-1.jpg",
+      "pdf": "pdf/battery-genuine.pdf",
+      "price_url": "price_sheet.html?tab=Batt%20Diagnostics%20Genuine"
+    },
+    {
+      "titleEN": "Adapter & USB",
+      "titleTH": "อุปกรณ์ชาร์จ",
+      "image": "assets/uploads/images/b6.jpg",
+      "pdf": "",
+      "price_url": "price_sheet.html?tab=Adaptor%20USB",
+      "pdf_file": "assets/uploads/pdfs/adapter-usb.pdf"
+    },
+    {
+      "titleEN": "LCD Screen",
+      "titleTH": "หน้าจอโทรศัพท์",
+      "image": "assets/uploads/images/b8.jpg",
+      "pdf": "assets/uploads/pdfs/6.ราคาส่ง-lcd-lp.pdf",
+      "price_url": "price_sheet.html?tab=LCD%20Leeplus"
+    },
+    {
+      "titleEN": "Film Protector",
+      "titleTH": "ฟิล์มกระจกกันรอย",
+      "image": "assets/uploads/images/b5.jpg",
+      "pdf": "pdf/film-protector.pdf"
+    },
+    {
+      "titleEN": "Hydrogel Film",
+      "titleTH": "ฟิล์มไฮโดรเจล",
+      "image": "assets/uploads/images/hydrop.jpg",
+      "pdf": "pdf/hydrogel-film.pdf"
+    },
+    {
+      "titleEN": "LCD Screen AAA",
+      "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
+      "image": "assets/uploads/images/lcd.jpg",
+      "pdf": "pdf/lcd-aaa.pdf"
+    },
+    {
+      "titleEN": "test",
+      "titleTH": "test"
+    }
+  ],
+  "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"
+}

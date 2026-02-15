@@ -7,3 +7,5 @@
 
 
 https://omrjco.github.io/price-webapp/assets/uploads/images/battery-iphone7.jpg
+
+...

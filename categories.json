@@ -1,27 +1,27 @@
 {
   "lineStickyEnabled": true,
-  "coverImage": "/price-webapp/assets/uploads/promotel.jpg",
+  "coverImage": "assets/uploads/promotel.jpg",
   "lineCtaText": "💬 แอดไลน์สั่งซื้อสินค้าได้เลย",
   "coverHeadline": "ศูนย์รวมอะไหล่มือถือ",
-  "lineIcon": "/price-webapp/assets/uploads/line-icon.png",
+  "lineIcon": "assets/uploads/line-icon.png",
   "siteTitle": "📦 ราคาสินค้า LEEPLUS",
-  "lineQr": "/price-webapp/assets/uploads/l_gainfriends_2dbarcodes_bw.png",
+  "lineQr": "assets/uploads/l_gainfriends_2dbarcodes_bw.png",
   "coverSubtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
   "coverSlides": [
     {
-      "image": "/price-webapp/assets/uploads/promotel.jpg",
+      "image": "assets/uploads/promotel.jpg",
       "headline": "ศูนย์รวมอะไหล่มือถือ",
       "subtext": "แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือครบจบในที่เดียว",
       "link": "https://lin.ee/3AnPIwp"
     },
     {
-      "image": "/price-webapp/assets/uploads/t1.jpg"
+      "image": "assets/uploads/t1.jpg"
     },
     {
-      "image": "/price-webapp/assets/uploads/t2.jpg"
+      "image": "assets/uploads/t2.jpg"
     },
     {
-      "image": "/price-webapp/assets/uploads/t3.jpg"
+      "image": "assets/uploads/t3.jpg"
     }
   ],
   "lineUrl": "https://lin.ee/3AnPIwp",
@@ -30,9 +30,9 @@
     {
       "titleEN": "Battery",
       "titleTH": "แบตเตอรี่",
-      "image": "/price-webapp/assets/uploads/images/b1.jpg",
+      "image": "assets/uploads/images/b1.jpg",
       "pdf": "",
-      "pdf_file": "/price-webapp/assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf",
+      "pdf_file": "assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf",
       "price_url": "https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery"
     },
     {

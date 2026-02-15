@@ -139,9 +139,23 @@ function normalizeSearchTokens(s) {
 
 /* ✅ NEW badge: turn "(NEW)" into a small badge NEW (case-insensitive) */
 function formatModelHTML(model) {
-  const safe = escapeHTML(model || "");
-  // Replace every occurrence of (NEW) / (new) etc.
-  return safe.replace(/\(NEW\)/gi, () => `<span class="badgeNew">NEW</span>`);
+  const raw = String(model || "");
+
+  // Detect NEW in multiple formats:
+  // (NEW)  |  NEW  |  NEW! / NEW!! / NEW!!!
+  // and remove the token from the displayed model text.
+  let isNew = false;
+  let cleaned = raw.replace(/\(\s*NEW\s*\)|\bNEW\b\s*!*/gi, (m) => {
+    isNew = true;
+    return "";
+  });
+
+  // Clean leftover whitespace
+  cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+
+  const safe = escapeHTML(cleaned);
+
+  return isNew ? `${safe}<span class="badgeNew">NEW</span>` : safe;
 }
 
 /* ===== modal ===== */

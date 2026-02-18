@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ดาวน์โหลดแคตตาล็อก • LEEPLUS</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+  // ===== Dealer Area Guard (client-side) =====
+  // เปลี่ยนรหัสได้ โดยแก้ค่า DEALER_PASS ให้ตรงกันทุกหน้าในโฟลเดอร์ /dealer/
+  const DEALER_PASS = "LEEPLUS2026";
+  if (sessionStorage.getItem("dealer_ok") !== "1") {
+    location.replace("/dealer/");
+  }
+</script>
+  <style>
+    :root{--bg:#0b0b0b; --text:#f8fafc; --muted:#a1a1aa; --border:rgba(255,255,255,.10); --radius:18px; --brand:#eab308;}
+    *{box-sizing:border-box}
+    body{margin:0; background:var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", Arial, sans-serif;
+      padding:22px;
+    }
+    .wrap{max-width:880px; margin:0 auto;}
+    .card{background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(12,18,32,.92)); border:1px solid var(--border); border-radius:var(--radius);
+      padding:16px; box-shadow:0 18px 50px rgba(0,0,0,.45);
+    }
+    h1{margin:0 0 6px; font-size:18px; font-weight:950;}
+    p{margin:0 0 12px; color:var(--muted); font-size:13px; line-height:1.6;}
+    .dl{display:flex; flex-wrap:wrap; gap:10px;}
+    a.btn{display:inline-flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px;
+      text-decoration:none; font-weight:950; color:var(--text);
+      border:1px solid rgba(234,179,8,.25); background: rgba(234,179,8,.10);
+    }
+    a.btn:hover{filter:brightness(1.05);}
+    a.back{display:inline-block; margin-top:12px; color:var(--brand); text-decoration:none; font-weight:900;}
+    code{background: rgba(255,255,255,.06); padding:2px 6px; border-radius:8px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>ดาวน์โหลดแคตตาล็อก</h1>
+      <p>ให้พี่เอาไฟล์ PDF ไปไว้ที่ <code>assets/uploads/pdfs/</code> แล้วใส่ลิงก์ด้านล่าง</p>
+
+      <div class="dl">
+        <a class="btn" href="/assets/uploads/pdfs/catalog.pdf" target="_blank" rel="noopener">📄 ดาวน์โหลดแคตตาล็อก (PDF)</a>
+      </div>
+
+      <a class="back" href="/dealer/home.html">← กลับเมนูตัวแทน</a>
+    </div>
+  </div>
+</body>
+</html>

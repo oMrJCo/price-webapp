@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LEEPLUS Dealer Access</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root{
+      --bg:#0b0b0b; --panel:#0f172a; --card:#111827; --text:#f8fafc; --muted:#a1a1aa; --brand:#eab308;
+      --border:rgba(255,255,255,.10); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh;
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(234,179,8,.12), transparent 55%),
+                  radial-gradient(1200px 700px at 90% 10%, rgba(99,102,241,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", Arial, sans-serif;
+      display:flex; align-items:center; justify-content:center;
+      padding:24px;
+    }
+    .card{
+      width:min(520px, 100%);
+      background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(12,18,32,.92));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 18px 50px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .top{
+      padding:18px 18px 14px;
+      display:flex; gap:12px; align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .badge{
+      width:44px; height:44px; border-radius:50%;
+      display:grid; place-items:center;
+      background: rgba(234,179,8,.12);
+      border:1px solid rgba(234,179,8,.20);
+      color: var(--brand);
+      font-weight:900;
+    }
+    .h1{font-size:16px; font-weight:900; margin:0}
+    .sub{margin:2px 0 0; color:var(--muted); font-size:13px}
+    .body{padding:18px}
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px}
+    .row{display:flex; gap:10px}
+    input{
+      flex:1;
+      padding:14px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(2,6,23,.55);
+      color: var(--text);
+      outline:none;
+      font-size:15px;
+    }
+    input:focus{border-color: rgba(234,179,8,.45); box-shadow: 0 0 0 4px rgba(234,179,8,.10);}
+    button{
+      padding:14px 16px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(90deg, #06C755, #04a548);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    button:active{transform:scale(.98)}
+    .hint{margin:12px 0 0; font-size:12px; color:var(--muted)}
+    .err{display:none; margin-top:12px; padding:10px 12px; border-radius:12px; background: rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.22); color:#fecaca; font-size:13px}
+    .foot{padding:14px 18px; border-top:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.55); font-size:12px; text-align:center}
+    a{color:var(--brand); text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="badge">L</div>
+      <div>
+        <p class="h1">พื้นที่ตัวแทนจำหน่าย</p>
+        <p class="sub">กรอกรหัสเพื่อเข้าดูเงื่อนไขและดาวน์โหลดแคตตาล็อก</p>
+      </div>
+    </div>
+    <div class="body">
+      <label for="pw">รหัสตัวแทน</label>
+      <div class="row">
+        <input id="pw" type="password" placeholder="ใส่รหัสที่ได้รับ" autocomplete="current-password" />
+        <button id="btn" type="button">เข้าใช้งาน</button>
+      </div>
+      <div id="err" class="err">รหัสไม่ถูกต้อง</div>
+      <div class="hint">หมายเหตุ: หน้านี้เป็นการกันแบบ client-side เหมาะสำหรับกันคนทั่วไป (ไม่ใช่ความปลอดภัยระดับจริงจัง)</div>
+    </div>
+    <div class="foot">© LEEPLUS • <a href="/">กลับหน้าแรก</a></div>
+  </div>
+
+  <script>
+    // ===== Password (client-side) =====
+    // เปลี่ยนรหัสได้ที่นี่ และต้องเปลี่ยนให้ตรงกันในทุกหน้า /dealer/
+    const DEALER_PASS = "LEEPLUS2026";
+
+    const pw = document.getElementById("pw");
+    const btn = document.getElementById("btn");
+    const err = document.getElementById("err");
+
+    function login(){
+      const v = (pw.value || "").trim();
+      if(v === DEALER_PASS){
+        sessionStorage.setItem("dealer_ok", "1");
+        location.href = "/dealer/home.html";
+      } else {
+        err.style.display = "block";
+        pw.select();
+      }
+    }
+    btn.addEventListener("click", login);
+    pw.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") login();
+    });
+  </script>
+</body>
+</html>

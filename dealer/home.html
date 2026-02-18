@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dealer • LEEPLUS</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script>
+  // ===== Dealer Area Guard (client-side) =====
+  // เปลี่ยนรหัสได้ โดยแก้ค่า DEALER_PASS ให้ตรงกันทุกหน้าในโฟลเดอร์ /dealer/
+  const DEALER_PASS = "LEEPLUS2026";
+  if (sessionStorage.getItem("dealer_ok") !== "1") {
+    location.replace("/dealer/");
+  }
+</script>
+  <style>
+    :root{--bg:#0b0b0b; --text:#f8fafc; --muted:#a1a1aa; --brand:#eab308; --border:rgba(255,255,255,.10); --radius:18px;}
+    *{box-sizing:border-box}
+    body{margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", Arial, sans-serif;
+      padding:22px;
+    }
+    .wrap{max-width:880px; margin:0 auto;}
+    .top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;}
+    .title h1{margin:0; font-size:18px; font-weight:950;}
+    .title p{margin:6px 0 0; color:var(--muted); font-size:13px;}
+    .btn{border:1px solid rgba(255,255,255,.12); background:rgba(17,24,39,.65); color:var(--text); padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:800;}
+    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+    @media (max-width: 820px){ .grid{grid-template-columns:1fr;} }
+    .card{background: linear-gradient(180deg, rgba(17,24,39,.92), rgba(12,18,32,.92)); border:1px solid var(--border); border-radius:var(--radius);
+      padding:16px; box-shadow:0 18px 50px rgba(0,0,0,.45);
+    }
+    .card h2{margin:0; font-size:15px; font-weight:950;}
+    .card p{margin:8px 0 12px; color:var(--muted); font-size:13px; line-height:1.45;}
+    a.cta{display:inline-flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; text-decoration:none; font-weight:950;
+      border:1px solid rgba(234,179,8,.25); color:var(--text); background: rgba(234,179,8,.10);
+    }
+    a.cta:hover{filter:brightness(1.05);}
+    .pill{font-size:12px; color:var(--brand); font-weight:900;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>พื้นที่ตัวแทนจำหน่าย</h1>
+        <p>เลือกเมนูด้านล่าง</p>
+      </div>
+      <button class="btn" id="logout">ออกจากระบบ</button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="pill">สมัครตัวแทน</div>
+        <h2>แบบฟอร์มสมัคร</h2>
+        <p>ส่งข้อมูลติดต่อ/ข้อมูลร้าน เพื่อให้ทีมงานติดต่อกลับ</p>
+        <a class="cta" href="/dealer/register.html">เปิดแบบฟอร์ม</a>
+      </div>
+
+      <div class="card">
+        <div class="pill">เงื่อนไขการสั่งสินค้า</div>
+        <h2>เงื่อนไข/วิธีสั่ง</h2>
+        <p>ขั้นต่ำการสั่ง, การชำระเงิน, การจัดส่ง และการเคลม</p>
+        <a class="cta" href="/dealer/terms.html">ดูเงื่อนไข</a>
+      </div>
+
+      <div class="card">
+        <div class="pill">ดาวน์โหลด</div>
+        <h2>แคตตาล็อกสินค้า</h2>
+        <p>ดาวน์โหลดไฟล์ PDF แคตตาล็อกล่าสุด</p>
+        <a class="cta" href="/dealer/catalog.html">ไปหน้าดาวน์โหลด</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("logout").addEventListener("click", () => {
+      sessionStorage.removeItem("dealer_ok");
+      location.replace("/dealer/");
+    });
+  </script>
+</body>
+</html>

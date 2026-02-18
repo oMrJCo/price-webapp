@@ -287,6 +287,7 @@ async function loadSheetWithMeta(tab) {
     brand: pickIndex(cols, ["brand", "Brand"]),
     model: pickIndex(cols, ["model", "Model"]),
     price: pickIndex(cols, ["price", "Price"]),
+    dealer_price: pickIndex(cols, ["dealer_price", "dealer price", "price_dealer", "dealerPrice", "Dealer Price"]),
     image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
     updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"]),
   };
@@ -298,7 +299,7 @@ async function loadSheetWithMeta(tab) {
     return {
       brand: String(cellValue(c[idx.brand]) || "").trim(),
       model: String(cellValue(c[idx.model]) || "").trim(),
-      price: String(cellValue(c[idx.price]) || "").trim(),
+      price: (() => { const dp = String(cellValue(c[idx.dealer_price]) || "").trim(); const p = String(cellValue(c[idx.price]) || "").trim(); return dp || p; })(),
       image_url: String(cellValue(c[idx.image_url]) || "").trim(),
       updated: String(cellValue(c[idx.updated]) || "").trim(),
       __all: allValues

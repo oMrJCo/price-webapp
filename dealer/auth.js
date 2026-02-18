@@ -4,7 +4,6 @@ function checkAuth() {
     window.location.href = "/dealer/index.html";
   }
 }
-
 function login(password) {
   if (password === DEALER_PASSWORD) {
     localStorage.setItem("dealerAuth", "true");
@@ -13,7 +12,6 @@ function login(password) {
     alert("รหัสไม่ถูกต้อง");
   }
 }
-
 function logout() {
   localStorage.removeItem("dealerAuth");
   window.location.href = "/dealer/index.html";

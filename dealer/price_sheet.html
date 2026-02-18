@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LEEPLUS Price Sheet</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <style>
+    :root{
+      --bg:#070b12;
+      --line:rgba(255,255,255,.08);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --pill:rgba(255,255,255,.06);
+      --pillLine:rgba(255,255,255,.10);
+      --accent:#f6c845;
+      --price:#ffcc00;
+      --danger:#ff3b30;
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
+      background: #070b12;
+      color:var(--text);
+      overflow-x:hidden;
+      position: relative;
+    }
+
+    /* Hi-tech smooth background layers (no banding / no seams) */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        radial-gradient(1100px 700px at 18% 12%, rgba(85,135,255,.20), transparent 62%),
+        radial-gradient(900px 600px at 78% 18%, rgba(246,200,69,.16), transparent 60%),
+        radial-gradient(900px 700px at 55% 92%, rgba(120,255,214,.10), transparent 62%),
+        linear-gradient(180deg, #070b12 0%, #0a1120 45%, #0a0f1c 100%);
+      transform: translateZ(0);
+    }
+
+    /* Subtle grid overlay for a 'tech' feel */
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.030) 1px, transparent 1px),
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,.05), transparent 55%);
+      background-size: 36px 36px, 36px 36px, auto;
+      opacity: .35;
+      pointer-events: none;
+      mix-blend-mode: overlay;
+      transform: translateZ(0);
+    }
+
+
+    .wrap{
+      max-width: 1080px;
+      margin: 28px auto 60px;
+      padding: 0 18px;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      background: rgba(12,16,26,.72); backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+
+    /* Allow list rows to render without being clipped */
+    .card.content{ overflow: visible; background: rgba(12,16,26,.72); backdrop-filter: blur(10px); }
+
+    /* ===== Header (clean) ===== */
+    .header{
+      position:relative;
+      padding: 18px 18px 16px;
+      background: transparent;
+    }
+
+    .headerInner{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      min-height: 92px;
+    }
+
+    .leftGroup{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .backBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      text-decoration:none;
+      white-space:nowrap;
+      flex: 0 0 auto;
+    }
+    .backBtn:hover{ background: rgba(255,255,255,.09); }
+
+    #catThumb{
+      display:none;
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      overflow:hidden;
+      flex: 0 0 auto;
+      box-shadow: 0 12px 24px rgba(0,0,0,.35);
+    }
+    #catThumb img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+
+    .titleBlock{
+      min-width: 0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      flex: 1 1 auto;
+    }
+    .crumb{
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+      letter-spacing:.2px;
+    }
+    .h1{
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 900;
+      margin:0;
+      word-break: break-word;
+      white-space: normal;
+    }
+    .updated{
+      font-size: 12px;
+      color: rgba(255,255,255,.60);
+    }
+
+    .rightGroup{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex: 0 0 auto;
+    }
+
+    .hint{
+      display:none;
+      align-items:center;
+      gap:8px;
+      color: var(--danger);
+      font-weight: 900;
+      font-size: 13px;
+      white-space:nowrap;
+    }
+    .hint .arrow{ font-size: 16px; line-height: 1; }
+
+    .pdfBtn{
+      display:none; /* JS will show */
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(246,200,69,.45);
+      background: rgba(246,200,69,.10);
+      color: rgba(255,255,255,.92);
+      font-weight: 900;
+      text-decoration:none;
+      white-space:nowrap;
+    }
+    .pdfBtn:hover{ background: rgba(246,200,69,.16); }
+
+    /* ===== Content ===== */
+    .content{
+      margin-top: 12px;
+      padding: 14px 18px 16px;
+    }
+
+    .note{
+      color: rgba(255,255,255,.70);
+      font-size: 13px;
+      margin: 0 0 10px;
+    }
+
+    .searchWrap{
+      position:relative;
+      margin: 6px 0 10px;
+    }
+    .searchWrap .icon{
+      position:absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width:18px;
+      height:18px;
+      opacity:.75;
+      pointer-events:none;
+    }
+    #search{
+      width: 100%;
+      padding: 13px 14px 13px 44px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+      font-size: 14px;
+    }
+    #search:focus{
+      border-color: rgba(246,200,69,.45);
+      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
+    }
+
+    #tabs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin: 8px 0 12px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border:1px solid var(--pillLine);
+      background: var(--pill);
+      color: rgba(255,255,255,.88);
+      cursor:pointer;
+      user-select:none;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .pill:hover{ background: rgba(255,255,255,.08); }
+    .pill.active{
+      border-color: rgba(246,200,69,.75);
+      background: rgba(246,200,69,.18);
+      color: rgba(255,255,255,.95);
+      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
+    }
+
+    /* Tap/Focus polish (better on iOS) */
+    button, a{ -webkit-tap-highlight-color: transparent; }
+    .pill:focus-visible, .backBtn:focus-visible, .pdfBtn:focus-visible, .thumb:focus-visible{
+      outline: 2px solid rgba(246,200,69,.65);
+      outline-offset: 2px;
+    }
+
+    /* ✅ Icons + thumbs are styled by CSS (avoid inline styles; easier to tune on mobile) */
+    .tabIcon{
+      width:18px;height:18px;border-radius:999px;overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.25);
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .tabIconImg{ width:100%;height:100%;object-fit:cover;display:block; }
+
+    .brandIcon{
+      width:20px;height:20px;border-radius:999px;overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.25);
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .brandIconImg{ width:100%;height:100%;object-fit:cover;display:block; }
+
+    .thumb{
+      width:54px;height:54px;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+      flex:0 0 auto;
+      cursor:pointer;
+    }
+    .thumb img{ width:100%;height:100%;object-fit:cover;display:block; }
+
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: transparent;
+      /* สำคัญ: อย่า overflow hidden บนมือถือ (จะตัด price) */
+      overflow: visible;
+    }
+
+    thead th{
+      text-align:left;
+      font-size: 13px;
+      color: rgba(255,255,255,.72);
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+    thead th:last-child{ text-align:right; }
+
+    tbody tr td{
+      padding: 14px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td{ border-bottom: none; }
+
+
+    /* Soft separators (continuous look) */
+    tbody tr td{
+      border-bottom-color: rgba(255,255,255,.05);
+    }
+    tbody tr{
+      background: transparent;
+    }
+
+    .model{
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+
+    /* ✅ NEW badge */
+    .badgeNew{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-left: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(255,59,48,.16);
+      border: 1px solid rgba(255,59,48,.55);
+      color: var(--danger);
+      font-weight: 900;
+      font-size: 12px;
+      line-height: 1;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .price{
+      text-align:right;
+      font-weight: 900;
+      color: var(--price);
+      white-space: nowrap;
+    }
+    .priceValue{ display:inline; }
+    .priceUnit{ display:inline; opacity:.85; font-weight: 800; }
+
+    .brandHeaderRow td{
+      padding: 12px 14px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .brandHeader{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: transparent;
+      font-weight: 900;
+    }
+    .dot{
+      width: 10px;
+      height: 10px;
+      border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(246,200,69,.10);
+    }
+
+    #empty{
+      display:none;
+      margin-top: 12px;
+      color: rgba(255,255,255,.70);
+      font-size: 14px;
+      padding: 14px 12px;
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: 16px;
+    }
+
+    /* ===== Modal ===== */
+    .modal{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.62);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+    }
+    .modal.show{ display:flex; }
+    .modalCard{
+      width: min(860px, 95vw);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,22,.92);
+      overflow:hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,.55);
+    }
+    .modalHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.92);
+      font-weight: 900;
+    }
+    .modalClose{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.90);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+    .modalBody{
+      padding: 14px;
+      background: rgba(0,0,0,.25);
+    }
+    .modalBody img{
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+
+    /* ===== Responsive (แก้ 2 ปัญหา: title โดนบีบ + ราคาไม่ขึ้น) ===== */
+    @media (max-width: 720px){
+      .wrap{ margin-top: 16px; }
+      .header{ padding: 14px 14px 12px; }
+      #catThumb{ width: 48px; height: 48px; }
+      .h1{ font-size: 22px; }
+      .hint{ display:flex; }
+      .backBtn{ padding: 9px 12px; }
+      .pdfBtn{ padding: 9px 12px; }
+      .content{ padding: 12px 14px 14px; }
+    }
+
+    /* ⭐ มือถือเล็ก: เปลี่ยนตารางเป็น list layout เพื่อให้ "ราคา" ไม่หาย */
+    @media (max-width: 520px){
+      .headerInner{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        min-height: unset;
+      }
+      .leftGroup{
+        width: 100%;
+      }
+      .rightGroup{
+        width: 100%;
+        justify-content: flex-end;
+      }
+      .crumb{ display:none; }
+
+      thead{ display:none; }
+      tbody tr{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+      }
+      tbody tr td{
+        border-bottom:none;
+        padding: 14px 12px;
+      }
+      tbody tr{
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+      tbody tr:last-child{
+        border-bottom: none;
+      }
+      tbody tr td:first-child{
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      tbody tr td:last-child{
+        flex: 0 0 auto;
+        text-align:right;
+        white-space: nowrap;
+      }
+
+      /* brand header row ให้ไม่เพี้ยน */
+      .brandHeaderRow{
+        display:block !important;
+      }
+      .brandHeaderRow td{
+        display:block !important;
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+
+      /* Mobile polish */
+      #tabs{ gap:8px; }
+      .pill{ padding: 7px 10px; font-size: 12.5px; }
+      .thumb{ width:46px; height:46px; border-radius:14px; }
+      tbody tr{ gap:10px; }
+      tbody tr td{ padding: 12px 12px; }
+      .price{ font-size: 14px; }
+
+
+      /* Price fit fix: prevent overflow on small phones */
+      tbody tr td:last-child{ padding-left: 6px; }
+      .price{ font-size: 13px; }
+      .priceUnit{ font-size: 12px; opacity:.8; }
+      /* If still tight, allow unit to wrap under number */
+      @supports (text-wrap: balance){ }
+      .priceUnit{ display:inline; }
+      @media (max-width: 360px){
+        .priceUnit{ display:block; margin-top:2px; }
+        .price{ text-align:right; }
+      }
+
+
+      /* Universal mobile list layout (better cross-device, incl. iOS Safari) */
+      table{ display:block; width:100%; }
+      tbody{ display:block; width:100%; }
+      tbody tr{ display:flex; width:100%; }
+      tbody tr td{ display:block; }
+      tbody tr td:first-child{ flex: 1 1 58%; min-width: 0; }
+      tbody tr td:last-child{ flex: 0 0 auto; max-width: 42%; }
+
+      /* Ensure long model names wrap and don't push price out */
+      .model{ overflow-wrap:anywhere; }
+
+    }
+  
+
+    /* Hi-tech ambient animation (very subtle) */
+    @keyframes floatGlow{
+      0%{ filter: hue-rotate(0deg); opacity:.34; }
+      50%{ filter: hue-rotate(10deg); opacity:.42; }
+      100%{ filter: hue-rotate(0deg); opacity:.34; }
+    }
+    body::before{ animation: floatGlow 10s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce){
+      body::before{ animation: none; }
+    }
+</style>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>checkAuth();</script>
+
+
+<style>
+  .dealerLogoutPill{
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 9999;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(0,0,0,.35);
+    color: var(--text, #fff);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    font-weight: 800;
+  }
+  .dealerLogoutPill:hover{ filter: brightness(1.08); }
+</style>
+
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card header">
+      <div class="headerInner">
+        <div class="leftGroup">
+          <a class="backBtn" href="./index.html">
+            <span aria-hidden="true">‹</span>
+            <span>กลับหน้าหมวด</span>
+          </a>
+
+          <div id="catThumb" aria-label="รูปหมวด">
+            <img id="catThumbImg" alt="category" />
+          </div>
+
+          <div class="titleBlock">
+            <div class="crumb" id="crumb">Sheet › ...</div>
+            <h1 class="h1" id="pageTitle">...</h1>
+            <div class="updated" id="updateText">อัปเดต: -</div>
+          </div>
+        </div>
+
+        <div class="rightGroup">
+          <div class="hint" id="pdfHint">
+            <span>เปิดเพื่อดาวน์โหลด</span>
+            <span class="arrow">→</span>
+          </div>
+          <a id="openPdfBtn" class="pdfBtn" href="#" target="_blank" rel="noopener">เปิด PDF</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card content">
+      
+
+      <div class="searchWrap">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                stroke="rgba(255,255,255,.78)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input id="search" type="search" autocomplete="off" placeholder="ค้นหารุ่น เช่น iphone15 / 15 pro / samsung / ip15 ..." />
+      </div>
+
+      <div id="tabs"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>รุ่น</th>
+            <th>ราคาส่ง</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+
+      <div id="empty"></div>
+    </div>
+  </div>
+
+  <div id="imgModal" class="modal" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalHead">
+        <div id="modalTitle">รูปสินค้า</div>
+        <button id="modalClose" class="modalClose" type="button">ปิด</button>
+      </div>
+      <div class="modalBody">
+        <img id="modalImg" alt="preview"/>
+      </div>
+    </div>
+  </div>
+
+  <script src="./price_sheet.js"></script>
+<button class="dealerLogoutPill" onclick="logout()">ออกจากระบบ</button>
+</body>
+</html>

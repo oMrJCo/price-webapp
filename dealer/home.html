@@ -3,12 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dealer Home</title>
+  <title>ราคาสินค้า LEEPLUS</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <meta name="description" content="ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ ราคาส่ง อัปเดตตลอด">
+  <meta property="og:title" content="LEEPLUS ราคาสินค้า">
+  <meta property="og:description" content="เช็คราคา เช็คสต็อก แอดไลน์ได้ทันที">
+  <meta property="og:type" content="website">
+
+  <!-- Auto redirect สำหรับ Netlify Identity recovery -->
+  <script>
+    (function () {
+      const hash = window.location.hash || "";
+      if (hash.startsWith("#recovery_token=")) {
+        window.location.replace("/reset-password.html" + hash);
+      }
+    })();
+  </script>
+
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
 
   <style>
-:root{
+    :root{
       --bg:#0b0b0b;
       --panel:#0f172a;
       --card:#111827;
@@ -359,56 +374,30 @@
       .line-sticky.pulse { animation: none; }
     }
 
-/* ===== Dealer Zone extras (ใช้สีจากเว็บหลัก) ===== */
-.dealerCard{
-  border:1px solid var(--border);
-  background:linear-gradient(180deg, var(--card), var(--card2));
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:16px;
-}
-.dealerStack{ display:flex; flex-direction:column; gap:10px; max-width:520px; }
-.dealerBtn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border:1px solid rgba(234,179,8,.40);
-  background: rgba(234,179,8,.10);
-  color: var(--text);
-  font-weight: 900;
-  text-decoration:none;
-  cursor:pointer;
-}
-.dealerBtn.secondary{
-  border-color: rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-}
-.dealerBtn:hover{ filter: brightness(1.05); }
-.dealerInput{
-  width: min(520px, 100%);
-  padding: 13px 14px;
-  border-radius: 16px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.22);
-  color: var(--text);
-  outline:none;
-  font-size: 15px;
-}
-.dealerInput:focus{
-  border-color: rgba(234,179,8,.55);
-  box-shadow: 0 0 0 4px rgba(234,179,8,.08);
-}
-.dealerRow{ display:flex; gap:10px; flex-wrap:wrap; }
-.smallMuted{ color: var(--muted); font-size: 13px; line-height:1.45; }
-
-  </style>
+</style>
 
   <script src="config.js"></script>
-<script src="auth.js"></script>
-<script>checkAuth();</script>
+  <script src="auth.js"></script>
+  <script>checkAuth();</script>
+
+
+<style>
+  .dealerLogoutPill{
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 9999;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(0,0,0,.35);
+    color: var(--text, #fff);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    font-weight: 800;
+  }
+  .dealerLogoutPill:hover{ filter: brightness(1.08); }
+</style>
 
 </head>
 
@@ -416,33 +405,43 @@
   <div class="wrap">
     <header>
       <div class="logo-circle">
-        <img src="/assets/uploads/leeplus-logo.png" alt="LEEPLUS" loading="eager" decoding="async">
+        <img src="assets/uploads/leeplus-logo.png" alt="LEEPLUS" loading="eager" decoding="async">
       </div>
 
-      <div style="flex:1 1 auto; min-width:0;">
-        <h1>LEEPLUS</h1>
-        <p id="siteSubtitle">Dealer Zone</p>
-      </div>
-
-      <div class="dealerRow" style="justify-content:flex-end;">
-        <a class="dealerBtn secondary" href="/" style="padding:10px 12px; border-radius:14px;">กลับหน้าเว็บหลัก</a>
-        <button class="dealerBtn secondary" onclick="logout()" style="padding:10px 12px; border-radius:14px;">ออกจากระบบ</button>
+      <div>
+        <h1 id="siteTitle">LEEPLUS</h1>
+        <p id="siteSubtitle">กำลังโหลด...</p>
       </div>
     </header>
 
-    <div class="cover-box" style="height:auto; aspect-ratio:auto; padding:16px; display:block;">
-  <div class="cover-txt" style="position:relative; left:auto; right:auto; bottom:auto;">
-    <h2 id="coverHeadline" style="margin:0 0 6px;">เมนูตัวแทน</h2>
-    <p id="coverSubtext" class="smallMuted" style="margin:0;">เลือกเมนูที่ต้องการ</p>
-  </div>
-</div>
+    <div class="cover-box" aria-label="โปรโมชั่นและสินค้าแนะนำ">
+      <div id="coverSlider" class="cover-slider" role="region" aria-roledescription="carousel" aria-label="Cover Slider">
+        <!-- slides injected by app.js -->
+      </div>
 
-<div class="dealerStack">
-  <a class="dealerBtn" href="catalog.html">ดาวน์โหลดแคตตาล็อก</a>
-  <a class="dealerBtn secondary" href="terms.html">เงื่อนไข / วิธีสั่งซื้อ</a>
-  <a class="dealerBtn secondary" href="register.html">สมัครตัวแทน</a>
-</div>
+      <button class="cover-nav prev" id="coverPrev" type="button" aria-label="รูปก่อนหน้า">‹</button>
+      <button class="cover-nav next" id="coverNext" type="button" aria-label="รูปถัดไป">›</button>
 
-  </div>
+      <div class="cover-dots" id="coverDots" aria-label="ตัวบ่งชี้สไลด์"></div>
+
+      <div class="cover-txt">
+        <h2 id="coverHeadline"></h2>
+        <p id="coverSubtext"></p>
+      </div>
+    </div>
+
+    <div id="categoriesGrid" class="grid"></div>
+<script src="app.js" defer></script>
+
+  <!-- Sticky LINE CTA (Mobile) -->
+  <a id="lineSticky"
+     href="#"
+     target="_blank"
+     rel="noopener"
+     class="line-sticky pulse"
+     aria-label="แอดไลน์เพื่อเช็คราคาและเช็คสต็อก">
+     💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที
+  </a>
+<button class="dealerLogoutPill" onclick="logout()">ออกจากระบบ</button>
 </body>
 </html>

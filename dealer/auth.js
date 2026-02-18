@@ -1,4 +1,3 @@
-
 function checkAuth() {
   const isAuth = localStorage.getItem("dealerAuth");
   if (isAuth !== "true") {

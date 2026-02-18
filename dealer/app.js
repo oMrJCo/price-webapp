@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!s) return "";
     if (/^https?:\/\//i.test(s) || s.startsWith("data:")) return s;
     if (s.startsWith("/")) return s;
-    // ทำให้รูปจาก JSON ที่เป็น path แบบ assets/... ไม่หลุดไป /dealer/assets/...
     return "/" + s.replace(/^\.\/?/, "");
   }
 function buildPriceSheetUrlFromTab(tabName) {

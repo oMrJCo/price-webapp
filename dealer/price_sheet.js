@@ -30,7 +30,6 @@ function normalizeImageUrl(url) {
   return "/" + s.replace(/^\.\/?/, "");
 }
 
-
 function normalizeMaybeRelativeUrl(url) {
   const u = String(url || "").trim();
   if (!u) return "";

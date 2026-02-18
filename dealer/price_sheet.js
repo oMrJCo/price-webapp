@@ -26,8 +26,10 @@ function normalizeImageUrl(url) {
   if (!s) return "";
   if (isHttpUrl(s)) return s;
   if (s.startsWith("/")) return `https://omrjco.github.io${s}`;
-  return s;
+  // ถ้าเป็น path แบบ assets/... ให้ชี้จาก root เพื่อไม่ให้หลุดไป /dealer/assets/...
+  return "/" + s.replace(/^\.\/?/, "");
 }
+
 
 function normalizeMaybeRelativeUrl(url) {
   const u = String(url || "").trim();

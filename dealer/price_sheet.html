@@ -595,6 +595,23 @@
   .dealerLogoutPill:hover{ filter: brightness(1.08); }
 </style>
 
+
+<style>
+  .dealerPriceBadge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid rgba(234,179,8,.35);
+    background: rgba(234,179,8,.10);
+    color: var(--text);
+    font-weight: 900;
+    letter-spacing: .2px;
+    margin-bottom: 8px;
+  }
+</style>
+
 </head>
 
 <body>
@@ -612,6 +629,7 @@
           </div>
 
           <div class="titleBlock">
+            <div class="dealerPriceBadge">ราคาตัวแทนจำหน่าย</div>
             <div class="crumb" id="crumb">Sheet › ...</div>
             <h1 class="h1" id="pageTitle">...</h1>
             <div class="updated" id="updateText">อัปเดต: -</div>

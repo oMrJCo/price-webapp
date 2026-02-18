@@ -7,7 +7,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   // base สำหรับ GitHub Pages (เพื่อทำ relative path ให้ชัวร์)
   const GH_BASE = "/dealer/";
 
-  function buildPriceSheetUrlFromTab(tabName) {
+  
+
+  function resolveAssetPath(p) {
+    const s = String(p || "").trim();
+    if (!s) return "";
+    if (/^https?:\/\//i.test(s) || s.startsWith("data:")) return s;
+    if (s.startsWith("/")) return s;
+    // ทำให้รูปจาก JSON ที่เป็น path แบบ assets/... ไม่หลุดไป /dealer/assets/...
+    return "/" + s.replace(/^\.\/?/, "");
+  }
+function buildPriceSheetUrlFromTab(tabName) {
     // ใช้ relative จะได้ทำงานทั้งบน GH Pages และกรณีมี custom domain ในอนาคต
     return `${GH_BASE}price_sheet.html?tab=${encodeURIComponent(tabName)}`;
   }
@@ -91,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const img = document.createElement("img");
-        img.src = s.image;
+        img.src = resolveAssetPath(s.image);
         img.alt = s.headline || "cover";
         img.loading = "eager";
 
@@ -241,7 +251,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function renderCard({ title, item, href }) {
       const imgHtml = item.image
-        ? `<img src="${item.image}" alt="${title}" loading="lazy" onerror="this.remove();">`
+        ? `<img src="${resolveAssetPath(item.image)}" alt="${title}" loading="lazy" onerror="this.remove();">`
         : "";
 
       return `

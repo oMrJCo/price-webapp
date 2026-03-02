@@ -5,7 +5,7 @@
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
-const GH_BASE = "/dealer/";
+const GH_BASE = "/price-webapp/";
 
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
@@ -26,8 +26,7 @@ function normalizeImageUrl(url) {
   if (!s) return "";
   if (isHttpUrl(s)) return s;
   if (s.startsWith("/")) return `https://omrjco.github.io${s}`;
-  // ถ้าเป็น path แบบ assets/... ให้ชี้จาก root เพื่อไม่ให้หลุดไป /dealer/assets/...
-  return "/" + s.replace(/^\.\/?/, "");
+  return s;
 }
 
 function normalizeMaybeRelativeUrl(url) {
@@ -80,7 +79,8 @@ async function setupPdfDownloadButton(tabName) {
 
     if (!match) return;
 
-    const pdf = match.pdf || match.pdf_file || "";
+    const isDealer = location.pathname.startsWith("/dealer/");
+    const pdf = (isDealer ? (match.dealer_pdf || match.dealerPdf || "") : "") || match.pdf || match.pdf_file || "";
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 
@@ -288,7 +288,6 @@ async function loadSheetWithMeta(tab) {
     brand: pickIndex(cols, ["brand", "Brand"]),
     model: pickIndex(cols, ["model", "Model"]),
     price: pickIndex(cols, ["price", "Price"]),
-    dealer_price: pickIndex(cols, ["dealer_price", "dealer price", "price_dealer", "dealerPrice", "Dealer Price"]),
     image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
     updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"]),
   };
@@ -300,7 +299,7 @@ async function loadSheetWithMeta(tab) {
     return {
       brand: String(cellValue(c[idx.brand]) || "").trim(),
       model: String(cellValue(c[idx.model]) || "").trim(),
-      price: (() => { const dp = String(cellValue(c[idx.dealer_price]) || "").trim(); const p = String(cellValue(c[idx.price]) || "").trim(); return dp || p; })(),
+      price: String(cellValue(c[idx.price]) || "").trim(),
       image_url: String(cellValue(c[idx.image_url]) || "").trim(),
       updated: String(cellValue(c[idx.updated]) || "").trim(),
       __all: allValues

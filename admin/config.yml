@@ -105,7 +105,7 @@ collections:
         hint: แนะนำขนาด 1920×800 px (แนวนอน)
         required: false
         media_folder: assets/uploads/images
-        public_folder: /price-webapp/assets/uploads/images
+        public_folder: /assets/uploads/images
       - label: Sheet Tab (แนะนำ ถ้าใช้ price_sheet)
         name: sheetTab
         widget: string
@@ -118,18 +118,17 @@ collections:
         required: false
         hint: วางลิงก์หน้าแสดงราคา เช่น https://omrjco.github.io/price-webapp/price_sheet.html?tab=Battery
           (ถ้าใส่ ระบบจะใช้ลิงก์นี้ก่อน)
-      - label: PDF Link (OPTIONAL)
+      - label: PDF ราคาปกติ (OPTIONAL)
         name: pdf
-        widget: string
-        required: false
-        hint: วางลิงก์ PDF ที่เปิดตรงได้ (ลงท้าย .pdf) — ใช้เมื่อไม่ได้ตั้งค่า Sheet
-          Tab/Price Page Link
-      - label: PDF File (Upload) (OPTIONAL)
-        name: pdf_file
         widget: file
-        hint: แนบไฟล์ PDF ได้ (ระบบจะใช้เมื่อไม่มี Sheet Tab/Price Page Link และ PDF
-          Link ว่าง)
         required: false
-        allow_multiple: false
         media_folder: assets/uploads/pdfs
-        public_folder: /price-webapp/assets/uploads/pdfs
+        public_folder: /assets/uploads/pdfs
+        hint: อัปโหลดไฟล์ PDF สำหรับ “ราคาปกติ” (ลูกค้าทั่วไป)
+      - label: PDF ราคาตัวแทน (OPTIONAL)
+        name: dealer_pdf
+        widget: file
+        required: false
+        media_folder: assets/uploads/pdfs
+        public_folder: /assets/uploads/pdfs
+        hint: อัปโหลดไฟล์ PDF สำหรับ “ราคาตัวแทนจำหน่าย” (ใช้เฉพาะใน /dealer/)

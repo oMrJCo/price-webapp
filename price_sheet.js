@@ -79,7 +79,8 @@ async function setupPdfDownloadButton(tabName) {
 
     if (!match) return;
 
-    const pdf = match.pdf || match.pdf_file || "";
+    const isDealer = location.pathname.startsWith("/dealer/");
+    const pdf = (isDealer ? (match.dealer_pdf || match.dealerPdf || "") : "") || match.pdf || match.pdf_file || "";
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 

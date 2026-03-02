@@ -99,7 +99,8 @@
     },
     {
       "titleEN": "test",
-      "titleTH": "test"
+      "titleTH": "test",
+      "image": "/price-webapp/assets/uploads/images/infinix-logo.png"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

@@ -111,6 +111,11 @@
       "titleEN": "test333",
       "titleTH": "test333",
       "image": "/price-webapp/assets/uploads/images/Black-Shark.jpg"
+    },
+    {
+      "titleEN": "test123456",
+      "titleTH": "123456",
+      "image": "/price-webapp/assets/uploads/images/30W-C.png"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

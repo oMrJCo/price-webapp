@@ -362,7 +362,9 @@
     /* Mobile: full-width bar like native CTA */
     @media (max-width: 768px){
       @keyframes softPulseMobile {
-        0%, 100% { transform: scale(1); }
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50% { transform: translateX(-50%) scale(1.02); }
+      }
         50% { transform: scale(1.02); }
       }
       .line-sticky.pulse {
@@ -416,7 +418,7 @@
       </div>
 
       <nav class="topNav">
-        <a href="/dealer/" class="dealerNavBtn">ราคาสำหรับตัวแทนจำหน่าย</a>
+        <a href="/dealer/" class="dealerNavBtn">Dealer</a>
       </nav>
     </header>
 

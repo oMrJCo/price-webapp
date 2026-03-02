@@ -33,7 +33,8 @@
       "image": "assets/uploads/images/b1.jpg",
       "pdf": "",
       "pdf_file": "assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf",
-      "price_url": "price_sheet.html?tab=Battery"
+      "price_url": "price_sheet.html?tab=Battery",
+      "dealer_pdf": "/assets/uploads/pdfs/1.ราคาตัวแทน-battery.pdf"
     },
     {
       "titleEN": "Battery Power Up",

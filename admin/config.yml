@@ -4,7 +4,7 @@ backend:
 site_url: https://sprightly-panda-ba302f.netlify.app
 display_url: https://omrjco.github.io/price-webapp
 media_folder: assets/uploads
-public_folder: /price-webapp/assets/uploads
+public_folder: /assets/uploads
 collections:
 - name: categories_config
   label: Categories

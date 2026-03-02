@@ -100,22 +100,22 @@
     {
       "titleEN": "test",
       "titleTH": "test",
-      "image": "/price-webapp/assets/uploads/images/CLLP27w.jpg"
+      "image": "assets/uploads/images/CLLP27w.jpg"
     },
     {
       "titleEN": "test2026",
       "titleTH": "test2026",
-      "image": "/price-webapp/assets/uploads/images/CCLP60w.jpg"
+      "image": "assets/uploads/images/CCLP60w.jpg"
     },
     {
       "titleEN": "test333",
       "titleTH": "test333",
-      "image": "/price-webapp/assets/uploads/images/Black-Shark.jpg"
+      "image": "assets/uploads/images/Black-Shark.jpg"
     },
     {
       "titleEN": "test123456",
       "titleTH": "123456",
-      "image": "/price-webapp/assets/uploads/images/30W-C.png"
+      "image": "assets/uploads/images/30W-C.png"
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

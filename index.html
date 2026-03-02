@@ -373,6 +373,33 @@
       .line-sticky.pulse { animation: none; }
     }
 
+
+    /* ===== Top Right Dealer Nav ===== */
+    .topNav{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+    }
+
+    .dealerNavBtn{
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(234,179,8,.4);
+      background:rgba(234,179,8,.12);
+      color:var(--text);
+      font-weight:900;
+      text-decoration:none;
+      letter-spacing:.3px;
+      font-size:13px;
+      transition:all .2s ease;
+    }
+
+    .dealerNavBtn:hover{
+      transform:translateY(-2px);
+      filter:brightness(1.05);
+      border-color:rgba(234,179,8,.7);
+    }
+
 </style>
 </head>
 
@@ -383,10 +410,14 @@
         <img src="assets/uploads/leeplus-logo.png" alt="LEEPLUS" loading="eager" decoding="async">
       </div>
 
-      <div>
+      <div style="flex:1;">
         <h1 id="siteTitle">LEEPLUS</h1>
         <p id="siteSubtitle">กำลังโหลด...</p>
       </div>
+
+      <nav class="topNav">
+        <a href="/dealer/" class="dealerNavBtn">Dealer</a>
+      </nav>
     </header>
 
     <div class="cover-box" aria-label="โปรโมชั่นและสินค้าแนะนำ">

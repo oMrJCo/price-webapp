@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const s = String(p || "").trim();
     if (!s) return "";
     if (/^https?:\/\//i.test(s) || s.startsWith("data:")) return s;
+    if (s.startsWith("/price-webapp/")) return s.replace("/price-webapp", "");
     if (s.startsWith("/")) return s;
     return "/" + s.replace(/^\.\/?/, "");
   }

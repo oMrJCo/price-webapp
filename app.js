@@ -1,42 +1,100 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const grid = document.getElementById("categoriesGrid");
 
-  const CATEGORIES_URL =
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
+
+  const FALLBACK_CATEGORIES_URL =
     "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 
-  // base สำหรับ GitHub Pages (เพื่อทำ relative path ให้ชัวร์)
   const GH_BASE = "/";
 
   function buildPriceSheetUrlFromTab(tabName) {
-    // ใช้ relative จะได้ทำงานทั้งบน GH Pages และกรณีมี custom domain ในอนาคต
     return `${GH_BASE}price_sheet.html?tab=${encodeURIComponent(tabName)}`;
   }
 
-  function isLikelyHttpUrl(url) {
-    return typeof url === "string" && /^https?:\/\//i.test(url.trim());
+  function normalizeMaybeRelativeUrl(url) {
+    if (!url) return "";
+    const u = String(url).trim();
+    if (!u) return "";
+    if (/^https?:\/\//i.test(u)) return u;
+    return u.replace(/^\/+/, "");
   }
 
-  function normalizeMaybeRelativeUrl(url) {
-   if (!url) return "";
-   const u = String(url).trim();
-   if (!u) return "";
-   if (/^https?:\/\//i.test(u)) return u;
-   return u.replace(/^\/+/, "");
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el && text !== undefined && text !== null) {
+      el.textContent = text;
+    }
+  }
+
+  function normalizeCategory(item) {
+    return {
+      titleEN: item.titleEN || "",
+      titleTH: item.titleTH || "",
+      image: item.image || "",
+      sheetTab: item.sheetTab || "",
+      price_url: item.price_url || "",
+      pdf: item.pdf || "",
+      dealer_pdf: item.dealer_pdf || "",
+      sort: item.sort || "",
+      status: item.status || "",
+    };
+  }
+
+  async function loadFromSheetApi() {
+    const res = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) throw new Error("API load failed");
+
+    const json = await res.json();
+
+    if (!json.success) {
+      throw new Error(json.message || "API success false");
+    }
+
+    return {
+      siteTitle: "LEEPLUS",
+      siteSubtitle: "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ",
+      lineUrl: "https://line.me/R/ti/p/@leeplus",
+      lineStickyEnabled: true,
+      lineCtaText: "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
+      coverHeadline: "LEEPLUS PRICE LIST",
+      coverSubtext: "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที",
+      coverSlides: [],
+      categories: (json.data || []).map(normalizeCategory),
+    };
+  }
+
+  async function loadFallbackJson() {
+    const res = await fetch(`${FALLBACK_CATEGORIES_URL}?v=${Date.now()}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) throw new Error("Fallback categories.json failed");
+
+    return await res.json();
   }
 
   try {
-    const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to load categories.json");
+    let data;
 
-    const data = await res.json();
+    try {
+      data = await loadFromSheetApi();
+      console.log("Loaded categories from Google Sheet API");
+    } catch (apiErr) {
+      console.warn("Sheet API failed, fallback to categories.json", apiErr);
+      data = await loadFallbackJson();
+    }
 
-    // ===== Header / Cover =====
-    if (data.siteTitle) document.getElementById("siteTitle").textContent = data.siteTitle;
-    if (data.siteSubtitle) document.getElementById("siteSubtitle").textContent = data.siteSubtitle;
+    setText("siteTitle", data.siteTitle || "LEEPLUS");
+    setText(
+      "siteSubtitle",
+      data.siteSubtitle || "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ"
+    );
 
-    // Cover: รองรับทั้งแบบรูปเดียว (coverImage) และแบบสไลด์ (coverSlides/coverImages)
     const coverHeadlineEl = document.getElementById("coverHeadline");
     const coverSubtextEl = document.getElementById("coverSubtext");
     const sliderEl = document.getElementById("coverSlider");
@@ -44,37 +102,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     const prevBtn = document.getElementById("coverPrev");
     const nextBtn = document.getElementById("coverNext");
 
-    const singleCover = data.coverImage ? [{
-      image: data.coverImage,
-      headline: data.coverHeadline || "",
-      subtext: data.coverSubtext || "",
-      link: data.coverLink || ""
-    }] : [];
+    const singleCover = data.coverImage
+      ? [
+          {
+            image: data.coverImage,
+            headline: data.coverHeadline || "",
+            subtext: data.coverSubtext || "",
+            link: data.coverLink || "",
+          },
+        ]
+      : [];
 
-    const slidesRaw = Array.isArray(data.coverSlides) ? data.coverSlides
-                    : Array.isArray(data.coverImages) ? data.coverImages
-                    : [];
+    const slidesRaw = Array.isArray(data.coverSlides)
+      ? data.coverSlides
+      : Array.isArray(data.coverImages)
+      ? data.coverImages
+      : [];
 
     const slides = (slidesRaw.length ? slidesRaw : singleCover)
-      .map(s => ({
-        image: (s && (s.image || s.src || s.url)) ? (s.image || s.src || s.url) : "",
-        headline: (s && (s.headline || s.title || s.text)) ? (s.headline || s.title || s.text) : "",
-        subtext: (s && (s.subtext || s.subtitle || s.desc)) ? (s.subtext || s.subtitle || s.desc) : "",
-        link: (s && (s.link || s.href)) ? (s.link || s.href) : ""
+      .map((s) => ({
+        image: s && (s.image || s.src || s.url) ? s.image || s.src || s.url : "",
+        headline:
+          s && (s.headline || s.title || s.text)
+            ? s.headline || s.title || s.text
+            : "",
+        subtext:
+          s && (s.subtext || s.subtitle || s.desc)
+            ? s.subtext || s.subtitle || s.desc
+            : "",
+        link: s && (s.link || s.href) ? s.link || s.href : "",
       }))
-      .filter(s => !!String(s.image || "").trim());
+      .filter((s) => !!String(s.image || "").trim());
 
     const coverIntervalSecRaw = Number(data.coverInterval);
-    const coverIntervalSec = Number.isFinite(coverIntervalSecRaw) ? Math.min(10, Math.max(2, coverIntervalSecRaw)) : 3;
+    const coverIntervalSec = Number.isFinite(coverIntervalSecRaw)
+      ? Math.min(10, Math.max(2, coverIntervalSecRaw))
+      : 3;
     const coverIntervalMs = Math.round(coverIntervalSec * 1000);
 
-    function setCoverText(i){
+    function setCoverText(i) {
       const s = slides[i] || {};
-      if (coverHeadlineEl) coverHeadlineEl.textContent = s.headline || "";
-      if (coverSubtextEl) coverSubtextEl.textContent = s.subtext || "";
+      if (coverHeadlineEl) {
+        coverHeadlineEl.textContent =
+          s.headline || data.coverHeadline || "LEEPLUS PRICE LIST";
+      }
+      if (coverSubtextEl) {
+        coverSubtextEl.textContent =
+          s.subtext || data.coverSubtext || "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที";
+      }
     }
 
-    function renderSlider(){
+    function renderSlider() {
       if (!sliderEl) return;
       sliderEl.innerHTML = "";
       if (dotsEl) dotsEl.innerHTML = "";
@@ -116,44 +194,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     let startX = 0;
     let dx = 0;
 
-    function updateUI(){
+    function updateUI() {
       if (!sliderEl) return;
       sliderEl.style.transform = `translateX(${-active * 100}%)`;
       if (dotsEl) {
-        [...dotsEl.children].forEach((el, i) => el.classList.toggle("active", i === active));
+        [...dotsEl.children].forEach((el, i) =>
+          el.classList.toggle("active", i === active)
+        );
       }
       setCoverText(active);
     }
 
-    function stopAuto(){
-      if (timer) { clearInterval(timer); timer = null; }
+    function stopAuto() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
     }
-    function startAuto(){
+
+    function startAuto() {
       stopAuto();
       if (slides.length <= 1) return;
       timer = setInterval(() => go(active + 1), coverIntervalMs);
     }
 
-    function go(i, userAction=false){
+    function go(i, userAction = false) {
       if (!slides.length) return;
       active = (i + slides.length) % slides.length;
       updateUI();
-      if (userAction) {
-        // user interacted -> restart auto
-        startAuto();
-      }
+      if (userAction) startAuto();
     }
 
     renderSlider();
-    // ถ้าไม่มีสไลด์ ให้ fallback เป็นข้อความเดิม
+
     if (!slides.length) {
-      if (coverHeadlineEl) coverHeadlineEl.textContent = data.coverHeadline || "";
-      if (coverSubtextEl) coverSubtextEl.textContent = data.coverSubtext || "";
+      if (coverHeadlineEl) {
+        coverHeadlineEl.textContent = data.coverHeadline || "LEEPLUS PRICE LIST";
+      }
+      if (coverSubtextEl) {
+        coverSubtextEl.textContent =
+          data.coverSubtext || "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที";
+      }
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
+      if (dotsEl) dotsEl.style.display = "none";
     } else {
       updateUI();
       startAuto();
 
-      // Swipe support
+      if (prevBtn) prevBtn.addEventListener("click", () => go(active - 1, true));
+      if (nextBtn) nextBtn.addEventListener("click", () => go(active + 1, true));
+
       const coverBox = sliderEl?.parentElement;
       if (coverBox && slides.length > 1) {
         coverBox.addEventListener("pointerdown", (e) => {
@@ -167,13 +258,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         coverBox.addEventListener("pointermove", (e) => {
           if (!isDragging) return;
           dx = e.clientX - startX;
-          // small resistance; do not actually drag transform to keep it simple & stable
         });
 
         const endDrag = () => {
           if (!isDragging) return;
           isDragging = false;
-          const threshold = 42; // px
+          const threshold = 42;
           if (dx > threshold) go(active - 1, true);
           else if (dx < -threshold) go(active + 1, true);
           else startAuto();
@@ -184,21 +274,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         coverBox.addEventListener("pointercancel", endDrag);
         coverBox.addEventListener("pointerleave", endDrag);
 
-        // Pause autoplay when user holds finger
         coverBox.addEventListener("touchstart", () => stopAuto(), { passive: true });
         coverBox.addEventListener("touchend", () => startAuto(), { passive: true });
       }
 
-      // Pause on hover (desktop)
       sliderEl?.parentElement?.addEventListener("mouseenter", stopAuto);
       sliderEl?.parentElement?.addEventListener("mouseleave", startAuto);
     }
 
-    
-    // Sticky LINE CTA (configurable from CMS)
     const lineSticky = document.getElementById("lineSticky");
-    const stickyEnabled = (typeof data.lineStickyEnabled === "boolean") ? data.lineStickyEnabled : true;
-    const stickyText = (data.lineCtaText || "").trim() || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที";
+    const stickyEnabled =
+      typeof data.lineStickyEnabled === "boolean" ? data.lineStickyEnabled : true;
+    const stickyText =
+      (data.lineCtaText || "").trim() || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที";
+
     if (lineSticky) {
       if (!stickyEnabled) {
         lineSticky.style.display = "none";
@@ -208,33 +297,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
 
-    // ===== LINE =====
-    // LINE fields are used by Sticky CTA (and optional cover slide links)
+    const items = Array.isArray(data.categories) ? data.categories : [];
 
-
-    // ===== Categories =====
-    const items = data.categories || [];
+    if (!items.length) {
+      grid.innerHTML = `<div style="padding:16px;">ยังไม่มีหมวดสินค้าที่เปิดใช้งาน</div>`;
+      return;
+    }
 
     grid.innerHTML = items
       .map((item) => {
         const title = item.titleEN || item.titleTH || "Category";
 
-        // ✅ Priority 1: SheetTab (แนะนำ)
         const sheetTab = (item.sheetTab || "").trim();
         if (sheetTab) {
           const href = buildPriceSheetUrlFromTab(sheetTab);
           return renderCard({ title, item, href });
         }
 
-        // ✅ Priority 2: Price Page Link (เช่น ลิงก์ price_sheet POC แบบเต็ม)
         const priceUrl = normalizeMaybeRelativeUrl(item.price_url);
         if (priceUrl) {
           return renderCard({ title, item, href: priceUrl });
         }
 
-        // ✅ Priority 3: PDF fallback (เดิม)
         const pdf = item.pdf || item.pdf_file || "";
-        const pdfHref = `${GH_BASE}price.html?title=${encodeURIComponent(title)}&pdf=${encodeURIComponent(pdf)}`;
+        const pdfHref = `${GH_BASE}price.html?title=${encodeURIComponent(
+          title
+        )}&pdf=${encodeURIComponent(pdf)}`;
+
         return renderCard({ title, item, href: pdfHref });
       })
       .join("");
@@ -242,7 +331,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function renderCard({ title, item, href }) {
       const imgHtml = item.image
         ? `<img src="${item.image}" alt="${title}" loading="lazy" onerror="this.remove();">`
-        : "";
+        : `<div class="placeholder">LEEPLUS</div>`;
 
       return `
         <a class="card" href="${href}">

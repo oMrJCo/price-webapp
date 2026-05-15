@@ -1,10 +1,12 @@
-/* GVIZ_JSON_VERSION: 2026-02-03g (LEEPLUS) ✅
-   - NEW badge: replace "(NEW)" with small badge <span class="badgeNew">NEW</span>
-   - Keep all existing logic: tabs, all grouping, search, pdf button, meta images
+/* DEALER PRICE SHEET VERSION: 2026-05-15a
+   - Dealer zone
+   - Read categories/pdf from Google Sheet API
+   - Read meta category/brand images from API
+   - Use dealer_price first, fallback to price
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
-const CATEGORIES_URL = "/categories.json";
+const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
 const GH_BASE = "/dealer/";
 const IS_DEALER_ZONE = true;
 
@@ -17,13 +19,19 @@ const DEBUG = getParam("debug") === "1";
 
 function escapeHTML(s) {
   return String(s ?? "")
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
-function isHttpUrl(url) { return typeof url === "string" && /^https?:\/\//i.test(url.trim()); }
+
+function isHttpUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url.trim());
+}
 
 function normalizeImageUrl(url) {
-  const s = (url || "").trim();
+  const s = String(url || "").trim();
   if (!s) return "";
   if (isHttpUrl(s)) return s;
   if (s.startsWith("/")) return `https://omrjco.github.io${s}`;
@@ -49,22 +57,47 @@ function tryGetTabFromPriceUrl(priceUrl) {
   }
 }
 
+async function loadMetaConfig() {
+  try {
+    const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
+      cache: "no-store"
+    });
+
+    if (!res.ok) throw new Error("Meta API failed");
+
+    const json = await res.json();
+    if (!json.success) throw new Error("Meta API success false");
+
+    return json.data || {};
+  } catch (e) {
+    console.warn("loadMetaConfig failed:", e);
+    return { site: {}, category: {}, brand: {} };
+  }
+}
+
 async function setupPdfDownloadButton(tabName) {
   const btn = el("openPdfBtn");
   const hint = el("pdfHint");
   if (!btn) return;
+
   btn.style.display = "none";
   if (hint) hint.style.display = "none";
 
   try {
-    const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) return;
+    const res = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, {
+      cache: "no-store"
+    });
 
-    const data = await res.json();
-    const cats = Array.isArray(data.categories) ? data.categories : [];
+    if (!res.ok) throw new Error("Categories API failed");
+
+    const json = await res.json();
+    if (!json.success) throw new Error("Categories API success false");
+
+    const cats = Array.isArray(json.data) ? json.data : [];
 
     const tab = String(tabName || "").trim();
     if (!tab) return;
+
     const tabLower = tab.toLowerCase();
 
     const match = cats.find((c) => {
@@ -80,7 +113,12 @@ async function setupPdfDownloadButton(tabName) {
 
     if (!match) return;
 
-    const pdf = (IS_DEALER_ZONE ? (match.dealer_pdf || match.dealerPdf || match.pdf_dealer || "") : "") || match.pdf || match.pdf_file || "";
+    const pdf =
+      (IS_DEALER_ZONE ? (match.dealer_pdf || match.dealerPdf || match.pdf_dealer || "") : "") ||
+      match.pdf ||
+      match.pdf_file ||
+      "";
+
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 
@@ -91,9 +129,10 @@ async function setupPdfDownloadButton(tabName) {
     btn.rel = "noopener";
     btn.removeAttribute("download");
     btn.style.display = "inline-flex";
+
     if (hint) hint.style.display = "inline-flex";
   } catch (e) {
-    console.warn("setupPdfDownloadButton failed:", e);
+    console.warn("setupPdfDownloadButton from API failed:", e);
   }
 }
 
@@ -103,7 +142,10 @@ function uniq(arr) {
   const out = [];
   for (const x of arr) {
     const k = String(x);
-    if (!set.has(k)) { set.add(k); out.push(x); }
+    if (!set.has(k)) {
+      set.add(k);
+      out.push(x);
+    }
   }
   return out;
 }
@@ -111,11 +153,16 @@ function uniq(arr) {
 function groupByBrandPreserveSheetOrder(rows) {
   const brandOrder = [];
   const map = new Map();
+
   for (const r of rows) {
     const b = (r.brand || "").trim() || "Unknown";
-    if (!map.has(b)) { map.set(b, []); brandOrder.push(b); }
+    if (!map.has(b)) {
+      map.set(b, []);
+      brandOrder.push(b);
+    }
     map.get(b).push(r);
   }
+
   const out = [];
   for (const b of brandOrder) {
     out.push({ __type: "brandHeader", brand: b });
@@ -138,22 +185,16 @@ function normalizeSearchTokens(s) {
   return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
 }
 
-/* ✅ NEW badge: turn "(NEW)" into a small badge NEW (case-insensitive) */
 function formatModelHTML(model) {
   const raw = String(model || "");
 
-  // Detect NEW in multiple formats:
-  // (NEW)  |  NEW  |  NEW! / NEW!! / NEW!!!
-  // and remove the token from the displayed model text.
   let isNew = false;
-  let cleaned = raw.replace(/\(\s*NEW\s*\)|\bNEW\b\s*!*/gi, (m) => {
+  let cleaned = raw.replace(/\(\s*NEW\s*\)|\bNEW\b\s*!*/gi, () => {
     isNew = true;
     return "";
   });
 
-  // Clean leftover whitespace
   cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
-
   const safe = escapeHTML(cleaned);
 
   return isNew ? `${safe}<span class="badgeNew">NEW</span>` : safe;
@@ -171,6 +212,7 @@ function setupImageModal() {
     modal?.setAttribute("aria-hidden", "true");
     if (img) img.src = "";
   }
+
   function show(src, t) {
     if (title) title.textContent = t || "รูปสินค้า";
     if (img) img.src = src;
@@ -179,8 +221,13 @@ function setupImageModal() {
   }
 
   close?.addEventListener("click", hide);
-  modal?.addEventListener("click", (e) => { if (e.target === modal) hide(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) hide();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hide();
+  });
 
   document.addEventListener("click", (e) => {
     const t = e.target.closest(".thumb");
@@ -201,7 +248,7 @@ function setupImageModal() {
   });
 }
 
-/* ===== META ===== */
+/* ===== old META row helpers ===== */
 function metaKey(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -209,6 +256,7 @@ function metaKey(s) {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "");
 }
+
 function extractFirstUrlFromRow(values) {
   for (const v of values) {
     const s = String(v || "").trim();
@@ -217,11 +265,13 @@ function extractFirstUrlFromRow(values) {
   }
   return "";
 }
+
 function isProbablyNumber(s) {
   const t = String(s || "").trim();
   if (!t) return false;
   return /^-?\d+(\.\d+)?$/.test(t);
 }
+
 function pickBrandNameFromRow(values) {
   const candidates = [];
   for (const v of values) {
@@ -233,8 +283,14 @@ function pickBrandNameFromRow(values) {
     if (isProbablyNumber(s)) continue;
     candidates.push(s);
   }
+
   if (!candidates.length) return "";
-  candidates.sort((a,b) => (a.length + (a.match(/\s/g)?.length||0)*5) - (b.length + (b.match(/\s/g)?.length||0)*5));
+
+  candidates.sort((a, b) =>
+    (a.length + (a.match(/\s/g)?.length || 0) * 5) -
+    (b.length + (b.match(/\s/g)?.length || 0) * 5)
+  );
+
   return candidates[0].trim();
 }
 
@@ -244,19 +300,27 @@ function gvizJsonUrl(sheetName) {
   const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
   return `${base}?${params.toString()}`;
 }
+
 function parseGvizResponse(text) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
-  if (start < 0 || end < 0 || end <= start) throw new Error("Invalid GViz response");
+  if (start < 0 || end < 0 || end <= start) {
+    throw new Error("Invalid GViz response");
+  }
   return JSON.parse(text.slice(start, end + 1));
 }
-function colLabel(c) { return String(c.label || c.id || "").trim(); }
+
+function colLabel(c) {
+  return String(c.label || c.id || "").trim();
+}
+
 function cellValue(v) {
   if (!v) return "";
   if (typeof v.f === "string" && v.f.trim() !== "") return v.f;
   if (v.v == null) return "";
   return String(v.v);
 }
+
 function normColName(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -264,6 +328,7 @@ function normColName(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "");
 }
+
 function pickIndex(cols, candidates) {
   const names = cols.map(c => normColName(colLabel(c)));
   for (const cand of candidates) {
@@ -277,8 +342,8 @@ async function loadSheetWithMeta(tab) {
   const url = gvizJsonUrl(tab);
   const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch GViz JSON");
-  const text = await res.text();
 
+  const text = await res.text();
   const json = parseGvizResponse(text);
   const table = json?.table;
   const cols = Array.isArray(table?.cols) ? table.cols : [];
@@ -292,15 +357,38 @@ async function loadSheetWithMeta(tab) {
     image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
     updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"]),
   };
-  if (Object.values(idx).some(v => v === -1)) idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
+
+  if (
+    idx.brand === -1 ||
+    idx.model === -1 ||
+    idx.price === -1 ||
+    idx.image_url === -1 ||
+    idx.updated === -1
+  ) {
+    idx = {
+      brand: 0,
+      model: 1,
+      price: 2,
+      dealer_price: 3,
+      image_url: 4,
+      updated: 5
+    };
+  }
 
   const raw = rows.map(r => {
     const c = Array.isArray(r.c) ? r.c : [];
     const allValues = c.map(cellValue).map(s => String(s || "").trim());
+
+    const dealerPrice =
+      idx.dealer_price >= 0 ? String(cellValue(c[idx.dealer_price]) || "").trim() : "";
+
+    const normalPrice =
+      idx.price >= 0 ? String(cellValue(c[idx.price]) || "").trim() : "";
+
     return {
       brand: String(cellValue(c[idx.brand]) || "").trim(),
       model: String(cellValue(c[idx.model]) || "").trim(),
-      price: (() => { const dp = String(cellValue(c[idx.dealer_price]) || "").trim(); const p = String(cellValue(c[idx.price]) || "").trim(); return dp || p; })(),
+      price: dealerPrice || normalPrice,
       image_url: String(cellValue(c[idx.image_url]) || "").trim(),
       updated: String(cellValue(c[idx.updated]) || "").trim(),
       __all: allValues
@@ -315,31 +403,48 @@ async function loadSheetWithMeta(tab) {
 
     const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
     const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
-    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    const hasBRAND =
+      rowKeys.includes("BRANDIMAGE") ||
+      metaKey(r.model) === "BRANDIMAGE" ||
+      metaKey(r.brand) === "BRANDIMAGE";
 
     const url = normalizeImageUrl(r.image_url) || extractFirstUrlFromRow(r.__all);
 
-    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) categoryImageUrl = url;
+    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) {
+      categoryImageUrl = url;
+    }
 
     if (hasBRAND && url) {
-      const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand) ? r.brand : pickBrandNameFromRow(r.__all);
+      const b =
+        metaKey(r.brand) !== "BRANDIMAGE" &&
+        metaKey(r.brand) !== "META" &&
+        r.brand
+          ? r.brand
+          : pickBrandNameFromRow(r.__all);
+
       if (b) brandImageMap.set(b, url);
     }
   }
 
-  const products = raw.filter(r => {
-    const rowKeys = r.__all.map(metaKey);
-    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
-    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
-    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
-    return !((hasMETA && hasCATEGORY) || hasBRAND);
-  }).map(({ __all, ...rest }) => rest);
+  const products = raw
+    .filter(r => {
+      const rowKeys = r.__all.map(metaKey);
+
+      const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+      const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+      const hasBRAND =
+        rowKeys.includes("BRANDIMAGE") ||
+        metaKey(r.model) === "BRANDIMAGE" ||
+        metaKey(r.brand) === "BRANDIMAGE";
+
+      return !((hasMETA && hasCATEGORY) || hasBRAND);
+    })
+    .map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03g");
-    console.log("[DEBUG] idx:", idx);
-    console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
-    console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
+    console.log("[DEALER DEBUG] idx:", idx);
+    console.log("[DEALER DEBUG] old categoryImageUrl:", categoryImageUrl);
+    console.log("[DEALER DEBUG] old brandImageMap:", Array.from(brandImageMap.entries()));
   }
 
   return { rows: products, categoryImageUrl, brandImageMap };
@@ -349,6 +454,7 @@ async function loadSheetWithMeta(tab) {
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
   if (!root) return;
+
   root.innerHTML = "";
 
   for (const b of brands) {
@@ -364,7 +470,7 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
         wrap.className = "tabIcon";
         wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" class="tabIconImg">`;
         btn.appendChild(wrap);
-}
+      }
     }
 
     const label = document.createElement("span");
@@ -386,12 +492,17 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
 function renderTable(rows, brandImageMap) {
   const tbody = el("tbody");
   if (!tbody) return;
+
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "ไม่พบข้อมูล"; }
+    if (el("empty")) {
+      el("empty").style.display = "block";
+      el("empty").textContent = "ไม่พบข้อมูล";
+    }
     return;
   }
+
   if (el("empty")) el("empty").style.display = "none";
 
   for (const r of rows) {
@@ -418,7 +529,7 @@ function renderTable(rows, brandImageMap) {
               data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
             <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
          </div>`
-      : ``;
+      : "";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -430,6 +541,7 @@ function renderTable(rows, brandImageMap) {
       </td>
       <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
     `;
+
     tbody.appendChild(tr);
   }
 }
@@ -454,19 +566,52 @@ function applyCategoryThumb(categoryImageUrl) {
   setupImageModal();
 
   const tab = getParam("tab") || "Battery";
-  el("crumb") && (el("crumb").textContent = `Sheet › ${tab}`);
-  el("pageTitle") && (el("pageTitle").textContent = tab);
+
+  if (el("crumb")) el("crumb").textContent = `Sheet › ${tab}`;
+  if (el("pageTitle")) el("pageTitle").textContent = tab;
 
   setupPdfDownloadButton(tab);
 
-  const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
+  const meta = await loadMetaConfig();
+
+  const {
+    rows: all,
+    categoryImageUrl: oldCategoryImageUrl,
+    brandImageMap: oldBrandImageMap
+  } = await loadSheetWithMeta(tab);
+
+  const categoryImageUrl =
+    meta?.category?.[tab] ||
+    meta?.category?.[String(tab).trim()] ||
+    oldCategoryImageUrl ||
+    "";
+
+  const brandImageMap = new Map(oldBrandImageMap);
+
+  Object.entries(meta?.brand || {}).forEach(([k, v]) => {
+    const key = String(k || "").trim();
+    const value = String(v || "").trim();
+    if (key && value) {
+      brandImageMap.set(key, value);
+    }
+  });
+
+  if (DEBUG) {
+    console.log("[DEALER DEBUG] meta:", meta);
+    console.log("[DEALER DEBUG] final categoryImageUrl:", categoryImageUrl);
+    console.log("[DEALER DEBUG] final brandImageMap:", Array.from(brandImageMap.entries()));
+  }
+
   applyCategoryThumb(categoryImageUrl);
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
-  el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
+  if (el("updateText")) el("updateText").textContent = `อัปเดต: ${upd}`;
 
   const brandNames = uniq(all.map(r => (r.brand || "").trim())).filter(Boolean);
-  const brands = [{ key: ALL_BRAND_KEY, label: ALL_BRAND_LABEL }, ...brandNames.map(b => ({ key: b, label: b }))];
+  const brands = [
+    { key: ALL_BRAND_KEY, label: ALL_BRAND_LABEL },
+    ...brandNames.map(b => ({ key: b, label: b }))
+  ];
 
   let activeBrand = ALL_BRAND_KEY;
   let query = "";
@@ -482,10 +627,13 @@ function applyCategoryThumb(categoryImageUrl) {
       rows = all.filter(r => {
         const hay = `${r.brand || ""} ${r.model || ""}`.toLowerCase();
         const hayCompact = normalizeSearchCompact(hay);
+
         if (qCompact && hayCompact.includes(qCompact)) return true;
         if (qTokens.length) return qTokens.every(t => hay.includes(t));
+
         return false;
       });
+
       renderTable(rows, brandImageMap);
       return;
     }
@@ -498,10 +646,21 @@ function applyCategoryThumb(categoryImageUrl) {
     }
   }
 
-  renderTabs(brands, activeBrand, (b) => { activeBrand = b; apply(); }, brandImageMap);
-  el("search")?.addEventListener("input", (e) => { query = e.target.value.trim(); apply(); });
+  renderTabs(brands, activeBrand, (b) => {
+    activeBrand = b;
+    apply();
+  }, brandImageMap);
+
+  el("search")?.addEventListener("input", (e) => {
+    query = e.target.value.trim();
+    apply();
+  });
+
   apply();
 })().catch(err => {
   console.error(err);
-  if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ"; }
+  if (el("empty")) {
+    el("empty").style.display = "block";
+    el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ";
+  }
 });

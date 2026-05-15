@@ -1,11 +1,13 @@
-/* GVIZ_JSON_VERSION: 2026-02-03g (LEEPLUS) ✅
-   - NEW badge: replace "(NEW)" with small badge <span class="badgeNew">NEW</span>
-   - Keep all existing logic: tabs, all grouping, search, pdf button, meta images
+/* GVIZ_JSON_VERSION: 2026-05-15a (LEEPLUS)
+   - Read category/brand images from meta API first
+   - Fallback to old __META__ / __BRAND_IMAGE__
+   - Keep existing logic: tabs, grouping, search, pdf button, NEW badge, modal
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
+const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
 
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
@@ -138,22 +140,16 @@ function normalizeSearchTokens(s) {
   return String(s || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
 }
 
-/* ✅ NEW badge: turn "(NEW)" into a small badge NEW (case-insensitive) */
 function formatModelHTML(model) {
   const raw = String(model || "");
 
-  // Detect NEW in multiple formats:
-  // (NEW)  |  NEW  |  NEW! / NEW!! / NEW!!!
-  // and remove the token from the displayed model text.
   let isNew = false;
-  let cleaned = raw.replace(/\(\s*NEW\s*\)|\bNEW\b\s*!*/gi, (m) => {
+  let cleaned = raw.replace(/\(\s*NEW\s*\)|\bNEW\b\s*!*/gi, () => {
     isNew = true;
     return "";
   });
 
-  // Clean leftover whitespace
   cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
-
   const safe = escapeHTML(cleaned);
 
   return isNew ? `${safe}<span class="badgeNew">NEW</span>` : safe;
@@ -201,7 +197,31 @@ function setupImageModal() {
   });
 }
 
-/* ===== META ===== */
+/* ===== META API ===== */
+async function loadMetaConfig() {
+  try {
+    const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
+      cache: "no-store"
+    });
+
+    if (!res.ok) throw new Error("Meta API failed");
+
+    const json = await res.json();
+
+    if (!json.success) throw new Error("Meta API success false");
+
+    return json.data || {};
+  } catch (e) {
+    console.warn("loadMetaConfig failed:", e);
+    return {
+      site: {},
+      category: {},
+      brand: {}
+    };
+  }
+}
+
+/* ===== META OLD ROW HELPERS ===== */
 function metaKey(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -335,10 +355,10 @@ async function loadSheetWithMeta(tab) {
   }).map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-02-03g");
+    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-05-15a");
     console.log("[DEBUG] idx:", idx);
-    console.log("[DEBUG] categoryImageUrl:", categoryImageUrl);
-    console.log("[DEBUG] brandImageMap:", Array.from(brandImageMap.entries()));
+    console.log("[DEBUG] old categoryImageUrl:", categoryImageUrl);
+    console.log("[DEBUG] old brandImageMap:", Array.from(brandImageMap.entries()));
   }
 
   return { rows: products, categoryImageUrl, brandImageMap };
@@ -363,7 +383,7 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
         wrap.className = "tabIcon";
         wrap.innerHTML = `<img src="${escapeHTML(img)}" alt="" class="tabIconImg">`;
         btn.appendChild(wrap);
-}
+      }
     }
 
     const label = document.createElement("span");
@@ -388,7 +408,10 @@ function renderTable(rows, brandImageMap) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "ไม่พบข้อมูล"; }
+    if (el("empty")) {
+      el("empty").style.display = "block";
+      el("empty").textContent = "ไม่พบข้อมูล";
+    }
     return;
   }
   if (el("empty")) el("empty").style.display = "none";
@@ -458,14 +481,46 @@ function applyCategoryThumb(categoryImageUrl) {
 
   setupPdfDownloadButton(tab);
 
-  const { rows: all, categoryImageUrl, brandImageMap } = await loadSheetWithMeta(tab);
+  const meta = await loadMetaConfig();
+
+  const {
+    rows: all,
+    categoryImageUrl: oldCategoryImageUrl,
+    brandImageMap: oldBrandImageMap
+  } = await loadSheetWithMeta(tab);
+
+  const categoryImageUrl =
+    meta?.category?.[tab] ||
+    meta?.category?.[String(tab).trim()] ||
+    oldCategoryImageUrl ||
+    "";
+
+  const brandImageMap = new Map(oldBrandImageMap);
+
+  Object.entries(meta?.brand || {}).forEach(([k, v]) => {
+    const key = String(k || "").trim();
+    const value = String(v || "").trim();
+    if (key && value) {
+      brandImageMap.set(key, value);
+    }
+  });
+
+  if (DEBUG) {
+    console.log("[DEBUG] meta:", meta);
+    console.log("[DEBUG] final categoryImageUrl:", categoryImageUrl);
+    console.log("[DEBUG] final brandImageMap:", Array.from(brandImageMap.entries()));
+  }
+
   applyCategoryThumb(categoryImageUrl);
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
   el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
 
   const brandNames = uniq(all.map(r => (r.brand || "").trim())).filter(Boolean);
-  const brands = [{ key: ALL_BRAND_KEY, label: ALL_BRAND_LABEL }, ...brandNames.map(b => ({ key: b, label: b }))];
+  const brands = [
+    { key: ALL_BRAND_KEY, label: ALL_BRAND_LABEL },
+    ...brandNames.map(b => ({ key: b, label: b }))
+  ];
 
   let activeBrand = ALL_BRAND_KEY;
   let query = "";
@@ -497,10 +552,21 @@ function applyCategoryThumb(categoryImageUrl) {
     }
   }
 
-  renderTabs(brands, activeBrand, (b) => { activeBrand = b; apply(); }, brandImageMap);
-  el("search")?.addEventListener("input", (e) => { query = e.target.value.trim(); apply(); });
+  renderTabs(brands, activeBrand, (b) => {
+    activeBrand = b;
+    apply();
+  }, brandImageMap);
+
+  el("search")?.addEventListener("input", (e) => {
+    query = e.target.value.trim();
+    apply();
+  });
+
   apply();
 })().catch(err => {
   console.error(err);
-  if (el("empty")) { el("empty").style.display = "block"; el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ"; }
+  if (el("empty")) {
+    el("empty").style.display = "block";
+    el("empty").textContent = "โหลดข้อมูลไม่สำเร็จ";
+  }
 });

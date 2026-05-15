@@ -54,18 +54,25 @@ async function setupPdfDownloadButton(tabName) {
   const btn = el("openPdfBtn");
   const hint = el("pdfHint");
   if (!btn) return;
+
   btn.style.display = "none";
   if (hint) hint.style.display = "none";
 
   try {
-    const res = await fetch(`${CATEGORIES_URL}?v=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) return;
+    const res = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, {
+      cache: "no-store"
+    });
 
-    const data = await res.json();
-    const cats = Array.isArray(data.categories) ? data.categories : [];
+    if (!res.ok) throw new Error("Categories API failed");
+
+    const json = await res.json();
+    if (!json.success) throw new Error("Categories API success false");
+
+    const cats = Array.isArray(json.data) ? json.data : [];
 
     const tab = String(tabName || "").trim();
     if (!tab) return;
+
     const tabLower = tab.toLowerCase();
 
     const match = cats.find((c) => {
@@ -82,7 +89,12 @@ async function setupPdfDownloadButton(tabName) {
     if (!match) return;
 
     const isDealer = location.pathname.startsWith("/dealer/");
-    const pdf = (isDealer ? (match.dealer_pdf || match.dealerPdf || "") : "") || match.pdf || match.pdf_file || "";
+    const pdf =
+      (isDealer ? (match.dealer_pdf || match.dealerPdf || "") : "") ||
+      match.pdf ||
+      match.pdf_file ||
+      "";
+
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);
     if (!pdfUrl) return;
 
@@ -93,9 +105,10 @@ async function setupPdfDownloadButton(tabName) {
     btn.rel = "noopener";
     btn.removeAttribute("download");
     btn.style.display = "inline-flex";
+
     if (hint) hint.style.display = "inline-flex";
   } catch (e) {
-    console.warn("setupPdfDownloadButton failed:", e);
+    console.warn("setupPdfDownloadButton from API failed:", e);
   }
 }
 

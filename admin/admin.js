@@ -75,7 +75,8 @@ async function saveCategory(payload){
     sort:payload.sort||"",
     image:payload.image||"",
     pdf_url:payload.pdf_url||"",
-    price_url:payload.price_url||""
+    price_url:payload.price_url||"",
+    autoCreate:payload.autoCreate||"0"
   });
 }
 async function deleteCategoryRow(row){
@@ -134,7 +135,7 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div class="form-grid">
       <label>ชื่อหมวดภาษาไทย<input id="catTH" required></label>
       <label>ชื่อหมวดภาษาอังกฤษ<input id="catEN"></label>
-      <label>Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option>${sheetTabs.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("")}</select></label>
+      <label>Google Sheet Tab<select id="catTab"><option value="">-- สร้าง Tab อัตโนมัติ --</option>${sheetTabs.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("")}</select><small class="field-note">หมวดใหม่: หากไม่เลือก ระบบจะสร้าง Tab จากชื่ออังกฤษให้อัตโนมัติ</small></label>
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
       <label>รูปหมวด
@@ -147,7 +148,7 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
         <input id="pdfFile" class="file-hidden" type="file" accept="application/pdf">
         <div id="pdfPreview" class="upload-preview"></div>
       </label>
-      <label>Price URL<input id="catPrice" placeholder="price_sheet.html?tab=..."></label>
+      <input id="catPrice" type="hidden">
     </div>
     <div class="form-actions"><button type="button" class="danger hidden" id="deleteCat">ลบหมวด</button><div class="spacer"></div><button type="button" class="secondary" id="cancelCat">ยกเลิก</button><button type="submit" class="primary">บันทึก</button></div>
     <div id="formMsg" class="form-msg"></div>
@@ -230,7 +231,8 @@ function openCategoryModal(x=null){
         sort:document.querySelector("#catSort").value,
         image:document.querySelector("#catImage").value.trim(),
         pdf_url:document.querySelector("#catPdf").value.trim(),
-        price_url:price
+        price_url:price,
+        autoCreate:document.querySelector("#catRow").value?"0":"1"
       });
       await loadCategoryApi();close();views.categories();
     }catch(err){msg.textContent="บันทึกไม่สำเร็จ: "+err.message}

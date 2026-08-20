@@ -32,6 +32,38 @@ async function loadCategoryApi(){
 function val(v){return v==null?"":String(v)}
 function esc(v){return val(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]))}
 function activeText(v){return String(v||"").toUpperCase()==="ACTIVE"}
+
+function safeFileName(name){
+  const p=name.split(".");
+  const ext=(p.length>1?p.pop():"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const base=p.join(".").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,45)||"file";
+  return `${base}-${Date.now()}${ext?"."+ext:""}`;
+}
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result).split(",")[1]||"");
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+async function uploadFile(file,kind){
+  if(!file) throw new Error("กรุณาเลือกไฟล์");
+  const max=kind==="pdf"?20*1024*1024:8*1024*1024;
+  if(file.size>max) throw new Error(kind==="pdf"?"PDF ต้องไม่เกิน 20 MB":"รูปต้องไม่เกิน 8 MB");
+  const filename=safeFileName(file.name);
+  const base64=await fileToBase64(file);
+  const r=await fetch(SHEET_API,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({action:"uploadFile",kind,filename,mimeType:file.type||"",base64})
+  });
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j=await r.json();
+  if(!j.success) throw new Error(j.message||"Upload failed");
+  return j;
+}
+
 async function saveCategory(payload){
   return await apiGet({
     action:"saveCategory",
@@ -105,8 +137,16 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
       <label>Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option>${sheetTabs.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("")}</select></label>
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
-      <label>URL รูปหมวด<input id="catImage" placeholder="/assets/... หรือ https://..."></label>
-      <label>URL PDF<input id="catPdf" placeholder="/pdf/... หรือ https://..."></label>
+      <label>รูปหมวด
+        <div class="upload-field"><input id="catImage" placeholder="/assets/... หรือ https://..."><button type="button" class="upload-btn" data-kind="image">อัปโหลดรูป</button></div>
+        <input id="imageFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+        <div id="imagePreview" class="upload-preview"></div>
+      </label>
+      <label>ไฟล์ PDF
+        <div class="upload-field"><input id="catPdf" placeholder="/assets/uploads/pdfs/..."><button type="button" class="upload-btn" data-kind="pdf">อัปโหลด PDF</button></div>
+        <input id="pdfFile" class="file-hidden" type="file" accept="application/pdf">
+        <div id="pdfPreview" class="upload-preview"></div>
+      </label>
       <label>Price URL<input id="catPrice" placeholder="price_sheet.html?tab=..."></label>
     </div>
     <div class="form-actions"><button type="button" class="danger hidden" id="deleteCat">ลบหมวด</button><div class="spacer"></div><button type="button" class="secondary" id="cancelCat">ยกเลิก</button><button type="submit" class="primary">บันทึก</button></div>
@@ -128,6 +168,28 @@ function categoryAdminRows(){
     <button class="edit-cat" data-i="${i}">แก้ไข</button>
   </div>`).join("");
 }
+
+async function handleUpload(file,kind){
+  if(!file)return;
+  const msg=document.querySelector("#formMsg"), btn=document.querySelector(`.upload-btn[data-kind="${kind}"]`);
+  const old=btn.textContent;btn.disabled=true;btn.textContent="กำลังอัปโหลด...";msg.textContent="";
+  try{
+    const j=await uploadFile(file,kind);
+    const input=document.querySelector(kind==="image"?"#catImage":"#catPdf");
+    input.value=j.url;
+    updateUploadPreview(kind,j.url);
+    msg.classList.add("success");msg.textContent="อัปโหลดสำเร็จ";
+  }catch(err){
+    msg.classList.remove("success");msg.textContent="อัปโหลดไม่สำเร็จ: "+err.message;
+  }finally{btn.disabled=false;btn.textContent=old}
+}
+function updateUploadPreview(kind,url){
+  const box=document.querySelector(kind==="image"?"#imagePreview":"#pdfPreview");
+  if(!box)return;
+  if(!url){box.innerHTML="";return}
+  box.innerHTML=kind==="image"?`<img src="${esc(url)}"><span>ไฟล์พร้อมใช้งาน</span>`:`<a href="${esc(url)}" target="_blank">เปิด PDF ที่อัปโหลด</a>`;
+}
+
 function bindCategoryAdmin(){
   document.querySelector("#addCategory")?.addEventListener("click",()=>openCategoryModal());
   document.querySelector("#reloadCats")?.addEventListener("click",async()=>{await Promise.all([loadCategoryApi(),loadSheetTabs()]);views.categories()});
@@ -146,6 +208,10 @@ function openCategoryModal(x=null){
   document.querySelector("#catImage").value=x?.image||"";
   document.querySelector("#catPdf").value=x?.pdf_url||"";
   document.querySelector("#catPrice").value=x?.price_url||"";
+  updateUploadPreview("image",x?.image||"");updateUploadPreview("pdf",x?.pdf_url||"");
+  document.querySelectorAll(".upload-btn").forEach(btn=>btn.onclick=()=>document.querySelector(btn.dataset.kind==="image"?"#imageFile":"#pdfFile").click());
+  document.querySelector("#imageFile").onchange=e=>handleUpload(e.target.files[0],"image");
+  document.querySelector("#pdfFile").onchange=e=>handleUpload(e.target.files[0],"pdf");
   del.classList.toggle("hidden",!x?.__row);
   const close=()=>modal.classList.add("hidden");
   document.querySelector("#closeModal").onclick=close;document.querySelector("#cancelCat").onclick=close;

@@ -1,26 +1,27 @@
-PHASE 3B — จัดการหมวดสินค้าจาก Backoffice
+PHASE 3C — UPLOAD MANAGER
 
-GitHub:
-วางทับ
+GitHub
+วางทับ:
 - /admin/admin.js
 - /admin/admin.css
 
-Google Apps Script:
-- เปิด Code.gs
-- แทนทั้งไฟล์ด้วย Code.gs ที่ให้มาใน ZIP
+Google Apps Script
+- ใช้ Code.gs ใน ZIP แทน Code.gs ปัจจุบัน
 - Save
 - Deploy > Manage deployments > Edit > New version > Deploy
+- ครั้งแรก Google อาจขออนุญาตเข้าถึง Google Drive ให้กดยอมรับ
 
-สิ่งที่ทำได้หลัง Deploy:
-- เพิ่มหมวด
-- แก้ไขหมวด
-- เปิด/ปิดหมวด
-- จัดลำดับ
-- เลือก Sheet Tab
-- URL รูปหมวด
-- URL PDF
-- Price URL
-- ลบหมวด
+การทำงาน
+- ใน เพิ่ม/แก้ไขหมวด มีปุ่ม “อัปโหลดรูป” และ “อัปโหลด PDF”
+- เลือกไฟล์จากเครื่องได้โดยตรง
+- ระบบสร้างชื่อไฟล์ใหม่อัตโนมัติ
+- สร้างโฟลเดอร์ My Drive: LEEPLUS Price Web Uploads/images และ /pdfs
+- อัปโหลดแล้ว URL จะเติมเข้าฟอร์มอัตโนมัติ
+- กดบันทึกหมวดเพื่อบันทึก URL ลง Sheet categories
 
-ระบบแก้เฉพาะ column ที่มี header ตรงชื่อใน Sheet categories เดิม
-จึงไม่ไปทับ column อื่นที่เว็บอาจใช้อยู่
+ข้อจำกัดที่ตั้งไว้:
+- รูปสูงสุด 8 MB
+- PDF สูงสุด 20 MB
+
+หมายเหตุ:
+รอบนี้เลือก Google Drive เป็นที่เก็บไฟล์เพื่อไม่ต้องฝัง GitHub token ในหน้าเว็บ และไม่ต้องมี server เพิ่ม

@@ -161,14 +161,40 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div id="formMsg" class="form-msg"></div>
   </form>
 </div></div>`;
-bindCategoryAdmin()},media(){renderMediaView()},pdf(){title.textContent='ไฟล์ PDF';subtitle.textContent='เอกสารและใบราคาที่เชื่อมกับหมวด';const x=cats().filter(x=>x.pdf_url);content.innerHTML=`<div class="panel"><h2>PDF ที่ใช้อยู่</h2>${x.length?rows(x):'<div class="empty">ยังไม่มีรายการ PDF</div>'}</div>`},sheet(){title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unlinked.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{
-  const btn=document.querySelector("#refreshSheet");
-  const oldText=btn.textContent;btn.disabled=true;btn.textContent="กำลังรีเฟรช...";
-  try{
-    await Promise.all([loadSheetTabs(),loadCategoryApi()]);
-    views.sheet();
-  }finally{
-    btn.disabled=false;btn.textContent=oldText;
+bindCategoryAdmin()},media(){renderMediaView()},pdf(){title.textContent='ไฟล์ PDF';subtitle.textContent='เอกสารและใบราคาที่เชื่อมกับหมวด';const x=cats().filter(x=>x.pdf_url);content.innerHTML=`<div class="panel"><h2>PDF ที่ใช้อยู่</h2>${x.length?rows(x):'<div class="empty">ยังไม่มีรายการ PDF</div>'}</div>`},sheet(){
+    title.textContent='Google Sheet';
+    subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';
+    const s=sheetStatus();
+    content.innerHTML=`
+      <div class="sheet-toolbar">
+        <button class="primary" id="refreshSheet">รีเฟรชจาก Google Sheet</button>
+        <div class="sheet-badges">
+          <span class="badge ok">เชื่อมแล้ว ${s.linked.length}</span>
+          <span class="badge warn">Tab ยังไม่ผูก ${s.unmapped.length}</span>
+          <span class="badge bad">Mapping หา Tab ไม่เจอ ${s.missing.length}</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Sheet Tabs</h2>
+        ${s.tabs.length?s.tabs.map(t=>{
+          const c=liveCats().find(x=>catTab(x)===t);
+          return `<div class="sheet-row">
+            <div><b>${esc(t)}</b><div class="muted">${c?`เชื่อมกับ ${esc(c.titleTH||c.titleEN||"หมวดสินค้า")}`:"ยังไม่มีหมวดเชื่อม"}</div></div>
+            <span class="badge ${c?"ok":"warn"}">${c?"เชื่อมแล้ว":"รอเชื่อม"}</span>
+          </div>`;
+        }).join(""):'<div class="empty">ไม่พบ Sheet Tab</div>'}
+      </div>`;
+    document.querySelector("#refreshSheet").onclick=async()=>{
+      const btn=document.querySelector("#refreshSheet");
+      btn.disabled=true;btn.textContent="กำลังรีเฟรช...";
+      try{
+        await Promise.all([loadSheetTabs(),loadCategoryApi()]);
+        views.sheet();
+      }catch(e){
+        btn.disabled=false;btn.textContent="รีเฟรชจาก Google Sheet";
+        alert("รีเฟรชไม่สำเร็จ: "+e.message);
+      }
+    };
   }
 })}};
 function rows(a){return a.length?a.map(x=>`<div class="row">${x.image?`<img class="thumb" src="${x.image}">`:'<div class="thumb"></div>'}<div class="grow"><b>${x.titleTH||x.titleEN||'-'}</b><div class="muted">${x.titleEN||''}</div></div><span class="tag">${x.sheetTab||sheetFromUrl(x.price_url)||'ยังไม่ผูก Sheet'}</span></div>`).join(''):'<div class="empty">ยังไม่มีข้อมูล</div>'}

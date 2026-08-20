@@ -1,16 +1,18 @@
-LOGIN RECOVERY
+SHEET MAPPING LIVE FIX
 
-วางทับใน GitHub:
+ฐาน: ตัว Login Recovery ที่พี่ทดสอบแล้วว่าใช้งานปกติ
+
+วางทับ GitHub แค่:
 - /admin/admin.js
 
 ไม่ต้องแก้ CSS
 ไม่ต้องแก้ Code.gs
 ไม่ต้อง Deploy Apps Script
 
-แก้เฉพาะระบบ Login:
-- ตัด crypto.subtle ออก
-- ตรวจรหัสแบบง่ายตามความต้องการเดิม
-- จำ session สูงสุด 12 ชั่วโมง
-- ปุ่มออกจากระบบยังทำงานเหมือนเดิม
+แก้เฉพาะหน้า Google Sheet:
+- สถานะเชื่อมอ่าน Mapping จาก categories ใน Google Sheet จริง
+- Tab ที่สร้างจาก Backoffice และผูกแล้ว ต้องขึ้น "เชื่อมแล้ว"
+- ปุ่มรีเฟรชโหลดทั้ง Tabs + Mapping ใหม่
 
-หลังอัปโหลด ให้รีเฟรชหน้า /admin/ แบบ Hard Refresh (Ctrl+F5) 1 ครั้ง
+ไม่แตะ Login
+ไม่แตะ Media Library

@@ -1,3 +1,11 @@
+const AUTH_HASH="246540996575c8ca5609b39f10588c8ca104b2ceacb577ee4f557b6256a9c0aa", AUTH_KEY="leeplus_admin_until";
+async function sha256(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function authOK(){return Number(sessionStorage.getItem(AUTH_KEY)||0)>Date.now()}
+function showGate(){document.querySelector("#loginGate").classList.remove("hidden");document.querySelector("#adminCode").focus()}
+function hideGate(){document.querySelector("#loginGate").classList.add("hidden")}
+document.querySelector("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const el=document.querySelector("#adminCode"),err=document.querySelector("#loginError");err.textContent="";if(await sha256(el.value)===AUTH_HASH){sessionStorage.setItem(AUTH_KEY,String(Date.now()+12*60*60*1000));el.value="";hideGate()}else{err.textContent="รหัสไม่ถูกต้อง";el.value="";setTimeout(()=>el.focus(),250)}});
+document.querySelector("#logoutBtn").addEventListener("click",()=>{sessionStorage.removeItem(AUTH_KEY);showGate()});
+if(authOK())hideGate();else showGate();
 const content=document.querySelector('#content'), title=document.querySelector('#title'), subtitle=document.querySelector('#subtitle');let db={categories:[]};
 async function load(){try{const r=await fetch('../categories.json?ts='+Date.now());db=await r.json()}catch(e){console.error(e)}render('dashboard')}
 function cats(){return db.categories||[]}

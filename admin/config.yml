@@ -92,7 +92,29 @@ collections:
     - label: Categories
       name: categories
       widget: list
+      summary: '{{fields.titleTH}} — {{fields.sheetTab}}'
       fields:
+      - label: Category ID
+        name: id
+        widget: string
+        hint: รหัสกลางของหมวด ใช้เชื่อมระบบ ห้ามเปลี่ยนหลังเริ่มใช้งาน เช่น battery, lcd-leeplus
+      - label: เปิดใช้งานหมวด
+        name: enabled
+        widget: boolean
+        default: true
+        required: false
+      - label: ลำดับการแสดงผล
+        name: sort
+        widget: number
+        value_type: int
+        min: 1
+        required: false
+        hint: เลขน้อยแสดงก่อน
+      - label: Sheet Tab
+        name: sheetTab
+        widget: string
+        required: false
+        hint: ชื่อแท็บ Google Sheet ที่เก็บสินค้าและราคาของหมวดนี้
       - label: Title (EN)
         name: titleEN
         widget: string
@@ -106,12 +128,32 @@ collections:
         required: false
         media_folder: assets/uploads/images
         public_folder: /assets/uploads/images
-      - label: Sheet Tab (แนะนำ ถ้าใช้ price_sheet)
-        name: sheetTab
-        widget: string
+      - label: Brand / Logo Image
+        name: brandImage
+        widget: image
         required: false
-        hint: ใส่ชื่อแท็บใน Google Sheet เช่น Battery (ระบบจะพาไป price_sheet.html?tab=Battery
-          อัตโนมัติ)
+        media_folder: assets/uploads/images
+        public_folder: /assets/uploads/images
+        hint: รูปแบรนด์หรือโลโก้ประจำหมวด (ถ้ามี)
+      - label: Product / Media Images
+        name: media
+        widget: list
+        required: false
+        summary: '{{fields.title}}'
+        fields:
+        - label: ชื่อสื่อ
+          name: title
+          widget: string
+          required: false
+        - label: รูป
+          name: image
+          widget: image
+          media_folder: assets/uploads/images
+          public_folder: /assets/uploads/images
+        - label: หมายเหตุ
+          name: note
+          widget: string
+          required: false
       - label: Price Page Link (แนะนำ)
         name: price_url
         widget: string

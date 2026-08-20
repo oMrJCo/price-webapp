@@ -49,3 +49,11 @@
  .media-image{height:150px;min-height:150px;max-height:150px}
  .media-image img{max-height:126px}
 }
+
+/* Phase 4B — PDF Library */
+.pdf-list{display:grid;gap:10px}
+.pdf-item{display:flex;align-items:center;gap:12px;border:1px solid #e7e7e7;border-radius:12px;padding:12px;background:#fff}
+.pdf-icon{width:48px;height:58px;border-radius:9px;background:#f2f2f2;display:grid;place-items:center;font-size:11px;font-weight:800;flex:0 0 auto}
+.pdf-info{min-width:0}.pdf-info b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px;font-size:13px}
+.pdf-actions{display:flex;gap:7px;align-items:center;flex:0 0 auto}.pdf-actions .secondary{padding:8px 10px;font-size:11px}
+@media(max-width:700px){.pdf-item{align-items:flex-start;flex-wrap:wrap}.pdf-info{width:calc(100% - 72px)}.pdf-actions{width:100%;padding-left:60px}}

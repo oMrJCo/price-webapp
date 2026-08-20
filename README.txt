@@ -1,16 +1,20 @@
-LOGIN RECOVERY
+PHASE 4B — PDF LIBRARY
 
-วางทับใน GitHub:
+วางทับ GitHub:
 - /admin/admin.js
+- /admin/admin.css
 
-ไม่ต้องแก้ CSS
 ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script
+ไม่ต้อง Deploy Apps Script ใหม่
 
-แก้เฉพาะระบบ Login:
-- ตัด crypto.subtle ออก
-- ตรวจรหัสแบบง่ายตามความต้องการเดิม
-- จำ session สูงสุด 12 ชั่วโมง
-- ปุ่มออกจากระบบยังทำงานเหมือนเดิม
+เมนูไฟล์ PDF:
+- แสดง PDF ทั้งหมดจาก Google Drive > LEEPLUS Price Web Uploads > pdfs
+- อัปโหลด PDF
+- เปิด PDF
+- คัดลอก URL
+- แสดงขนาดไฟล์
+- บอกว่า PDF ถูกใช้กับหมวดไหน
 
-หลังอัปโหลด ให้รีเฟรชหน้า /admin/ แบบ Hard Refresh (Ctrl+F5) 1 ครั้ง
+ไม่แตะ Login
+ไม่แตะ Media Library
+ไม่แตะ logic Google Sheet

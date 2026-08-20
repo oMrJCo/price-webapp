@@ -1,20 +1,26 @@
-PHASE 3A — BACKOFFICE ↔ GOOGLE SHEET (ฝั่งเว็บ)
+PHASE 3B — จัดการหมวดสินค้าจาก Backoffice
 
-วางทับใน GitHub:
+GitHub:
+วางทับ
 - /admin/admin.js
 - /admin/admin.css
 
-ไฟล์ /admin/index.html ในชุดนี้เหมือน Phase 2.2 หากพี่อัปไปด้วยก็ไม่เป็นไร
+Google Apps Script:
+- เปิด Code.gs
+- แทนทั้งไฟล์ด้วย Code.gs ที่ให้มาใน ZIP
+- Save
+- Deploy > Manage deployments > Edit > New version > Deploy
 
-สิ่งที่เพิ่ม:
-- หน้า Google Sheet เรียก API ด้วย action=tabs
-- แสดง Tab ที่เชื่อมแล้ว
-- แสดง Tab ที่ยังไม่มีหมวด
-- แสดง Mapping ที่หา Tab จริงไม่เจอ
-- ปุ่มรีเฟรช Google Sheet
+สิ่งที่ทำได้หลัง Deploy:
+- เพิ่มหมวด
+- แก้ไขหมวด
+- เปิด/ปิดหมวด
+- จัดลำดับ
+- เลือก Sheet Tab
+- URL รูปหมวด
+- URL PDF
+- Price URL
+- ลบหมวด
 
-ตอนนี้ Apps Script ตัวเดิมของเว็บยังต้องเพิ่ม action=tabs อีก 1 จุด
-หากยังไม่ได้เพิ่ม หน้า Google Sheet จะแสดงข้อความว่า "รอเพิ่ม Tabs API ที่ Google Apps Script"
-
-ขั้นถัดไป:
-ส่ง Code.gs / โค้ด Apps Script ตัวปัจจุบันมาให้ยิ้ม แล้วจะเพิ่ม action=tabs โดยไม่รื้อ API เดิม
+ระบบแก้เฉพาะ column ที่มี header ตรงชื่อใน Sheet categories เดิม
+จึงไม่ไปทับ column อื่นที่เว็บอาจใช้อยู่

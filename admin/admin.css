@@ -7,3 +7,10 @@
 .login-box input:focus{border-color:#e0b600;box-shadow:0 0 0 3px #f2c30022}
 .login-box button{width:100%;height:46px;margin-top:12px;border:0;border-radius:10px;background:#f2c300;color:#111;font-weight:800;cursor:pointer}
 .login-error{min-height:18px;color:#c62828;font-size:12px;margin-top:10px}.header-actions{display:flex;gap:8px}.logout{border:1px solid #ddd;background:#fff;border-radius:9px;padding:9px 13px;cursor:pointer}
+
+.sheet-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.refresh-sheet{border:0;background:#111;color:#fff;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700}
+.sheet-counts{display:flex;gap:7px;flex-wrap:wrap}.sheet-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #eee}.sheet-row:last-child{border:0}
+.status{font-size:11px;border-radius:999px;padding:6px 9px;background:#eee;white-space:nowrap}.status.ok{background:#e5f7ea;color:#17672e}.status.wait{background:#fff4ce;color:#805d00}.status.bad{background:#fde8e7;color:#a12622}
+.api-needed{margin:8px 0;padding:20px;border:1px dashed #d8b437;background:#fff9df;border-radius:12px}.api-needed b{display:block;margin-bottom:5px}.api-needed code{background:#222;color:#fff;padding:2px 5px;border-radius:4px}
+@media(max-width:800px){.sheet-tools{align-items:flex-start;flex-direction:column}}

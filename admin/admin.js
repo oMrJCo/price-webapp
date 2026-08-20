@@ -1,10 +1,24 @@
-const AUTH_HASH="246540996575c8ca5609b39f10588c8ca104b2ceacb577ee4f557b6256a9c0aa", AUTH_KEY="leeplus_admin_until";
-async function sha256(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+const ADMIN_CODE="451520210", AUTH_KEY="leeplus_admin_until";
 function authOK(){return Number(sessionStorage.getItem(AUTH_KEY)||0)>Date.now()}
-function showGate(){document.querySelector("#loginGate").classList.remove("hidden");document.querySelector("#adminCode").focus()}
-function hideGate(){document.querySelector("#loginGate").classList.add("hidden")}
-document.querySelector("#loginForm").addEventListener("submit",async e=>{e.preventDefault();const el=document.querySelector("#adminCode"),err=document.querySelector("#loginError");err.textContent="";if(await sha256(el.value)===AUTH_HASH){sessionStorage.setItem(AUTH_KEY,String(Date.now()+12*60*60*1000));el.value="";hideGate()}else{err.textContent="รหัสไม่ถูกต้อง";el.value="";setTimeout(()=>el.focus(),250)}});
-document.querySelector("#logoutBtn").addEventListener("click",()=>{sessionStorage.removeItem(AUTH_KEY);showGate()});
+function showGate(){const g=document.querySelector("#loginGate");if(g)g.classList.remove("hidden");setTimeout(()=>document.querySelector("#adminCode")?.focus(),50)}
+function hideGate(){document.querySelector("#loginGate")?.classList.add("hidden")}
+const loginForm=document.querySelector("#loginForm");
+if(loginForm){
+  loginForm.onsubmit=function(e){
+    e.preventDefault();
+    const el=document.querySelector("#adminCode"),err=document.querySelector("#loginError");
+    if(err)err.textContent="";
+    if(el && el.value===ADMIN_CODE){
+      sessionStorage.setItem(AUTH_KEY,String(Date.now()+12*60*60*1000));
+      el.value="";
+      hideGate();
+    }else{
+      if(err)err.textContent="รหัสไม่ถูกต้อง";
+      if(el){el.value="";el.focus()}
+    }
+  };
+}
+document.querySelector("#logoutBtn")?.addEventListener("click",()=>{sessionStorage.removeItem(AUTH_KEY);showGate()});
 if(authOK())hideGate();else showGate();
 
 const SHEET_API="https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";

@@ -1,1 +1,15 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>LEEPLUS Backoffice</title><script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script><style>html,body{margin:0;background:#f5f5f5;font-family:Arial,"Noto Sans Thai",sans-serif}#boot{padding:18px 22px;background:#111;color:#fff;border-bottom:4px solid #f2c300}#boot b{font-size:18px}#boot span{opacity:.72;margin-left:10px;font-size:13px}</style></head><body><div id="boot"><b>LEEPLUS Backoffice</b><span>จัดการหมวดสินค้า รูป สื่อ PDF และการเชื่อม Google Sheet</span></div><div id="nc-root"></div><script src="https://unpkg.com/decap-cms@3.0.0/dist/decap-cms.js"></script></body></html>
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LEEPLUS Backoffice</title><link rel="stylesheet" href="admin.css"></head>
+<body>
+<div class="app">
+<aside><div class="brand"><b>LEEPLUS</b><span>BACKOFFICE</span></div><nav>
+<button class="nav active" data-view="dashboard">ภาพรวม</button>
+<button class="nav" data-view="categories">หมวดสินค้า</button>
+<button class="nav" data-view="media">รูปและสื่อ</button>
+<button class="nav" data-view="pdf">ไฟล์ PDF</button>
+<button class="nav" data-view="sheet">Google Sheet</button>
+</nav><div class="foot">Price Web Admin</div></aside>
+<main><header><div><h1 id="title">ภาพรวม</h1><p id="subtitle">จัดการข้อมูลเว็บใบราคาในจุดเดียว</p></div><a href="/" class="site">เปิดหน้าเว็บ</a></header>
+<section id="content"></section></main></div>
+<script src="admin.js"></script></body></html>

@@ -24,3 +24,5 @@
 .upload-field{display:flex;gap:7px;margin-top:6px}.upload-field input{margin-top:0;flex:1}.upload-btn{border:0;background:#111;color:#fff;border-radius:9px;padding:0 13px;white-space:nowrap;cursor:pointer;font-weight:700}.upload-btn:disabled{opacity:.55}.file-hidden{display:none!important}.upload-preview{margin-top:7px;min-height:0;font-size:11px;color:#777}.upload-preview img{width:54px;height:54px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-right:8px;border:1px solid #ddd}.upload-preview a{color:#111;font-weight:700}.form-msg.success{color:#1b7a38}
 
 .field-note{display:block;margin-top:5px;color:#888;font-size:11px;font-weight:400}
+
+#catTabField.hidden{display:none}

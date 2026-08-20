@@ -135,7 +135,7 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div class="form-grid">
       <label>ชื่อหมวดภาษาไทย<input id="catTH" required></label>
       <label>ชื่อหมวดภาษาอังกฤษ<input id="catEN"></label>
-      <label>Google Sheet Tab<select id="catTab"><option value="">-- สร้าง Tab อัตโนมัติ --</option>${sheetTabs.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("")}</select><small class="field-note">หมวดใหม่: หากไม่เลือก ระบบจะสร้าง Tab จากชื่ออังกฤษให้อัตโนมัติ</small></label>
+      <label id="catTabField">Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option></select><small class="field-note">ใช้สำหรับสลับหมวดเดิมไปยัง Sheet Tab อื่น</small></label>
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
       <label>รูปหมวด
@@ -196,14 +196,26 @@ function bindCategoryAdmin(){
   document.querySelector("#reloadCats")?.addEventListener("click",async()=>{await Promise.all([loadCategoryApi(),loadSheetTabs()]);views.categories()});
   document.querySelectorAll(".edit-cat").forEach(b=>b.addEventListener("click",()=>openCategoryModal(categoryApiData[Number(b.dataset.i)])));
 }
-function openCategoryModal(x=null){
+async function openCategoryModal(x=null){
   const modal=document.querySelector("#categoryModal"), del=document.querySelector("#deleteCat");
   modal.classList.remove("hidden");
   document.querySelector("#modalTitle").textContent=x?"แก้ไขหมวดสินค้า":"เพิ่มหมวดสินค้า";
   document.querySelector("#catRow").value=x?.__row||"";
   document.querySelector("#catTH").value=x?.titleTH||"";
   document.querySelector("#catEN").value=x?.titleEN||"";
-  document.querySelector("#catTab").value=x?.sheetTab||sheetFromUrl(x?.price_url)||"";
+  const tabField=document.querySelector("#catTabField"), tabSelect=document.querySelector("#catTab");
+  if(x){
+    tabField.classList.remove("hidden");
+    await loadSheetTabs();
+    const currentTab=x?.sheetTab||sheetFromUrl(x?.price_url)||"";
+    const allTabs=[...new Set([currentTab,...sheetTabs].filter(Boolean))];
+    tabSelect.innerHTML='<option value="">-- ยังไม่เชื่อม --</option>'+allTabs.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
+    tabSelect.value=currentTab;
+  }else{
+    tabField.classList.add("hidden");
+    tabSelect.innerHTML='<option value="">-- สร้าง Tab อัตโนมัติ --</option>';
+    tabSelect.value="";
+  }
   document.querySelector("#catStatus").value=(x?.status||"ACTIVE").toUpperCase()==="ACTIVE"?"ACTIVE":"INACTIVE";
   document.querySelector("#catSort").value=x?.sort||"";
   document.querySelector("#catImage").value=x?.image||"";

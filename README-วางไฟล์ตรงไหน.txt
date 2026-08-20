@@ -1,28 +1,35 @@
-PHASE 4C — PICKER + PDF FRONTEND
+PHASE 4D — HERO BANNER + BRAND LOGO MANAGER
 
-GitHub วางทับ 4 ไฟล์:
+GitHub วางทับ:
 - /admin/admin.js
 - /admin/admin.css
-- /price_sheet.js
-- /dealer/price_sheet.js
+- /app.js
 
-ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script ใหม่
+Google Apps Script:
+- ใช้ Code.gs ใน ZIP แทน Code.gs ปัจจุบัน
+- Save
+- Deploy > Manage deployments > Edit > New version > Deploy
 
-สิ่งที่เพิ่ม:
-1. หน้าแก้ไขหมวด
-- รูปหมวด: มี "เลือกจากคลัง" + "อัปโหลดรูป"
-- PDF: มี "เลือกจากคลัง" + "อัปโหลด PDF"
-- เลือกไฟล์จากคลังแล้ว URL + Preview ถูกใส่ในฟอร์มอัตโนมัติ
-- กดบันทึกหมวดตามปกติ
+เมนู รูปและสื่อ จะเพิ่ม:
 
-2. หน้าใบราคา
-- แก้ให้ระบบอ่าน pdf_url ที่ Backoffice บันทึกอยู่
-- ถ้าหมวดมี PDF ปุ่ม "เปิด PDF" ที่มีอยู่เดิมจะแสดงอัตโนมัติ
-- แก้ทั้งหน้าปกติและ /dealer/
+1) สื่อหน้าแรก / Hero Banner
+- ขนาดแนะนำ 1600 × 500 px (16:5)
+- Safe Area แนะนำ 1400 × 420 px
+- เลือกจาก Media Library ได้
+- เพิ่มหลาย Banner ได้ (สูงสุด API รองรับ 10)
+- หัวข้อ / ข้อความรอง / Link เป็น optional
+- ตั้งเวลาเปลี่ยน Slide 2–10 วินาที
+- Frontend อ่านค่าจาก meta.sheet แล้วแสดง Slider เดิม
 
-ไม่แตะ:
-- Login
-- Google Sheet Mapping logic
-- ระบบราคา
-- Code.gs
+2) โลโก้แบรนด์
+- เลือก Sheet Tab/หมวด
+- ระบบอ่าน Unique brand จากคอลัมน์ brand ของสินค้าจริง
+- ตัด __META__ / __BRAND_IMAGE__ / __CATEGORY_IMAGE__ ออกจากรายการ
+- ขนาดแนะนำ 256 × 256 px (1:1), PNG/WebP พื้นหลังโปร่งใส
+- เลือกจากคลังหรืออัปโหลดใหม่ได้
+- โลโก้ถูกเก็บใน meta sheet: type=brand, key=ชื่อแบรนด์, value=URL
+- หน้า price_sheet เดิมรองรับ meta.brand อยู่แล้ว จึงไม่ต้องแก้ price_sheet.js รอบนี้
+
+หมายเหตุ:
+- รอบนี้ยังไม่ลบแถว __BRAND_IMAGE__ เก่าในสินค้า เพราะ Frontend ยังมี fallback อยู่
+- เมื่อระบบใหม่ผ่าน ค่อย Cleanup ของเก่า

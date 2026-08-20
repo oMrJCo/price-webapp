@@ -93,21 +93,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         loadCategories(),
       ]);
 
+      const siteMeta = meta.site || meta || {};
+      let coverSlides = [];
+      try {
+        coverSlides = Array.isArray(siteMeta.coverSlides)
+          ? siteMeta.coverSlides
+          : JSON.parse(siteMeta.coverSlides || "[]");
+      } catch (_) {
+        coverSlides = [];
+      }
+
       data = {
-        siteTitle: meta.siteTitle || "LEEPLUS",
+        siteTitle: siteMeta.siteTitle || meta.siteTitle || "LEEPLUS",
         siteSubtitle:
+          siteMeta.siteSubtitle ||
           meta.siteSubtitle ||
           "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ",
-        lineUrl: meta.lineUrl || "https://line.me/R/ti/p/@leeplus",
+        lineUrl: siteMeta.lineUrl || meta.lineUrl || "https://line.me/R/ti/p/@leeplus",
         lineStickyEnabled:
-          String(meta.lineStickyEnabled || "true").toLowerCase() !== "false",
+          String(siteMeta.lineStickyEnabled || meta.lineStickyEnabled || "true").toLowerCase() !== "false",
         lineCtaText:
-          meta.lineCtaText || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
-        coverHeadline: meta.coverHeadline || "LEEPLUS PRICE LIST",
+          siteMeta.lineCtaText || meta.lineCtaText || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
+        coverHeadline: siteMeta.coverHeadline || meta.coverHeadline || "LEEPLUS PRICE LIST",
         coverSubtext:
+          siteMeta.coverSubtext ||
           meta.coverSubtext ||
           "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที",
-        coverSlides: [],
+        coverSlides,
+        coverInterval: siteMeta.coverInterval || meta.coverInterval || 3,
         categories,
       };
 

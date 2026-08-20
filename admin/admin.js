@@ -49,17 +49,44 @@ function mediaUsage(url){return cats().filter(c=>String(c.image||"")===String(ur
 function mediaCards(){if(mediaState==="loading")return '<div class="empty">กำลังโหลดรูป...</div>';if(mediaState==="error")return '<div class="api-needed"><b>ยังอ่าน Media Library ไม่ได้</b><div>ตรวจสอบว่า Deploy Code.gs ของ Phase 4A แล้ว</div></div>';if(!mediaFiles.length)return '<div class="empty">ยังไม่มีรูปใน Media Library</div>';return `<div class="media-grid">${mediaFiles.map(f=>{const used=mediaUsage(f.url);return `<div class="media-card"><div class="media-image"><img src="${esc(f.url)}"></div><div class="media-body"><b title="${esc(f.name)}">${esc(f.name)}</b><div class="muted">${used.length?`ใช้อยู่: ${used.map(x=>esc(x.titleTH||x.titleEN)).join(", ")}`:"ยังไม่ถูกใช้กับหมวด"}</div><div class="media-actions"><button class="secondary media-copy" data-url="${esc(f.url)}">คัดลอก URL</button><a class="media-open" href="${esc(f.url)}" target="_blank">เปิดรูป</a></div></div></div>`}).join("")}</div>`}
 function bindMediaActions(){document.querySelectorAll(".media-copy").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.url);const o=b.textContent;b.textContent="คัดลอกแล้ว";setTimeout(()=>b.textContent=o,1200)}catch(e){prompt("คัดลอก URL นี้",b.dataset.url)}})}
 async function uploadFromMedia(file){if(!file)return;const msg=document.querySelector("#mediaMsg"),btn=document.querySelector("#mediaUploadBtn"),old=btn.textContent;btn.disabled=true;btn.textContent="กำลังอัปโหลด...";try{await uploadFile(file,"image");await renderMediaView()}catch(e){msg.className="media-msg error";msg.textContent="อัปโหลดไม่สำเร็จ: "+e.message}finally{btn.disabled=false;btn.textContent=old}}
-async function renderMediaView(){title.textContent="รูปและสื่อ";subtitle.textContent="Media Library สำหรับรูปที่อัปโหลดผ่าน Backoffice";content.innerHTML=`<div class="media-toolbar"><div><button class="primary" id="mediaUploadBtn">+ อัปโหลดรูป</button><input id="mediaFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div><button class="secondary" id="mediaRefresh">รีเฟรช</button></div><div id="mediaMsg" class="media-msg"></div><div class="panel"><div class="media-panel-head"><h2>รูปทั้งหมด</h2><span class="muted" id="mediaCount"></span></div><div id="mediaLibrary"><div class="empty">กำลังโหลดรูป...</div></div></div>`;await loadMediaLibrary();document.querySelector("#mediaLibrary").innerHTML=mediaCards();document.querySelector("#mediaCount").textContent=`${mediaFiles.length} ไฟล์`;document.querySelector("#mediaUploadBtn").onclick=()=>document.querySelector("#mediaFile").click();document.querySelector("#mediaFile").onchange=e=>uploadFromMedia(e.target.files[0]);document.querySelector("#mediaRefresh").onclick=()=>renderMediaView();bindMediaActions()}
+async function renderMediaView(){
+  title.textContent='รูปและสื่อ';
+  subtitle.textContent='จัดการสื่อหน้าแรก โลโก้แบรนด์ และคลังรูปในจุดเดียว';
+  await Promise.all([loadSheetTabs(),loadCategoryApi()]);
+  const heroHtml=await renderHeroManager();
+  const brandHtml=await renderBrandManager();
+  content.innerHTML=`${heroHtml}${brandHtml}
+  <div class="media-toolbar">
+    <div><button class="primary" id="mediaUploadBtn">+ อัปโหลดรูปเข้าคลัง</button><input id="mediaFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div>
+    <button class="secondary" id="mediaRefresh">รีเฟรชคลังรูป</button>
+  </div>
+  <div id="mediaMsg" class="media-msg"></div>
+  <div class="panel"><div class="media-panel-head"><h2>คลังรูปทั้งหมด</h2><span class="muted" id="mediaCount"></span></div><div id="mediaLibrary"><div class="empty">กำลังโหลดรูป...</div></div></div>`;
 
-
-let pdfFiles=[], pdfState="idle";
-async function loadPdfLibrary(){
-  pdfState="loading";
-  try{
-    const j=await apiGet({action:"media",kind:"pdf"});
-    pdfFiles=Array.isArray(j.data)?j.data:[];
-    pdfState="ok";
-  }catch(e){console.warn("PDF API error:",e);pdfFiles=[];pdfState="error";}
+  await loadMediaLibrary();
+  document.querySelector("#mediaLibrary").innerHTML=mediaCards();
+  document.querySelector("#mediaCount").textContent=`${mediaFiles.length} ไฟล์`;
+  document.querySelector("#mediaUploadBtn").onclick=()=>document.querySelector("#mediaFile").click();
+  document.querySelector("#mediaFile").onchange=e=>uploadFromMedia(e.target.files[0]);
+  document.querySelector("#mediaRefresh").onclick=()=>renderMediaView();
+  bindMediaActions();
+  bindHeroRows();
+  document.querySelector("#addHeroSlide").onclick=()=>{
+    document.querySelector("#heroSlides").insertAdjacentHTML("beforeend",heroSlideRow({},document.querySelectorAll(".hero-slide-row").length));
+    bindHeroRows();
+  };
+  document.querySelector("#saveHero").onclick=async()=>{
+    const msg=document.querySelector("#heroMsg");msg.textContent="กำลังบันทึก...";
+    try{await saveSiteMedia();msg.className="media-msg success";msg.textContent="บันทึกสื่อหน้าแรกแล้ว"}
+    catch(e){msg.className="media-msg error";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}
+  };
+  document.querySelector("#brandTabSelect")?.addEventListener("change",async e=>{
+    activeBrandTab=e.target.value;
+    await loadBrandsForTab(activeBrandTab);
+    document.querySelector("#brandLogoArea").innerHTML=brandLogoCards();
+    bindBrandLogoCards();
+  });
+  bindBrandLogoCards();
 }
 function pdfUsage(url){return liveCats().filter(c=>String(c.pdf_url||"")===String(url||""))}
 function formatBytes(n){n=Number(n||0);if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";return (n/1048576).toFixed(1)+" MB"}
@@ -103,6 +130,155 @@ async function renderPdfView(){
   document.querySelector("#pdfLibraryFile").onchange=e=>uploadFromPdfLibrary(e.target.files[0]);
   document.querySelector("#pdfRefresh").onclick=()=>renderPdfView();
   bindPdfActions();
+}
+
+
+let siteMediaConfig={coverSlides:[],coverInterval:3};
+let brandLogoRows=[];
+let activeBrandTab="";
+
+async function loadSiteMedia(){
+  try{
+    const j=await apiGet({action:"siteMedia"});
+    siteMediaConfig={
+      coverSlides:Array.isArray(j.coverSlides)?j.coverSlides:[],
+      coverInterval:Number(j.coverInterval||3)||3
+    };
+  }catch(e){
+    console.warn("siteMedia load failed",e);
+    siteMediaConfig={coverSlides:[],coverInterval:3};
+  }
+}
+async function saveSiteMedia(){
+  const slides=[...document.querySelectorAll(".hero-slide-row")].map(row=>({
+    image:row.querySelector("[data-field=image]")?.value.trim()||"",
+    headline:row.querySelector("[data-field=headline]")?.value.trim()||"",
+    subtext:row.querySelector("[data-field=subtext]")?.value.trim()||"",
+    link:row.querySelector("[data-field=link]")?.value.trim()||""
+  })).filter(x=>x.image);
+  const interval=Math.max(2,Math.min(10,Number(document.querySelector("#heroInterval")?.value||3)));
+  const r=await apiGet({action:"saveSiteMedia",coverSlides:JSON.stringify(slides),coverInterval:String(interval)});
+  siteMediaConfig={coverSlides:slides,coverInterval:interval};
+  return r;
+}
+function heroSlideRow(s={},i=0){
+  return `<div class="hero-slide-row">
+    <div class="hero-preview">${s.image?`<img src="${esc(s.image)}" alt="">`:'<span>1600 × 500 px</span>'}</div>
+    <div class="hero-fields">
+      <label>รูป Banner <div class="upload-field"><input data-field="image" value="${esc(s.image||"")}" placeholder="เลือกรูป 1600 × 500 px"><button type="button" class="library-btn hero-pick">เลือกจากคลัง</button></div></label>
+      <label>หัวข้อ <input data-field="headline" value="${esc(s.headline||"")}" placeholder="เว้นว่างได้"></label>
+      <label>ข้อความรอง <input data-field="subtext" value="${esc(s.subtext||"")}" placeholder="เว้นว่างได้"></label>
+      <label>ลิงก์เมื่อคลิก <input data-field="link" value="${esc(s.link||"")}" placeholder="https://... (ไม่บังคับ)"></label>
+    </div>
+    <button type="button" class="danger hero-remove">ลบ</button>
+  </div>`;
+}
+function bindHeroRows(){
+  document.querySelectorAll(".hero-pick").forEach(btn=>btn.onclick=async()=>{
+    const row=btn.closest(".hero-slide-row");
+    await openMediaPickerForTarget("image",url=>{
+      row.querySelector("[data-field=image]").value=url;
+      const box=row.querySelector(".hero-preview");
+      box.innerHTML=`<img src="${esc(url)}" alt="">`;
+    });
+  });
+  document.querySelectorAll(".hero-remove").forEach(btn=>btn.onclick=()=>{
+    btn.closest(".hero-slide-row").remove();
+  });
+}
+async function renderHeroManager(){
+  await loadSiteMedia();
+  const slides=siteMediaConfig.coverSlides||[];
+  return `<div class="panel media-section">
+    <div class="section-head">
+      <div><h2>สื่อหน้าแรก / Hero Banner</h2><div class="spec-note"><b>ขนาดแนะนำ 1600 × 500 px (16:5)</b> · Safe Area กลางประมาณ 1400 × 420 px · หน้าเว็บใช้ object-fit: cover</div></div>
+      <button class="primary" id="addHeroSlide">+ เพิ่ม Banner</button>
+    </div>
+    <div class="hero-settings"><label>เวลาเปลี่ยนสไลด์ <input id="heroInterval" type="number" min="2" max="10" value="${esc(siteMediaConfig.coverInterval||3)}"> วินาที</label></div>
+    <div id="heroSlides">${slides.length?slides.map(heroSlideRow).join(""):heroSlideRow({},0)}</div>
+    <div class="section-save"><button class="primary" id="saveHero">บันทึกสื่อหน้าแรก</button><span id="heroMsg" class="media-msg"></span></div>
+  </div>`;
+}
+async function loadBrandsForTab(tab){
+  if(!tab){brandLogoRows=[];return}
+  try{
+    const j=await apiGet({action:"brands",tab});
+    brandLogoRows=Array.isArray(j.data)?j.data:[];
+  }catch(e){brandLogoRows=[];console.warn(e)}
+}
+function brandLogoCards(){
+  if(!activeBrandTab)return '<div class="empty">เลือกหมวดสินค้าเพื่อดูรายชื่อแบรนด์</div>';
+  if(!brandLogoRows.length)return '<div class="empty">ยังไม่พบแบรนด์ใน Tab นี้</div>';
+  return `<div class="brand-logo-grid">${brandLogoRows.map(b=>`
+    <div class="brand-logo-card" data-brand="${esc(b.brand)}">
+      <div class="brand-logo-preview">${b.logo?`<img src="${esc(b.logo)}" alt="">`:'<span>ไม่มีรูป</span>'}</div>
+      <div class="brand-logo-name"><b>${esc(b.brand)}</b><small>256 × 256 px (1:1)</small></div>
+      <div class="brand-logo-actions">
+        <button type="button" class="secondary brand-pick">เลือกจากคลัง</button>
+        <button type="button" class="upload-btn brand-upload">อัปโหลด</button>
+        <input class="file-hidden brand-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+      </div>
+    </div>`).join("")}</div>`;
+}
+async function selectBrandLogo(card,url){
+  const brand=card.dataset.brand;
+  const msg=document.querySelector("#brandMsg");
+  msg.textContent="กำลังบันทึก...";
+  try{
+    await apiGet({action:"saveBrandLogo",brand,url});
+    card.querySelector(".brand-logo-preview").innerHTML=`<img src="${esc(url)}" alt="">`;
+    msg.className="media-msg success";msg.textContent=`บันทึกโลโก้ ${brand} แล้ว`;
+  }catch(e){
+    msg.className="media-msg error";msg.textContent="บันทึกไม่สำเร็จ: "+e.message;
+  }
+}
+function bindBrandLogoCards(){
+  document.querySelectorAll(".brand-logo-card").forEach(card=>{
+    card.querySelector(".brand-pick").onclick=()=>openMediaPickerForTarget("image",url=>selectBrandLogo(card,url));
+    const fileInput=card.querySelector(".brand-file");
+    card.querySelector(".brand-upload").onclick=()=>fileInput.click();
+    fileInput.onchange=async e=>{
+      const file=e.target.files[0]; if(!file)return;
+      const msg=document.querySelector("#brandMsg");msg.textContent="กำลังอัปโหลด...";
+      try{
+        const j=await uploadFile(file,"image");
+        await selectBrandLogo(card,j.url);
+      }catch(err){msg.className="media-msg error";msg.textContent="อัปโหลดไม่สำเร็จ: "+err.message}
+    };
+  });
+}
+async function openMediaPickerForTarget(kind,onSelect){
+  const modal=document.querySelector("#libraryPicker");
+  const body=document.querySelector("#pickerBody");
+  document.querySelector("#pickerTitle").textContent=kind==="image"?"เลือกรูปจากคลัง":"เลือก PDF จากคลัง";
+  document.querySelector("#pickerSubtitle").textContent=kind==="image"?"เลือกรูปที่ต้องการใช้งาน":"เลือก PDF ที่ต้องการใช้งาน";
+  modal.classList.remove("hidden");
+  body.innerHTML='<div class="empty">กำลังโหลด...</div>';
+  if(kind==="image"){
+    await loadMediaLibrary();
+    body.innerHTML=mediaFiles.length?`<div class="picker-grid">${mediaFiles.map(f=>`
+      <button type="button" class="picker-image-item target-picker" data-url="${esc(f.url)}">
+        <span class="picker-thumb"><img src="${esc(f.url)}" alt=""></span>
+        <span class="picker-name">${esc(f.name||"รูป")}</span>
+      </button>`).join("")}</div>`:'<div class="empty">ยังไม่มีรูปในคลัง</div>';
+  }else{
+    await loadPdfLibrary();
+    body.innerHTML=pdfFiles.length?`<div class="picker-pdf-list">${pdfFiles.map(f=>`
+      <button type="button" class="picker-pdf-item target-picker" data-url="${esc(f.url)}">
+        <span class="picker-pdf-icon">PDF</span><span class="picker-pdf-text"><b>${esc(f.name||"PDF")}</b><small>${formatBytes(f.size)}</small></span><span class="picker-select">เลือก</span>
+      </button>`).join("")}</div>`:'<div class="empty">ยังไม่มี PDF ในคลัง</div>';
+  }
+  body.querySelectorAll(".target-picker").forEach(b=>b.onclick=()=>{onSelect(b.dataset.url);closeLibraryPicker()});
+}
+async function renderBrandManager(){
+  const tabs=sheetTabs.filter(t=>!["meta","categories"].includes(String(t).toLowerCase()));
+  if(!activeBrandTab && tabs.length)activeBrandTab=tabs[0];
+  await loadBrandsForTab(activeBrandTab);
+  return `<div class="panel media-section">
+    <div class="section-head"><div><h2>โลโก้แบรนด์</h2><div class="spec-note"><b>ขนาดแนะนำ 256 × 256 px (1:1)</b> · PNG/WebP พื้นหลังโปร่งใส · รายชื่อแบรนด์อ่านจากข้อมูลสินค้าใน Sheet จริง</div></div></div>
+    <div class="brand-toolbar"><label>หมวด / Sheet Tab <select id="brandTabSelect">${tabs.map(t=>`<option value="${esc(t)}" ${t===activeBrandTab?"selected":""}>${esc(t)}</option>`).join("")}</select></label><span id="brandMsg" class="media-msg"></span></div>
+    <div id="brandLogoArea">${brandLogoCards()}</div>
+  </div>`;
 }
 
 function val(v){return v==null?"":String(v)}

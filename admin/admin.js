@@ -36,6 +36,7 @@ function mediaCards(){if(mediaState==="loading")return '<div class="empty">ก�
 function bindMediaActions(){document.querySelectorAll(".media-copy").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.url);const o=b.textContent;b.textContent="คัดลอกแล้ว";setTimeout(()=>b.textContent=o,1200)}catch(e){prompt("คัดลอก URL นี้",b.dataset.url)}})}
 async function uploadFromMedia(file){if(!file)return;const msg=document.querySelector("#mediaMsg"),btn=document.querySelector("#mediaUploadBtn"),old=btn.textContent;btn.disabled=true;btn.textContent="กำลังอัปโหลด...";try{await uploadFile(file,"image");await renderMediaView()}catch(e){msg.className="media-msg error";msg.textContent="อัปโหลดไม่สำเร็จ: "+e.message}finally{btn.disabled=false;btn.textContent=old}}
 async function renderMediaView(){title.textContent="รูปและสื่อ";subtitle.textContent="Media Library สำหรับรูปที่อัปโหลดผ่าน Backoffice";content.innerHTML=`<div class="media-toolbar"><div><button class="primary" id="mediaUploadBtn">+ อัปโหลดรูป</button><input id="mediaFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div><button class="secondary" id="mediaRefresh">รีเฟรช</button></div><div id="mediaMsg" class="media-msg"></div><div class="panel"><div class="media-panel-head"><h2>รูปทั้งหมด</h2><span class="muted" id="mediaCount"></span></div><div id="mediaLibrary"><div class="empty">กำลังโหลดรูป...</div></div></div>`;await loadMediaLibrary();document.querySelector("#mediaLibrary").innerHTML=mediaCards();document.querySelector("#mediaCount").textContent=`${mediaFiles.length} ไฟล์`;document.querySelector("#mediaUploadBtn").onclick=()=>document.querySelector("#mediaFile").click();document.querySelector("#mediaFile").onchange=e=>uploadFromMedia(e.target.files[0]);document.querySelector("#mediaRefresh").onclick=()=>renderMediaView();bindMediaActions()}
+
 function val(v){return v==null?"":String(v)}
 function esc(v){return val(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]))}
 function activeText(v){return String(v||"").toUpperCase()==="ACTIVE"}
@@ -109,7 +110,7 @@ async function loadSheetTabs(){
 }
 function catTab(c){return String(c.sheetTab||sheetFromUrl(c.price_url)||"").trim()}
 function sheetStatus(){
-  const mapped=new Set(liveCats().map(catTab).filter(Boolean));
+  const mapped=new Set(cats().map(catTab).filter(Boolean));
   const tabs=new Set(sheetTabs);
   return {
     linked:[...tabs].filter(t=>mapped.has(t)),
@@ -124,7 +125,7 @@ function sheetRows(){
   const s=sheetStatus();
   if(!sheetTabs.length) return '<div class="empty">ไม่พบ Sheet Tab</div>';
   return sheetTabs.map(t=>{
-    const c=liveCats().find(x=>catTab(x)===t);
+    const c=cats().find(x=>catTab(x)===t);
     return `<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">${c?`เชื่อมกับ ${c.titleTH||c.titleEN}`:"ยังไม่มีหมวดเชื่อม"}</div></div>${c?badge("เชื่อมแล้ว","ok"):badge("รอเชื่อม","wait")}</div>`
   }).join("");
 }
@@ -161,42 +162,7 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div id="formMsg" class="form-msg"></div>
   </form>
 </div></div>`;
-bindCategoryAdmin()},media(){renderMediaView()},pdf(){title.textContent='ไฟล์ PDF';subtitle.textContent='เอกสารและใบราคาที่เชื่อมกับหมวด';const x=cats().filter(x=>x.pdf_url);content.innerHTML=`<div class="panel"><h2>PDF ที่ใช้อยู่</h2>${x.length?rows(x):'<div class="empty">ยังไม่มีรายการ PDF</div>'}</div>`},sheet(){
-    title.textContent='Google Sheet';
-    subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';
-    const s=sheetStatus();
-    content.innerHTML=`
-      <div class="sheet-toolbar">
-        <button class="primary" id="refreshSheet">รีเฟรชจาก Google Sheet</button>
-        <div class="sheet-badges">
-          <span class="badge ok">เชื่อมแล้ว ${s.linked.length}</span>
-          <span class="badge warn">Tab ยังไม่ผูก ${s.unmapped.length}</span>
-          <span class="badge bad">Mapping หา Tab ไม่เจอ ${s.missing.length}</span>
-        </div>
-      </div>
-      <div class="panel">
-        <h2>Sheet Tabs</h2>
-        ${s.tabs.length?s.tabs.map(t=>{
-          const c=liveCats().find(x=>catTab(x)===t);
-          return `<div class="sheet-row">
-            <div><b>${esc(t)}</b><div class="muted">${c?`เชื่อมกับ ${esc(c.titleTH||c.titleEN||"หมวดสินค้า")}`:"ยังไม่มีหมวดเชื่อม"}</div></div>
-            <span class="badge ${c?"ok":"warn"}">${c?"เชื่อมแล้ว":"รอเชื่อม"}</span>
-          </div>`;
-        }).join(""):'<div class="empty">ไม่พบ Sheet Tab</div>'}
-      </div>`;
-    document.querySelector("#refreshSheet").onclick=async()=>{
-      const btn=document.querySelector("#refreshSheet");
-      btn.disabled=true;btn.textContent="กำลังรีเฟรช...";
-      try{
-        await Promise.all([loadSheetTabs(),loadCategoryApi()]);
-        views.sheet();
-      }catch(e){
-        btn.disabled=false;btn.textContent="รีเฟรชจาก Google Sheet";
-        alert("รีเฟรชไม่สำเร็จ: "+e.message);
-      }
-    };
-  }
-})}};
+bindCategoryAdmin()},media(){renderMediaView()},pdf(){title.textContent='ไฟล์ PDF';subtitle.textContent='เอกสารและใบราคาที่เชื่อมกับหมวด';const x=cats().filter(x=>x.pdf_url);content.innerHTML=`<div class="panel"><h2>PDF ที่ใช้อยู่</h2>${x.length?rows(x):'<div class="empty">ยังไม่มีรายการ PDF</div>'}</div>`},sheet(){title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unlinked.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{await loadSheetTabs();views.sheet()})}};
 function rows(a){return a.length?a.map(x=>`<div class="row">${x.image?`<img class="thumb" src="${x.image}">`:'<div class="thumb"></div>'}<div class="grow"><b>${x.titleTH||x.titleEN||'-'}</b><div class="muted">${x.titleEN||''}</div></div><span class="tag">${x.sheetTab||sheetFromUrl(x.price_url)||'ยังไม่ผูก Sheet'}</span></div>`).join(''):'<div class="empty">ยังไม่มีข้อมูล</div>'}
 function sheetFromUrl(u=''){try{return new URL(u,location.href).searchParams.get('tab')||''}catch{return''}}
 

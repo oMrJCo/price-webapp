@@ -91,6 +91,7 @@ async function setupPdfDownloadButton(tabName) {
     const isDealer = location.pathname.startsWith("/dealer/");
     const pdf =
       (isDealer ? (match.dealer_pdf || match.dealerPdf || "") : "") ||
+      match.pdf_url ||
       match.pdf ||
       match.pdf_file ||
       "";

@@ -218,12 +218,12 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
       <label>รูปหมวด
-        <div class="upload-field"><input id="catImage" placeholder="/assets/... หรือ https://..."><button type="button" class="upload-btn" data-kind="image">อัปโหลดรูป</button></div>
+        <div class="upload-field"><input id="catImage" placeholder="/assets/... หรือ https://..."><button type="button" class="library-btn" data-picker="image">เลือกจากคลัง</button><button type="button" class="upload-btn" data-kind="image">อัปโหลดรูป</button></div>
         <input id="imageFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
         <div id="imagePreview" class="upload-preview"></div>
       </label>
       <label>ไฟล์ PDF
-        <div class="upload-field"><input id="catPdf" placeholder="/assets/uploads/pdfs/..."><button type="button" class="upload-btn" data-kind="pdf">อัปโหลด PDF</button></div>
+        <div class="upload-field"><input id="catPdf" placeholder="/assets/uploads/pdfs/..."><button type="button" class="library-btn" data-picker="pdf">เลือกจากคลัง</button><button type="button" class="upload-btn" data-kind="pdf">อัปโหลด PDF</button></div>
         <input id="pdfFile" class="file-hidden" type="file" accept="application/pdf">
         <div id="pdfPreview" class="upload-preview"></div>
       </label>
@@ -232,7 +232,13 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div class="form-actions"><button type="button" class="danger hidden" id="deleteCat">ลบหมวด</button><div class="spacer"></div><button type="button" class="secondary" id="cancelCat">ยกเลิก</button><button type="submit" class="primary">บันทึก</button></div>
     <div id="formMsg" class="form-msg"></div>
   </form>
-</div></div>`;
+</div></div>
+<div id="libraryPicker" class="picker-modal hidden">
+  <div class="picker-card">
+    <div class="modal-head"><div><h2 id="pickerTitle">เลือกจากคลัง</h2><div class="muted" id="pickerSubtitle"></div></div><button type="button" id="closePicker" class="icon-btn">×</button></div>
+    <div id="pickerBody" class="picker-body"><div class="empty">กำลังโหลด...</div></div>
+  </div>
+</div>`;
 bindCategoryAdmin()},media(){renderMediaView()},pdf(){renderPdfView()},async sheet(){
     await loadCategoryApi();title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unlinked.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{await Promise.all([loadSheetTabs(),loadCategoryApi()]);views.sheet()})}};
 function rows(a){return a.length?a.map(x=>`<div class="row">${x.image?`<img class="thumb" src="${x.image}">`:'<div class="thumb"></div>'}<div class="grow"><b>${x.titleTH||x.titleEN||'-'}</b><div class="muted">${x.titleEN||''}</div></div><span class="tag">${x.sheetTab||sheetFromUrl(x.price_url)||'ยังไม่ผูก Sheet'}</span></div>`).join(''):'<div class="empty">ยังไม่มีข้อมูล</div>'}
@@ -271,6 +277,60 @@ function updateUploadPreview(kind,url){
   box.innerHTML=kind==="image"?`<img src="${esc(url)}"><span>ไฟล์พร้อมใช้งาน</span>`:`<a href="${esc(url)}" target="_blank">เปิด PDF ที่อัปโหลด</a>`;
 }
 
+
+async function openLibraryPicker(kind){
+  const modal=document.querySelector("#libraryPicker");
+  const body=document.querySelector("#pickerBody");
+  const titleEl=document.querySelector("#pickerTitle");
+  const sub=document.querySelector("#pickerSubtitle");
+  modal.classList.remove("hidden");
+  titleEl.textContent=kind==="image"?"เลือกรูปจากคลัง":"เลือก PDF จากคลัง";
+  sub.textContent=kind==="image"?"เลือกรูปแล้วระบบจะผูกเข้าหมวดทันทีในฟอร์ม":"เลือก PDF แล้วระบบจะผูกเข้าหมวดทันทีในฟอร์ม";
+  body.innerHTML='<div class="empty">กำลังโหลด...</div>';
+
+  try{
+    if(kind==="image"){
+      await loadMediaLibrary();
+      if(!mediaFiles.length){
+        body.innerHTML='<div class="empty">ยังไม่มีรูปในคลัง</div>';
+      }else{
+        body.innerHTML=`<div class="picker-grid">${mediaFiles.map(f=>`
+          <button type="button" class="picker-image-item" data-url="${esc(f.url)}">
+            <span class="picker-thumb"><img src="${esc(f.url)}" alt=""></span>
+            <span class="picker-name">${esc(f.name||"รูป")}</span>
+          </button>`).join("")}</div>`;
+        body.querySelectorAll(".picker-image-item").forEach(b=>b.onclick=()=>{
+          document.querySelector("#catImage").value=b.dataset.url;
+          updateUploadPreview("image",b.dataset.url);
+          closeLibraryPicker();
+        });
+      }
+    }else{
+      await loadPdfLibrary();
+      if(!pdfFiles.length){
+        body.innerHTML='<div class="empty">ยังไม่มี PDF ในคลัง</div>';
+      }else{
+        body.innerHTML=`<div class="picker-pdf-list">${pdfFiles.map(f=>`
+          <button type="button" class="picker-pdf-item" data-url="${esc(f.url)}">
+            <span class="picker-pdf-icon">PDF</span>
+            <span class="picker-pdf-text"><b>${esc(f.name||"PDF")}</b><small>${formatBytes(f.size)}</small></span>
+            <span class="picker-select">เลือก</span>
+          </button>`).join("")}</div>`;
+        body.querySelectorAll(".picker-pdf-item").forEach(b=>b.onclick=()=>{
+          document.querySelector("#catPdf").value=b.dataset.url;
+          updateUploadPreview("pdf",b.dataset.url);
+          closeLibraryPicker();
+        });
+      }
+    }
+  }catch(err){
+    body.innerHTML=`<div class="api-needed">โหลดคลังไม่สำเร็จ: ${esc(err.message||err)}</div>`;
+  }
+}
+function closeLibraryPicker(){
+  document.querySelector("#libraryPicker")?.classList.add("hidden");
+}
+
 function bindCategoryAdmin(){
   document.querySelector("#addCategory")?.addEventListener("click",()=>openCategoryModal());
   document.querySelector("#reloadCats")?.addEventListener("click",async()=>{await Promise.all([loadCategoryApi(),loadSheetTabs()]);views.categories()});
@@ -303,6 +363,9 @@ async function openCategoryModal(x=null){
   document.querySelector("#catPrice").value=x?.price_url||"";
   updateUploadPreview("image",x?.image||"");updateUploadPreview("pdf",x?.pdf_url||"");
   document.querySelectorAll(".upload-btn").forEach(btn=>btn.onclick=()=>document.querySelector(btn.dataset.kind==="image"?"#imageFile":"#pdfFile").click());
+  document.querySelectorAll(".library-btn").forEach(btn=>btn.onclick=()=>openLibraryPicker(btn.dataset.picker));
+  document.querySelector("#closePicker").onclick=closeLibraryPicker;
+  document.querySelector("#libraryPicker").onclick=e=>{if(e.target.id==="libraryPicker")closeLibraryPicker()};
   document.querySelector("#imageFile").onchange=e=>handleUpload(e.target.files[0],"image");
   document.querySelector("#pdfFile").onchange=e=>handleUpload(e.target.files[0],"pdf");
   del.classList.toggle("hidden",!x?.__row);

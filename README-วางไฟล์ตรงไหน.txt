@@ -1,15 +1,28 @@
-PHASE 3E — LIVE SHEET TAB DROPDOWN
+PHASE 4C — PICKER + PDF FRONTEND
 
-วางทับใน GitHub:
+GitHub วางทับ 4 ไฟล์:
 - /admin/admin.js
 - /admin/admin.css
+- /price_sheet.js
+- /dealer/price_sheet.js
 
 ไม่ต้องแก้ Code.gs
 ไม่ต้อง Deploy Apps Script ใหม่
 
-สิ่งที่แก้:
-1. ตอน "เพิ่มหมวดใหม่" ซ่อน Google Sheet Tab
-   เพราะระบบสร้าง Tab ให้อัตโนมัติอยู่แล้ว
-2. ตอน "แก้ไขหมวดเดิม" ระบบจะดึงรายชื่อ Tab ล่าสุดจาก Google Sheet ทุกครั้งที่เปิดฟอร์ม
-3. ถ้ามี Tab เพิ่มใหม่ จะเห็นใน Dropdown ทันที
-4. Dropdown นี้ใช้สำหรับสลับ/เปลี่ยน Mapping ของหมวดเดิมเท่านั้น
+สิ่งที่เพิ่ม:
+1. หน้าแก้ไขหมวด
+- รูปหมวด: มี "เลือกจากคลัง" + "อัปโหลดรูป"
+- PDF: มี "เลือกจากคลัง" + "อัปโหลด PDF"
+- เลือกไฟล์จากคลังแล้ว URL + Preview ถูกใส่ในฟอร์มอัตโนมัติ
+- กดบันทึกหมวดตามปกติ
+
+2. หน้าใบราคา
+- แก้ให้ระบบอ่าน pdf_url ที่ Backoffice บันทึกอยู่
+- ถ้าหมวดมี PDF ปุ่ม "เปิด PDF" ที่มีอยู่เดิมจะแสดงอัตโนมัติ
+- แก้ทั้งหน้าปกติและ /dealer/
+
+ไม่แตะ:
+- Login
+- Google Sheet Mapping logic
+- ระบบราคา
+- Code.gs

@@ -114,10 +114,9 @@ async function setupPdfDownloadButton(tabName) {
     if (!match) return;
 
     const pdf =
-      (IS_DEALER_ZONE ? (match.dealer_pdf || match.dealerPdf || match.pdf_dealer || "") : "") ||
-      match.pdf_url ||
-      match.pdf ||
-      match.pdf_file ||
+      match.dealer_pdf_url ||
+      match.dealer_pdf ||
+      match.dealerPdf ||
       "";
 
     const pdfUrl = normalizeMaybeRelativeUrl(pdf);

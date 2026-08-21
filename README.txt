@@ -1,23 +1,27 @@
-PHASE 6D — CONTACT CARDS + BRAND HEADER FIX
+PHASE 7A — PRICE SECTION HEADING + DEALER PDF
 
-วางทับ GitHub:
+GitHub วางทับ:
 - /index.html
-- /app.js
 - /dealer/home.html
-- /dealer/app.js
-- /price_sheet.html
-- /dealer/price_sheet.html
+- /admin/admin.js
+- /dealer/price_sheet.js
 
-ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script
-ไม่แตะ Backoffice / ราคา / PDF / Dealer login logic
+หมายเหตุ:
+- /app.js, /dealer/app.js, /price_sheet.html, /dealer/price_sheet.html ถูกแนบไว้เป็นฐานเดียวกัน แต่ถ้าไม่ได้แก้ใน GitHub รอบล่าสุด ไม่จำเป็นต้องวางทับใหม่
 
-1) Contact Cards
-- ใช้ข้อมูล LINE / Facebook / โทร จาก Backoffice เดิม
-- เพิ่มไอคอนใน UI
-- Desktop 4 ช่อง / Tablet 2 ช่อง / Mobile 1 ช่อง
-- ทุก Card กดใช้งานจริง
+Google Apps Script:
+- ใช้ Code.gs ใน ZIP แทนตัวปัจจุบัน
+- Save > Deploy > Manage deployments > Edit > New version > Deploy
 
-2) Brand Header
-- แก้ไอคอน + ชื่อแบรนด์ที่ถูก td:last-child บังคับชิดขวา
-- กลับไปชิดซ้ายเหนือรายการสินค้า
+เพิ่ม:
+1) หัวข้อ "รายการราคาสินค้า" ระหว่าง Banner กับ Card
+   - ข้อความรอง: เลือกหมวดสินค้าเพื่อดูรายการราคาและดาวน์โหลดใบราคา
+   - Desktop มีเส้น/ไอคอน, Mobile compact
+
+2) Dealer PDF แยกจาก Retail PDF
+   - Backoffice > หมวดสินค้า เพิ่ม "PDF ราคาตัวแทนจำหน่าย"
+   - เลือกจากคลัง/อัปโหลดได้
+   - บันทึกลง dealer_pdf_url
+   - Dealer page ใช้เฉพาะ dealer_pdf_url
+   - ถ้ายังไม่มี Dealer PDF = ไม่แสดงปุ่ม PDF
+   - Retail page ยังใช้ pdf_url เดิม

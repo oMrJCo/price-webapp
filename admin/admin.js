@@ -440,6 +440,7 @@ async function saveCategory(payload){
     sort:payload.sort||"",
     image:payload.image||"",
     pdf_url:payload.pdf_url||"",
+    dealer_pdf_url:payload.dealer_pdf_url||"",
     price_url:payload.price_url||"",
     autoCreate:payload.autoCreate||"0"
   });
@@ -513,9 +514,18 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
       </label>
       <label>ไฟล์ PDF
         <div class="upload-field"><input id="catPdf" placeholder="/assets/uploads/pdfs/..."><button type="button" class="library-btn" data-picker="pdf">เลือกจากคลัง</button><button type="button" class="upload-btn" data-kind="pdf">อัปโหลด PDF</button></div>
-        <input id="pdfFile" class="file-hidden" type="file" accept="application/pdf">
+        <input id="pdfFile" class="file-hidden" type="file" accept="application/pdf"><input id="dealerPdfFile" class="file-hidden" type="file" accept="application/pdf">
         <div id="pdfPreview" class="upload-preview"></div>
       </label>
+<label>PDF ราคาตัวแทนจำหน่าย
+  <div class="upload-field">
+    <input id="catDealerPdf" placeholder="เลือก PDF สำหรับหน้าตัวแทน">
+    <button type="button" class="library-btn" data-picker="dealerPdf">เลือกจากคลัง</button>
+    <button type="button" class="upload-btn dealer-pdf-upload">อัปโหลด PDF</button>
+  </div>
+  <div id="dealerPdfPreview" class="upload-preview"></div>
+  <small class="field-note">ถ้าไม่เลือก PDF หน้าตัวแทนจะไม่แสดงปุ่ม PDF</small>
+</label>
       <input id="catPrice" type="hidden">
     </div>
     <div class="form-actions"><button type="button" class="danger hidden" id="deleteCat">ลบหมวด</button><div class="spacer"></div><button type="button" class="secondary" id="cancelCat">ยกเลิก</button><button type="submit" class="primary">บันทึก</button></div>
@@ -562,7 +572,7 @@ async function handleUpload(file,kind){
   }finally{btn.disabled=false;btn.textContent=old}
 }
 function updateUploadPreview(kind,url){
-  const box=document.querySelector(kind==="image"?"#imagePreview":"#pdfPreview");
+  const box=document.querySelector(kind==="image"?"#imagePreview":kind==="dealerPdf"?"#dealerPdfPreview":"#pdfPreview");
   if(!box)return;
   if(!url){box.innerHTML="";return}
   box.innerHTML=kind==="image"?`<img src="${esc(url)}"><span>ไฟล์พร้อมใช้งาน</span>`:`<a href="${esc(url)}" target="_blank">เปิด PDF ที่อัปโหลด</a>`;
@@ -608,8 +618,9 @@ async function openLibraryPicker(kind){
             <span class="picker-select">เลือก</span>
           </button>`).join("")}</div>`;
         body.querySelectorAll(".picker-pdf-item").forEach(b=>b.onclick=()=>{
-          document.querySelector("#catPdf").value=b.dataset.url;
-          updateUploadPreview("pdf",b.dataset.url);
+          const target=kind==="dealerPdf"?"#catDealerPdf":"#catPdf";
+          document.querySelector(target).value=b.dataset.url;
+          updateUploadPreview(kind==="dealerPdf"?"dealerPdf":"pdf",b.dataset.url);
           closeLibraryPicker();
         });
       }
@@ -651,14 +662,23 @@ async function openCategoryModal(x=null){
   document.querySelector("#catSort").value=x?.sort||"";
   document.querySelector("#catImage").value=x?.image||"";
   document.querySelector("#catPdf").value=x?.pdf_url||"";
+  document.querySelector("#catDealerPdf").value=x?.dealer_pdf_url||"";
   document.querySelector("#catPrice").value=x?.price_url||"";
   updateUploadPreview("image",x?.image||"");updateUploadPreview("pdf",x?.pdf_url||"");
   document.querySelectorAll(".upload-btn").forEach(btn=>btn.onclick=()=>document.querySelector(btn.dataset.kind==="image"?"#imageFile":"#pdfFile").click());
+  document.querySelector(".dealer-pdf-upload")?.addEventListener("click",()=>document.querySelector("#dealerPdfFile")?.click());
   document.querySelectorAll(".library-btn").forEach(btn=>btn.onclick=()=>openLibraryPicker(btn.dataset.picker));
   document.querySelector("#closePicker").onclick=closeLibraryPicker;
   document.querySelector("#libraryPicker").onclick=e=>{if(e.target.id==="libraryPicker")closeLibraryPicker()};
   document.querySelector("#imageFile").onchange=e=>handleUpload(e.target.files[0],"image");
   document.querySelector("#pdfFile").onchange=e=>handleUpload(e.target.files[0],"pdf");
+  document.querySelector("#dealerPdfFile").onchange=async e=>{
+    const file=e.target.files[0]; if(!file)return;
+    const result=await uploadFile(file,"pdf");
+    document.querySelector("#catDealerPdf").value=result.url;
+    updateUploadPreview("dealerPdf",result.url);
+    e.target.value="";
+  };
   del.classList.toggle("hidden",!x?.__row);
   const close=()=>modal.classList.add("hidden");
   document.querySelector("#closeModal").onclick=close;document.querySelector("#cancelCat").onclick=close;
@@ -678,6 +698,7 @@ async function openCategoryModal(x=null){
         sort:document.querySelector("#catSort").value,
         image:document.querySelector("#catImage").value.trim(),
         pdf_url:document.querySelector("#catPdf").value.trim(),
+        dealer_pdf_url:document.querySelector("#catDealerPdf").value.trim(),
         price_url:price,
         autoCreate:document.querySelector("#catRow").value?"0":"1"
       });

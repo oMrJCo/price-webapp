@@ -320,7 +320,8 @@ async function saveSiteSettings(){
     lineEnabled:document.querySelector("#settingLineEnabled")?.checked?"TRUE":"FALSE",
     phone:document.querySelector("#settingPhone")?.value.trim()||"",
     phoneEnabled:document.querySelector("#settingPhoneEnabled")?.checked?"TRUE":"FALSE",
-    dealerCode:document.querySelector("#settingDealerCode")?.value.trim()||""
+    dealerCode:document.querySelector("#settingDealerCode")?.value.trim()||"",
+    logoUrl:document.querySelector("#settingLogoUrl")?.value.trim()||""
   });
 }
 async function renderSettingsView(){
@@ -331,6 +332,19 @@ async function renderSettingsView(){
   const s=siteSettings||{};
   content.innerHTML=`
     <div class="settings-grid">
+      <div class="panel settings-card">
+        <h2>โลโก้เว็บไซต์</h2>
+        <div class="settings-note"><b>ขนาดแนะนำ 400 × 160 px</b> · PNG/WebP พื้นหลังโปร่งใส · ใช้ทั้งหน้าปกติและหน้าตัวแทน</div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px">
+          <div id="siteLogoPreview" style="width:120px;height:64px;border:1px solid #ddd;border-radius:10px;background:#111;display:grid;place-items:center;overflow:hidden">${s.logoUrl?`<img src="${esc(s.logoUrl)}" style="max-width:100%;max-height:100%;object-fit:contain">`:'<span style="color:#888;font-size:11px">ยังไม่ได้ตั้งโลโก้</span>'}</div>
+          <div style="flex:1;min-width:260px">
+            <input id="settingLogoUrl" value="${esc(s.logoUrl||"")}" placeholder="URL โลโก้" style="width:100%;margin-bottom:8px">
+            <button type="button" class="secondary" id="uploadSiteLogoBtn">อัปโหลดโลโก้</button>
+            <input id="siteLogoFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp">
+            <span id="siteLogoMsg" class="media-msg"></span>
+          </div>
+        </div>
+      </div>
       <div class="panel settings-card">
         <h2>ช่องทางการติดต่อ</h2>
         <div class="settings-note">ถ้าเปิดใช้งาน ช่องทางนั้นจะขึ้นทั้งหน้าปกติและหน้าตัวแทนจำหน่าย</div>
@@ -345,6 +359,15 @@ async function renderSettingsView(){
       </div>
     </div>
     <div class="settings-save"><button class="primary" id="saveSettingsBtn">บันทึกการตั้งค่า</button><span id="settingsMsg" class="media-msg"></span></div>`;
+  document.querySelector("#uploadSiteLogoBtn")?.addEventListener("click",()=>document.querySelector("#siteLogoFile")?.click());
+  document.querySelector("#siteLogoFile")?.addEventListener("change",async e=>{
+    const file=e.target.files?.[0]; if(!file)return;
+    const btn=document.querySelector("#uploadSiteLogoBtn"),msg=document.querySelector("#siteLogoMsg");
+    btn.disabled=true; msg.textContent="กำลังอัปโหลด...";
+    try{const r=await uploadFile(file,"image");document.querySelector("#settingLogoUrl").value=r.url;document.querySelector("#siteLogoPreview").innerHTML=`<img src="${esc(r.url)}" style="max-width:100%;max-height:100%;object-fit:contain">`;msg.className="media-msg success";msg.textContent="อัปโหลดแล้ว — กดบันทึกการตั้งค่า"}
+    catch(err){msg.className="media-msg error";msg.textContent="อัปโหลดไม่สำเร็จ: "+err.message}
+    finally{btn.disabled=false;e.target.value=""}
+  });
   document.querySelector("#saveSettingsBtn").onclick=async()=>{
     const btn=document.querySelector("#saveSettingsBtn"),msg=document.querySelector("#settingsMsg");
     btn.disabled=true;msg.textContent="กำลังบันทึก...";

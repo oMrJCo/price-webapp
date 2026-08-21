@@ -144,6 +144,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ"
     );
 
+    const siteLogo=document.getElementById("siteLogo");
+    if(siteLogo){
+      const logoUrl=String(data.logoUrl||"").trim();
+      if(logoUrl){siteLogo.src=logoUrl;siteLogo.style.display="block";siteLogo.onerror=()=>{siteLogo.style.display="none";siteLogo.removeAttribute("src")}}
+      else{siteLogo.style.display="none";siteLogo.removeAttribute("src")}
+    }
+
 
     const contactBar=document.getElementById("contactBar");
     if(contactBar){

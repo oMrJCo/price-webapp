@@ -56,12 +56,21 @@ async function renderMediaView(){
   const heroHtml=await renderHeroManager();
   const brandHtml=await renderBrandManager();
   content.innerHTML=`${heroHtml}${brandHtml}
+  <div id="libraryPicker" class="picker-modal hidden">
+    <div class="picker-card">
+      <div class="modal-head"><div><h2 id="pickerTitle">เลือกจากคลัง</h2><div class="muted" id="pickerSubtitle"></div></div><button type="button" id="closePicker" class="icon-btn">×</button></div>
+      <div id="pickerBody" class="picker-body"><div class="empty">กำลังโหลด...</div></div>
+    </div>
+  </div>
   <div class="media-toolbar">
     <div><button class="primary" id="mediaUploadBtn">+ อัปโหลดรูปเข้าคลัง</button><input id="mediaFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div>
     <button class="secondary" id="mediaRefresh">รีเฟรชคลังรูป</button>
   </div>
   <div id="mediaMsg" class="media-msg"></div>
   <div class="panel"><div class="media-panel-head"><h2>คลังรูปทั้งหมด</h2><span class="muted" id="mediaCount"></span></div><div id="mediaLibrary"><div class="empty">กำลังโหลดรูป...</div></div></div>`;
+
+  document.querySelector("#closePicker")?.addEventListener("click",closeLibraryPicker);
+  document.querySelector("#libraryPicker")?.addEventListener("click",e=>{if(e.target.id==="libraryPicker")closeLibraryPicker()});
 
   await loadMediaLibrary();
   document.querySelector("#mediaLibrary").innerHTML=mediaCards();
@@ -250,6 +259,7 @@ function bindBrandLogoCards(){
 async function openMediaPickerForTarget(kind,onSelect){
   const modal=document.querySelector("#libraryPicker");
   const body=document.querySelector("#pickerBody");
+  if(!modal || !body) throw new Error("ไม่พบหน้าต่างเลือกไฟล์ กรุณารีเฟรชหน้า Backoffice");
   document.querySelector("#pickerTitle").textContent=kind==="image"?"เลือกรูปจากคลัง":"เลือก PDF จากคลัง";
   document.querySelector("#pickerSubtitle").textContent=kind==="image"?"เลือกรูปที่ต้องการใช้งาน":"เลือก PDF ที่ต้องการใช้งาน";
   modal.classList.remove("hidden");
@@ -271,13 +281,27 @@ async function openMediaPickerForTarget(kind,onSelect){
   body.querySelectorAll(".target-picker").forEach(b=>b.onclick=()=>{onSelect(b.dataset.url);closeLibraryPicker()});
 }
 async function renderBrandManager(){
-  const tabs=sheetTabs.filter(t=>!["meta","categories"].includes(String(t).toLowerCase()));
-  if(!activeBrandTab && tabs.length)activeBrandTab=tabs[0];
+  const mappedCats=liveCats().filter(c=>catTab(c));
+  const seen=new Set();
+  const items=mappedCats.map(c=>({
+    tab:catTab(c),
+    label:c.titleTH||c.titleEN||catTab(c)
+  })).filter(x=>{
+    const k=String(x.tab).toLowerCase();
+    if(!x.tab || seen.has(k))return false;
+    seen.add(k);return true;
+  });
+
+  if(!items.some(x=>x.tab===activeBrandTab)){
+    activeBrandTab=items.length?items[0].tab:"";
+  }
+
   await loadBrandsForTab(activeBrandTab);
+
   return `<div class="panel media-section">
     <div class="section-head"><div><h2>โลโก้แบรนด์</h2><div class="spec-note"><b>ขนาดแนะนำ 256 × 256 px (1:1)</b> · PNG/WebP พื้นหลังโปร่งใส · รายชื่อแบรนด์อ่านจากข้อมูลสินค้าใน Sheet จริง</div></div></div>
-    <div class="brand-toolbar"><label>หมวด / Sheet Tab <select id="brandTabSelect">${tabs.map(t=>`<option value="${esc(t)}" ${t===activeBrandTab?"selected":""}>${esc(t)}</option>`).join("")}</select></label><span id="brandMsg" class="media-msg"></span></div>
-    <div id="brandLogoArea">${brandLogoCards()}</div>
+    <div class="brand-toolbar"><label>หมวดสินค้า <select id="brandTabSelect">${items.map(x=>`<option value="${esc(x.tab)}" ${x.tab===activeBrandTab?"selected":""}>${esc(x.label)} — ${esc(x.tab)}</option>`).join("")}</select></label><span id="brandMsg" class="media-msg"></span></div>
+    <div id="brandLogoArea">${items.length?brandLogoCards():'<div class="empty">ยังไม่มีหมวดที่เชื่อมกับ Google Sheet</div>'}</div>
   </div>`;
 }
 

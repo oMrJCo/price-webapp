@@ -1,20 +1,20 @@
-PHASE 4B — PDF LIBRARY
+PHASE 4D.1 — HERO + BRAND FIX
 
-วางทับ GitHub:
+วางทับใน GitHub:
 - /admin/admin.js
-- /admin/admin.css
 
+ไม่ต้องแก้ admin.css
+ไม่ต้องแก้ app.js
 ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script ใหม่
+ไม่ต้อง Deploy Apps Script
 
-เมนูไฟล์ PDF:
-- แสดง PDF ทั้งหมดจาก Google Drive > LEEPLUS Price Web Uploads > pdfs
-- อัปโหลด PDF
-- เปิด PDF
-- คัดลอก URL
-- แสดงขนาดไฟล์
-- บอกว่า PDF ถูกใช้กับหมวดไหน
+แก้ 2 จุด:
+1. Hero Banner
+- หน้า รูปและสื่อ มี Media Picker ของตัวเองแล้ว
+- ปุ่ม "เลือกจากคลัง" ใช้งานได้โดยไม่พึ่งหน้า หมวดสินค้า
 
-ไม่แตะ Login
-ไม่แตะ Media Library
-ไม่แตะ logic Google Sheet
+2. Brand Logo
+- Dropdown แสดงเฉพาะหมวดที่มี sheetTab ใน categories จริง
+- ไม่เอา Ex image url / Tab ระบบ / Tab ที่ไม่ใช่หมวดมาปน
+- แสดงชื่อหมวดไทย + ชื่อ Sheet Tab
+- เมื่อเลือกหมวด จะอ่าน Unique brand จากคอลัมน์ brand ใน Tab นั้น

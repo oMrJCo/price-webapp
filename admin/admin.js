@@ -350,7 +350,7 @@ async function renderSettingsView(){
     <div class="settings-grid">
       <div class="panel settings-card">
         <h2>โลโก้เว็บไซต์</h2>
-        <div class="settings-note"><b>ขนาดแนะนำ 320 × 120 px</b> (หรือ 512 × 192 px สำหรับไฟล์คมชัด) · PNG/WebP พื้นหลังโปร่งใส · ใช้ทั้งหน้าปกติและหน้าตัวแทน</div>
+        <div class="settings-note"><b>ขนาดแนะนำ 512 × 512 px (1:1)</b> · PNG/WebP พื้นหลังโปร่งใส · ใช้ทั้งหน้าปกติและหน้าตัวแทน</div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px">
           <div id="siteLogoPreview" style="width:120px;height:64px;border:1px solid #ddd;border-radius:10px;background:#111;display:grid;place-items:center;overflow:hidden">${s.logoUrl?`<img src="${esc(s.logoUrl)}" style="max-width:100%;max-height:100%;object-fit:contain">`:'<span style="color:#888;font-size:11px">ยังไม่ได้ตั้งโลโก้</span>'}</div>
           <div style="flex:1;min-width:260px">

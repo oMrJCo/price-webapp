@@ -128,6 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         facebookEnabled: String(siteMeta.facebookEnabled || "TRUE").toUpperCase() !== "FALSE",
         phone: siteMeta.phone || "",
         phoneEnabled: String(siteMeta.phoneEnabled || "TRUE").toUpperCase() !== "FALSE",
+        logoUrl: siteMeta.logoUrl || "",
         categories,
       };
 

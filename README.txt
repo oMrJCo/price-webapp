@@ -1,22 +1,16 @@
-PHASE 5B.4 — ADMIN CORE FIX
+PHASE 5B.5 — LOGO DISPLAY FIX
 
 วางทับ GitHub แค่:
 - /admin/admin.js
+- /app.js
+- /dealer/app.js
 
 ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script
-ไม่ต้องแตะ Frontend / Dealer
+ไม่ต้อง Deploy Apps Script ใหม่
+ไม่แตะ PDF / Google Sheet / Dealer logic
 
-แก้:
-1) PDF Library
-- คืน pdfFiles / pdfState / loadPdfLibrary() ที่หลุดหายตอนรวมไฟล์
-- เมนู PDF ต้องโหลดรายการและอัปโหลดได้อีกครั้ง
-
-2) Google Sheet
-- แก้ s.unlinked -> s.unmapped
-- เมนู Google Sheet ต้องเปิดได้และแสดงสถานะ Tabs ได้อีกครั้ง
-
-3) Website Logo spec
-- แนะนำ 320 × 120 px
-- หรือ 512 × 192 px สำหรับความคมชัด
-- เหมาะกับ Header มากกว่า 400 × 160 px
+แก้เฉพาะ:
+1. Logo spec ใน Backoffice = 512 × 512 px (1:1)
+2. Frontend bug: app.js และ dealer/app.js ลืม map siteMeta.logoUrl -> data.logoUrl
+   ทำให้แม้ Backoffice บันทึก Logo สำเร็จ หน้าเว็บก็อ่านค่าเป็นว่าง
+3. หลังวางไฟล์ กด Ctrl+F5

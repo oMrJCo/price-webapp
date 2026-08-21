@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const links=[];
       if(data.lineEnabled && data.lineUrl) links.push(`<a class="contact-pill line" href="${data.lineUrl}" target="_blank" rel="noopener">LINE</a>`);
       if(data.facebookEnabled && data.facebookUrl) links.push(`<a class="contact-pill facebook" href="${data.facebookUrl}" target="_blank" rel="noopener">Facebook</a>`);
-      if(data.phoneEnabled && data.phone) links.push(`<a class="contact-pill phone" href="tel:${String(data.phone).replace(/[^0-9+]/g,"")}">โทร ${data.phone}</a>`);
+      if(data.phoneEnabled && data.phone){const phoneText=String(data.phone).trim();links.push(`<a class="contact-pill phone" href="tel:${phoneText.replace(/[^0-9+]/g,"")}">โทร ${phoneText}</a>`);}
       contactBar.innerHTML=links.join("");
       contactBar.style.display=links.length?"flex":"none";
     }

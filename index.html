@@ -584,6 +584,39 @@
 .contact-bar{display:flex;gap:8px;flex-wrap:wrap;margin:-3px 0 14px 62px}.contact-pill{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:#fff;text-decoration:none;font-size:11px;font-weight:800;background:#111722}.contact-pill.line{border-color:rgba(6,199,85,.40)}.contact-pill.facebook{border-color:rgba(24,119,242,.45)}.contact-pill.phone{border-color:rgba(234,179,8,.40)}
 .dealerNavBtn{font-family:inherit;cursor:pointer}.dealer-access-modal{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:9999;display:none;place-items:center;padding:20px}.dealer-access-modal.show{display:grid}.dealer-access-card{position:relative;width:min(390px,100%);background:#0d1119;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.65)}.dealer-access-close{position:absolute;right:14px;top:12px;border:0;background:#171c26;color:#fff;width:34px;height:34px;border-radius:50%;font-size:22px;cursor:pointer}.dealer-access-brand{font-weight:950;font-size:18px}.dealer-access-brand span{color:#eab308;font-size:10px;letter-spacing:2px;display:block;margin-top:2px}.dealer-access-card h2{margin:24px 0 5px;font-size:21px}.dealer-access-card p{margin:0 0 16px;color:#9299a8;font-size:12px}.dealer-access-card input{width:100%;height:48px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:#090c12;color:#fff;padding:0 13px;font-size:16px;outline:none}.dealer-access-submit{width:100%;height:46px;border:0;border-radius:11px;background:#eab308;color:#090b10;font-weight:900;margin-top:10px;cursor:pointer}.dealer-access-error{min-height:18px;color:#ff7777;font-size:11px;margin-top:9px}@media(max-width:760px){.contact-bar{margin:0 0 12px 0}.contact-pill{flex:1;min-width:88px}}
 
+
+/* Phase 5B.2 — Header logo fallback + Contact bar polish */
+.logo-image-failed .logo-circle{display:none!important}
+.logo-image-failed header::before{
+  content:"LP";width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;
+  border-radius:12px;background:linear-gradient(145deg,#f2c300,#111 78%);
+  color:#fff;font-size:12px;font-weight:950;letter-spacing:.5px;border:1px solid rgba(242,195,0,.35);
+}
+.contact-bar{
+  margin:0 0 16px 0!important;padding:10px 12px;border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;background:rgba(13,17,25,.72);backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:8px;
+}
+.contact-bar::before{
+  content:"ติดต่อเรา";color:rgba(255,255,255,.48);font-size:10px;font-weight:800;
+  letter-spacing:.5px;margin-right:2px;
+}
+.contact-pill{
+  min-height:36px!important;padding:0 14px!important;border-radius:10px!important;
+  background:#0a0e15!important;font-size:11px!important;font-weight:900!important;transition:.18s ease;
+}
+.contact-pill:hover{transform:translateY(-1px);filter:brightness(1.12)}
+.contact-pill.line{border-color:rgba(6,199,85,.55)!important}
+.contact-pill.facebook{border-color:rgba(24,119,242,.60)!important}
+.contact-pill.phone{
+  border-color:rgba(234,179,8,.58)!important;color:#f3cf34!important;
+  font-variant-numeric:tabular-nums;letter-spacing:.15px;
+}
+@media(max-width:760px){
+  .contact-bar{padding:8px;gap:6px}.contact-bar::before{display:none}
+  .contact-pill{flex:1;padding:0 8px!important;min-width:0!important}
+}
+
 </style>
 </head>
 

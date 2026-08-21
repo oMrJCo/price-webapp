@@ -403,10 +403,441 @@ tbody tr td{
   }
 }
 
+
+/* ===== Phase 6C — FULL VISUAL REDESIGN ===== */
+:root{
+  --bg:#07090d;
+  --surface:#0d1118;
+  --surface-2:#111722;
+  --surface-3:#171e2b;
+  --stroke:rgba(255,255,255,.075);
+  --stroke-strong:rgba(255,255,255,.12);
+  --text:#f5f7fa;
+  --sub:#9ba4b2;
+  --muted:#6f7886;
+  --yellow:#f3c900;
+  --yellow-2:#ffd927;
+  --yellow-soft:rgba(243,201,0,.10);
+  --shadow:0 20px 70px rgba(0,0,0,.34);
+}
+
+body{
+  background:
+    radial-gradient(900px 520px at 0% 0%,rgba(243,201,0,.08),transparent 58%),
+    radial-gradient(760px 460px at 100% 4%,rgba(67,97,238,.05),transparent 62%),
+    #07090d;
+}
+
+.wrap{
+  max-width:1240px!important;
+  padding:18px 20px 58px!important;
+}
+
+/* top mini rail */
+.smart-rail{
+  height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:0 2px 10px;
+  color:#7e8795;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.1px;
+}
+.smart-rail-left,.smart-rail-right{display:flex;align-items:center;gap:8px}
+.smart-kicker{color:var(--yellow)}
+.smart-dot-live{
+  width:6px;height:6px;border-radius:50%;
+  background:#41d17d;
+  box-shadow:0 0 0 4px rgba(65,209,125,.08);
+}
+.retail-mode .smart-mode-label::after{content:"RETAIL PRICE";}
+.dealer-mode .smart-mode-label::after{content:"DEALER PRICE";color:var(--yellow)}
+
+/* HERO HEADER — completely different composition */
+.header{
+  position:relative!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  margin-bottom:14px!important;
+  overflow:visible!important;
+}
+.header::before{display:none!important}
+
+.headerInner{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:12px!important;
+  min-height:0!important;
+  align-items:stretch!important;
+}
+
+.leftGroup{
+  min-width:0!important;
+  padding:16px!important;
+  border:1px solid var(--stroke)!important;
+  border-radius:20px!important;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.025),transparent 42%),
+    var(--surface)!important;
+  box-shadow:var(--shadow)!important;
+  display:grid!important;
+  grid-template-columns:44px 58px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.backBtn{
+  width:44px!important;height:44px!important;
+  border-radius:13px!important;
+  background:#151b25!important;
+  border:1px solid var(--stroke-strong)!important;
+}
+.backBtn:hover{background:#1b2230!important;border-color:rgba(243,201,0,.4)!important}
+#catThumb{
+  width:58px!important;height:58px!important;
+  display:block!important;
+  border-radius:16px!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  background:#f5f5f5!important;
+}
+.titleBlock{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:4px!important;
+}
+.crumb{
+  display:block!important;
+  color:var(--yellow)!important;
+  font-size:9px!important;
+  letter-spacing:1.25px!important;
+  font-weight:950!important;
+}
+.h1{
+  font-size:26px!important;
+  line-height:1.06!important;
+  font-weight:950!important;
+  color:#fff!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.updated{
+  font-size:10px!important;
+  color:#788290!important;
+}
+
+/* PDF becomes its own action panel */
+.rightGroup{
+  display:flex!important;
+  align-items:stretch!important;
+  min-width:190px!important;
+}
+.hint{display:none!important}
+.pdfBtn{
+  width:100%!important;
+  min-height:100%!important;
+  border-radius:20px!important;
+  border:1px solid rgba(243,201,0,.28)!important;
+  background:
+    linear-gradient(180deg,rgba(243,201,0,.10),rgba(243,201,0,.035)),
+    #12150f!important;
+  color:#fff!important;
+  flex-direction:column!important;
+  gap:7px!important;
+  padding:16px 18px!important;
+  font-size:12px!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.22)!important;
+}
+.pdfBtn::before{
+  content:"PDF"!important;
+  font-size:11px!important;
+  letter-spacing:1px!important;
+  background:var(--yellow)!important;
+  color:#111!important;
+  padding:7px 11px!important;
+  border-radius:8px!important;
+}
+.pdfBtn::after{
+  content:"เปิดเอกสารราคา";
+  color:#8c927d;
+  font-size:9px;
+  font-weight:700;
+}
+.pdfBtn:hover{
+  border-color:rgba(243,201,0,.52)!important;
+  transform:translateY(-1px);
+}
+
+/* COMMAND CENTER */
+.content{
+  border:0!important;
+  border-radius:22px!important;
+  padding:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+
+/* Search becomes command bar */
+.searchWrap{
+  margin:0 0 10px!important;
+  padding:10px!important;
+  border-radius:18px!important;
+  border:1px solid var(--stroke)!important;
+  background:var(--surface)!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.18)!important;
+}
+.searchWrap .icon{left:26px!important}
+#search{
+  height:50px!important;
+  padding-left:48px!important;
+  border-radius:13px!important;
+  border:1px solid rgba(255,255,255,.065)!important;
+  background:#090c11!important;
+  font-size:13px!important;
+}
+
+/* brand nav turns into a floating control dock */
+#tabs{
+  margin:0 0 12px!important;
+  padding:10px!important;
+  border:1px solid var(--stroke)!important;
+  border-radius:18px!important;
+  background:var(--surface)!important;
+  gap:7px!important;
+}
+.pill{
+  min-height:38px!important;
+  padding:0 12px!important;
+  border-radius:12px!important;
+  background:#151b25!important;
+  border-color:rgba(255,255,255,.07)!important;
+  color:#aeb6c1!important;
+}
+.pill.active{
+  color:#111!important;
+  background:linear-gradient(180deg,#ffda25,#e6b900)!important;
+  border-color:#efc400!important;
+  box-shadow:0 8px 22px rgba(243,201,0,.15)!important;
+}
+
+/* PRICE LIST — turns table into a dashboard list visually */
+table{
+  display:block!important;
+  width:100%!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+}
+thead{
+  display:none!important;
+}
+tbody{
+  display:grid!important;
+  gap:8px!important;
+}
+tbody tr{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:100%!important;
+  margin:0!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.016),transparent),
+    var(--surface)!important;
+  border:1px solid var(--stroke)!important;
+  border-radius:15px!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.12)!important;
+  overflow:hidden!important;
+  transition:.16s ease!important;
+}
+tbody tr:not(.brandHeaderRow):hover{
+  transform:translateY(-1px)!important;
+  border-color:rgba(243,201,0,.20)!important;
+  background:
+    linear-gradient(180deg,rgba(243,201,0,.025),transparent),
+    #11161e!important;
+}
+tbody tr td{
+  display:block!important;
+  border:0!important;
+  padding:13px 15px!important;
+}
+tbody tr td:first-child{min-width:0!important}
+tbody tr td:last-child{text-align:right!important}
+
+.brandHeaderRow{
+  display:block!important;
+  margin:10px 0 0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+}
+.brandHeaderRow td{
+  padding:4px 4px 5px!important;
+  background:transparent!important;
+}
+.brandHeader{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  color:#dde2e8!important;
+  font-size:11px!important;
+  letter-spacing:.2px!important;
+}
+.dot{
+  width:16px!important;height:4px!important;
+  border-radius:999px!important;
+  background:var(--yellow)!important;
+}
+.model{
+  font-size:13px!important;
+  font-weight:850!important;
+  color:#eef2f6!important;
+}
+.price{
+  font-size:16px!important;
+  font-weight:950!important;
+  color:var(--yellow-2)!important;
+  letter-spacing:-.1px!important;
+}
+.priceUnit{
+  font-size:9px!important;
+  color:#78818e!important;
+  margin-left:3px!important;
+}
+.badgeNew{
+  border-radius:999px!important;
+  padding:3px 7px!important;
+}
+
+/* desktop card/list width */
+#empty{
+  background:var(--surface)!important;
+  border-color:var(--stroke)!important;
+}
+
+/* tablet */
+@media(max-width:900px){
+  .headerInner{
+    grid-template-columns:1fr!important;
+  }
+  .rightGroup{
+    min-width:0!important;
+  }
+  .pdfBtn{
+    min-height:70px!important;
+    flex-direction:row!important;
+    justify-content:center!important;
+  }
+  .pdfBtn::after{display:none}
+}
+
+/* mobile redesign */
+@media(max-width:720px){
+  .wrap{padding:10px 9px 34px!important}
+  .smart-rail{margin:0 2px 7px;height:24px}
+
+  .leftGroup{
+    grid-template-columns:38px 46px minmax(0,1fr)!important;
+    padding:10px!important;
+    border-radius:16px!important;
+    gap:8px!important;
+  }
+  .backBtn{width:38px!important;height:38px!important;border-radius:10px!important}
+  #catThumb{width:46px!important;height:46px!important;border-radius:12px!important}
+  .h1{font-size:18px!important}
+  .crumb{font-size:8px!important}
+  .updated{font-size:9px!important}
+
+  .pdfBtn{
+    min-height:52px!important;
+    border-radius:15px!important;
+    padding:8px 12px!important;
+    flex-direction:row!important;
+    gap:8px!important;
+    font-size:11px!important;
+  }
+  .pdfBtn::before{
+    padding:5px 8px!important;
+    font-size:9px!important;
+  }
+
+  .searchWrap{
+    padding:8px!important;
+    border-radius:15px!important;
+  }
+  #search{
+    height:44px!important;
+    border-radius:11px!important;
+    font-size:12px!important;
+  }
+  #tabs{
+    padding:8px!important;
+    border-radius:15px!important;
+  }
+  .pill{
+    min-height:34px!important;
+    padding:0 10px!important;
+    border-radius:10px!important;
+    font-size:10px!important;
+  }
+
+  tbody{gap:7px!important}
+  tbody tr{
+    border-radius:13px!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+  }
+  tbody tr td{padding:11px 12px!important}
+  .model{font-size:12px!important}
+  .price{font-size:15px!important}
+  .brandHeaderRow{margin-top:8px!important}
+}
+
+/* very narrow / zoomed */
+@media(max-width:420px){
+  .leftGroup{
+    grid-template-columns:36px 42px minmax(0,1fr)!important;
+  }
+  .backBtn{width:36px!important;height:36px!important}
+  #catThumb{width:42px!important;height:42px!important}
+  .h1{font-size:17px!important}
+}
+@media(max-width:360px){
+  #catThumb{display:none!important}
+  .leftGroup{grid-template-columns:34px minmax(0,1fr)!important}
+  .h1{font-size:16px!important}
+}
+
+/* dealer differentiation: subtle, not a second design */
+.dealer-mode .smart-mode-label::after{color:var(--yellow)!important}
+.dealer-mode .header .leftGroup{
+  box-shadow:0 20px 60px rgba(243,201,0,.035),var(--shadow)!important;
+}
+
 </style>
 </head>
-<body>
+<body class="retail-mode">
   <div class="wrap">
+<div class="smart-rail" aria-hidden="true">
+  <div class="smart-rail-left">
+    <span class="smart-kicker">LEEPLUS</span>
+    <span class="smart-mode-label"></span>
+  </div>
+  <div class="smart-rail-right">
+    <span class="smart-dot-live"></span>
+    <span>PRICE SYSTEM</span>
+  </div>
+</div>
+
     <div class="card header">
       <div class="headerInner">
         <div class="leftGroup">

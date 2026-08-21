@@ -1,4 +1,4 @@
-PHASE 6B — SMART DARK PREMIUM + RESPONSIVE HEADER
+PHASE 6C — FULL UI REDESIGN
 
 วางทับ GitHub:
 - /price_sheet.html
@@ -7,14 +7,14 @@ PHASE 6B — SMART DARK PREMIUM + RESPONSIVE HEADER
 ไม่ต้องแก้ JS
 ไม่ต้องแก้ Code.gs
 ไม่ต้อง Deploy Apps Script
-ไม่แตะ Backoffice / Dealer Login / PDF logic / ราคา
+ไม่แตะ Backoffice / ราคา / PDF logic / Dealer logic
 
-แก้หลัก:
-- Smart Dark: ดำอมเทา ดู premium กว่าเดิม
-- เหลืองใช้เฉพาะ Active / ราคา / CTA สำคัญ
-- ลดความแข็งของ border และ panel
-- Header แตก layout อัตโนมัติก่อนเริ่มเบียด
-- รองรับ iPhone / จอแคบ / Browser Zoom สูง
-- ชื่อหมวดห้ามเรียงตัวอักษรแนวตั้งอีก
-- PDF ย้ายเต็มแถวเมื่อพื้นที่ไม่พอ
-- หน้าปกติและ Dealer ใช้ดีไซน์เดียวกัน
+รอบนี้ไม่ใช่ refine:
+- เปลี่ยน Header เป็น 2-panel composition
+- PDF กลายเป็น Action Panel
+- Search เป็น Command Bar
+- Brand filter เป็น Control Dock
+- ตารางราคาเปลี่ยนหน้าตาเป็น Smart Price Rows/Cards
+- เพิ่ม mini status rail
+- Dealer ใช้ดีไซน์เดียวกัน แต่มี label Dealer
+- Mobile/Zoom สูงใช้ layout ชุดเดียวกัน ไม่บีบชื่อหมวด

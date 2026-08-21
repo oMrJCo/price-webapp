@@ -87,6 +87,322 @@ tbody tr{transition:.13s ease}tbody tr:not(.brandHeaderRow):hover{background:rgb
 }
 @media(max-width:360px){.h1{font-size:17px}.pdfBtn{padding:0 8px}.priceUnit{display:block;margin-top:1px}.rightGroup{align-self:flex-start}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* ===== Phase 6B — Smart Dark Premium + Responsive Header ===== */
+:root{
+  --bg:#090b0f;
+  --panel:#11151c;
+  --panel2:#0d1117;
+  --line:rgba(255,255,255,.075);
+  --line2:rgba(255,255,255,.045);
+  --text:#f4f6f8;
+  --muted:#8d95a1;
+  --accent:#f0c400;
+  --accent2:#ffd31a;
+  --soft-yellow:rgba(240,196,0,.10);
+  --soft-blue:rgba(79,108,255,.06);
+  --shadow:0 18px 50px rgba(0,0,0,.26);
+}
+
+body{
+  background:
+    radial-gradient(900px 520px at 8% -10%,rgba(240,196,0,.065),transparent 60%),
+    radial-gradient(900px 520px at 96% 0%,rgba(67,97,238,.05),transparent 62%),
+    linear-gradient(180deg,#090b0f 0%,#080a0d 100%);
+}
+
+.wrap{
+  max-width:1180px;
+  padding:22px 22px 56px;
+}
+
+/* Header */
+.header{
+  padding:14px 16px;
+  border-radius:20px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.006)),
+    #10141b;
+  border-color:rgba(255,255,255,.075);
+  box-shadow:0 12px 36px rgba(0,0,0,.22);
+}
+.header::before{
+  width:3px;
+  background:linear-gradient(180deg,#ffd31a,#d8aa00);
+}
+.headerInner{
+  min-height:74px;
+  gap:14px;
+}
+.leftGroup{
+  min-width:0;
+}
+.titleBlock{
+  min-width:0;
+  flex:1;
+}
+.h1{
+  font-size:24px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.updated{
+  margin-top:2px;
+}
+.backBtn{
+  background:#171b22;
+  border-color:rgba(255,255,255,.08);
+}
+#catThumb{
+  background:#f4f4f4;
+  border-color:rgba(255,255,255,.08);
+}
+.pdfBtn{
+  background:rgba(240,196,0,.075);
+  border-color:rgba(240,196,0,.34);
+  color:#f7f7f7;
+}
+.pdfBtn:hover{
+  background:rgba(240,196,0,.13);
+  border-color:rgba(240,196,0,.55);
+}
+.pdfBtn::before{
+  background:#f0c400;
+  color:#111;
+}
+
+/* Main panel */
+.content{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.012),transparent 28%),
+    #10141b;
+  border-color:rgba(255,255,255,.07);
+  box-shadow:0 14px 42px rgba(0,0,0,.20);
+}
+#search{
+  background:#0a0d12;
+  border-color:rgba(255,255,255,.08);
+}
+#search:focus{
+  border-color:rgba(240,196,0,.45);
+  box-shadow:0 0 0 3px rgba(240,196,0,.055);
+}
+
+/* Brand filter */
+.pill{
+  background:#151922;
+  border-color:rgba(255,255,255,.075);
+  color:#b6bdc7;
+  box-shadow:none;
+}
+.pill:hover{
+  background:#191e28;
+  border-color:rgba(255,255,255,.14);
+}
+.pill.active{
+  background:linear-gradient(180deg,#ffd21a,#e5b700);
+  border-color:#efc300;
+  color:#111318;
+  box-shadow:0 8px 18px rgba(240,196,0,.13);
+}
+.tabIcon,.brandIcon{
+  background:#f7f7f7;
+}
+
+/* Table / rows */
+table{
+  background:#0b0e13;
+  border-color:rgba(255,255,255,.065);
+}
+thead th{
+  background:#13171e;
+  color:#747d8a;
+  border-bottom-color:rgba(255,255,255,.065);
+}
+tbody tr:not(.brandHeaderRow):hover{
+  background:rgba(255,255,255,.018);
+}
+tbody tr td{
+  border-bottom-color:rgba(255,255,255,.042);
+}
+.brandHeaderRow td{
+  background:#11151b;
+  border-bottom-color:rgba(255,255,255,.055);
+}
+.brandHeader{
+  color:#d5d9df;
+}
+.dot{
+  background:#e7bd00;
+}
+.model{
+  color:#eef1f4;
+}
+.price{
+  color:#ffd31a;
+  text-shadow:0 0 18px rgba(255,211,26,.06);
+}
+.priceUnit{
+  color:#858d99;
+}
+
+/* Break before the layout starts squeezing */
+@media(max-width:900px){
+  .headerInner{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:11px;
+  }
+  .leftGroup{
+    width:100%;
+    display:grid;
+    grid-template-columns:auto auto minmax(0,1fr);
+    align-items:center;
+    gap:10px;
+  }
+  .rightGroup{
+    width:100%;
+    display:flex;
+    justify-content:flex-end;
+  }
+  .pdfBtn{
+    min-height:40px;
+  }
+}
+
+/* Mobile / browser zoom */
+@media(max-width:720px){
+  .wrap{
+    padding:11px 10px 38px;
+  }
+
+  .header{
+    padding:10px;
+    border-radius:16px;
+  }
+  .headerInner{
+    display:grid;
+    grid-template-columns:1fr;
+    min-height:0;
+    gap:10px;
+  }
+  .leftGroup{
+    display:grid;
+    grid-template-columns:38px 44px minmax(0,1fr);
+    gap:8px;
+    width:100%;
+    align-items:center;
+  }
+  .backBtn{
+    width:38px;
+    height:38px;
+    flex-basis:auto;
+    border-radius:10px;
+  }
+  #catThumb{
+    width:44px;
+    height:44px;
+    flex-basis:auto;
+    border-radius:10px;
+  }
+  .titleBlock{
+    min-width:0;
+    width:100%;
+  }
+  .h1{
+    font-size:18px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+  }
+  .updated{
+    font-size:10px;
+    white-space:nowrap;
+  }
+
+  .rightGroup{
+    width:100%;
+    justify-content:stretch;
+  }
+  .pdfBtn{
+    width:100%;
+    min-height:40px;
+    border-radius:10px;
+    gap:7px;
+    padding:0 12px;
+  }
+
+  .content{
+    padding:10px;
+    border-radius:16px;
+  }
+
+  #tabs{
+    padding-bottom:9px;
+  }
+
+  .pill{
+    min-height:34px;
+    padding:0 10px;
+    font-size:10.5px;
+    border-radius:9px;
+  }
+
+  tbody tr{
+    background:#0d1117;
+    border-color:rgba(255,255,255,.065);
+    box-shadow:none;
+  }
+  tbody tr td{
+    padding:10px 11px;
+  }
+  .brandHeaderRow{
+    background:transparent!important;
+  }
+}
+
+/* Extremely narrow widths / very high browser zoom */
+@media(max-width:430px){
+  .leftGroup{
+    grid-template-columns:36px 40px minmax(0,1fr);
+    gap:7px;
+  }
+  .backBtn{
+    width:36px;
+    height:36px;
+  }
+  #catThumb{
+    width:40px;
+    height:40px;
+  }
+  .h1{
+    font-size:17px;
+  }
+  .pdfBtn{
+    min-height:38px;
+    font-size:10px;
+  }
+}
+
+@media(max-width:360px){
+  .leftGroup{
+    grid-template-columns:34px minmax(0,1fr);
+  }
+  #catThumb{
+    display:none!important;
+  }
+  .backBtn{
+    width:34px;
+    height:34px;
+  }
+  .h1{
+    font-size:16px;
+  }
+}
+
 </style>
 <script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}</script>
 </head>

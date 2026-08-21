@@ -1,23 +1,20 @@
-PHASE 6A — SMART PRICE UI
+PHASE 6B — SMART DARK PREMIUM + RESPONSIVE HEADER
 
-วางทับ GitHub แค่:
+วางทับ GitHub:
 - /price_sheet.html
 - /dealer/price_sheet.html
 
 ไม่ต้องแก้ JS
 ไม่ต้องแก้ Code.gs
 ไม่ต้อง Deploy Apps Script
-ไม่แตะ Backoffice / Dealer Login / ราคา / PDF logic
+ไม่แตะ Backoffice / Dealer Login / PDF logic / ราคา
 
-แนว UI ใหม่:
-- Smart / Clean / อ่านง่าย
-- หน้าปกติและ Dealer ใช้หน้าตาเดียวกัน
-- Dealer ต่างเฉพาะข้อมูล dealer_price จาก JS เดิม
-- Brand filter เป็นแถบเลื่อนแนวนอน ไม่รก
-- Search ชัดและใช้ง่าย
-- Desktop เป็น Table ที่เบาและอ่านราคาเร็ว
-- Mobile เปลี่ยนเป็น List Card อัตโนมัติ
-- ราคาเด่นแต่ไม่ตะโกนเกินไป
-- Product image / Brand logo ใช้ contain ไม่ตัดภาพ
-- PDF / Back / Modal ใช้ภาษาดีไซน์เดียวกัน
-- ลด gradient/grid/animation ที่ทำให้หน้าดู AI และรก
+แก้หลัก:
+- Smart Dark: ดำอมเทา ดู premium กว่าเดิม
+- เหลืองใช้เฉพาะ Active / ราคา / CTA สำคัญ
+- ลดความแข็งของ border และ panel
+- Header แตก layout อัตโนมัติก่อนเริ่มเบียด
+- รองรับ iPhone / จอแคบ / Browser Zoom สูง
+- ชื่อหมวดห้ามเรียงตัวอักษรแนวตั้งอีก
+- PDF ย้ายเต็มแถวเมื่อพื้นที่ไม่พอ
+- หน้าปกติและ Dealer ใช้ดีไซน์เดียวกัน

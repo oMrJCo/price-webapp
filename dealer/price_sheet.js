@@ -546,6 +546,24 @@ function renderTable(rows, brandImageMap) {
   }
 }
 
+
+async function loadCategoryByTab(tab) {
+  try {
+    const r = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, { cache: "no-store" });
+    if (!r.ok) throw new Error(`categories api ${r.status}`);
+    const j = await r.json();
+    const items = Array.isArray(j.data) ? j.data : [];
+    const target = String(tab || "").trim().toLowerCase();
+
+    return items.find(item =>
+      String(item.sheetTab || item.sheet_tab || "").trim().toLowerCase() === target
+    ) || null;
+  } catch (err) {
+    if (DEBUG) console.warn("loadCategoryByTab failed", err);
+    return null;
+  }
+}
+
 /* ===== category thumb ===== */
 function applyCategoryThumb(categoryImageUrl) {
   const thumb = el("catThumb");
@@ -573,6 +591,7 @@ function applyCategoryThumb(categoryImageUrl) {
   setupPdfDownloadButton(tab);
 
   const meta = await loadMetaConfig();
+  const categoryRecord = await loadCategoryByTab(tab);
 
   const {
     rows: all,
@@ -581,6 +600,12 @@ function applyCategoryThumb(categoryImageUrl) {
   } = await loadSheetWithMeta(tab);
 
   const categoryImageUrl =
+    normalizeImageUrl(
+      categoryRecord?.image ||
+      categoryRecord?.image_url ||
+      categoryRecord?.categoryImage ||
+      ""
+    ) ||
     meta?.category?.[tab] ||
     meta?.category?.[String(tab).trim()] ||
     oldCategoryImageUrl ||

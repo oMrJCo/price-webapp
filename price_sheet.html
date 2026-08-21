@@ -823,6 +823,38 @@ tbody tr td:last-child{text-align:right!important}
   box-shadow:0 20px 60px rgba(243,201,0,.035),var(--shadow)!important;
 }
 
+
+/* ===== Phase 6C.1 — Brand Bar Wrap Fix ===== */
+/* Desktop: brands wrap to the next line instead of overflowing horizontally */
+#tabs{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  align-items:center!important;
+  align-content:flex-start!important;
+  gap:7px!important;
+}
+#tabs .pill{
+  flex:0 0 auto!important;
+}
+
+/* Mobile: wrap as well, with slightly tighter chips */
+@media(max-width:720px){
+  #tabs{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+    white-space:normal!important;
+    gap:6px!important;
+  }
+  #tabs .pill{
+    flex:0 0 auto!important;
+    min-height:32px!important;
+    padding:0 9px!important;
+  }
+}
+
 </style>
 </head>
 <body class="retail-mode">

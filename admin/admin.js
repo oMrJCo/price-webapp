@@ -97,6 +97,22 @@ async function renderMediaView(){
   });
   bindBrandLogoCards();
 }
+
+let pdfFiles=[], pdfState="idle";
+
+async function loadPdfLibrary(){
+  pdfState="loading";
+  try{
+    const j=await apiGet({action:"media",kind:"pdf"});
+    pdfFiles=Array.isArray(j.data)?j.data:[];
+    pdfState="ok";
+  }catch(e){
+    console.warn("PDF API error:",e);
+    pdfFiles=[];
+    pdfState="error";
+  }
+}
+
 function pdfUsage(url){return liveCats().filter(c=>String(c.pdf_url||"")===String(url||""))}
 function formatBytes(n){n=Number(n||0);if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";return (n/1048576).toFixed(1)+" MB"}
 function pdfCards(){
@@ -334,7 +350,7 @@ async function renderSettingsView(){
     <div class="settings-grid">
       <div class="panel settings-card">
         <h2>โลโก้เว็บไซต์</h2>
-        <div class="settings-note"><b>ขนาดแนะนำ 400 × 160 px</b> · PNG/WebP พื้นหลังโปร่งใส · ใช้ทั้งหน้าปกติและหน้าตัวแทน</div>
+        <div class="settings-note"><b>ขนาดแนะนำ 320 × 120 px</b> (หรือ 512 × 192 px สำหรับไฟล์คมชัด) · PNG/WebP พื้นหลังโปร่งใส · ใช้ทั้งหน้าปกติและหน้าตัวแทน</div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px">
           <div id="siteLogoPreview" style="width:120px;height:64px;border:1px solid #ddd;border-radius:10px;background:#111;display:grid;place-items:center;overflow:hidden">${s.logoUrl?`<img src="${esc(s.logoUrl)}" style="max-width:100%;max-height:100%;object-fit:contain">`:'<span style="color:#888;font-size:11px">ยังไม่ได้ตั้งโลโก้</span>'}</div>
           <div style="flex:1;min-width:260px">
@@ -513,7 +529,7 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
   </div>
 </div>`;
 bindCategoryAdmin()},media(){renderMediaView()},pdf(){renderPdfView()},async sheet(){
-    await loadCategoryApi();title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unlinked.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{await Promise.all([loadSheetTabs(),loadCategoryApi()]);views.sheet()})},
+    await loadCategoryApi();title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unmapped.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{await Promise.all([loadSheetTabs(),loadCategoryApi()]);views.sheet()})},
 settings(){renderSettingsView()}
 };
 function rows(a){return a.length?a.map(x=>`<div class="row">${x.image?`<img class="thumb" src="${x.image}">`:'<div class="thumb"></div>'}<div class="grow"><b>${x.titleTH||x.titleEN||'-'}</b><div class="muted">${x.titleEN||''}</div></div><span class="tag">${x.sheetTab||sheetFromUrl(x.price_url)||'ยังไม่ผูก Sheet'}</span></div>`).join(''):'<div class="empty">ยังไม่มีข้อมูล</div>'}

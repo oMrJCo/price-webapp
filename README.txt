@@ -1,20 +1,22 @@
-PHASE 5B.3 — LOGO BACKOFFICE + FAVICON BUNDLE
+PHASE 5B.4 — ADMIN CORE FIX
 
-GitHub วางทับตามโครงสร้างใน ZIP ทั้งหมด
-สำคัญ: favicon.ico ต้องอยู่ ROOT ของเว็บ /favicon.ico
+วางทับ GitHub แค่:
+- /admin/admin.js
 
-Apps Script:
-- ใช้ Code.gs ใน ZIP แทนตัวปัจจุบัน
-- Save > Deploy > Manage deployments > Edit > New version > Deploy
+ไม่ต้องแก้ Code.gs
+ไม่ต้อง Deploy Apps Script
+ไม่ต้องแตะ Frontend / Dealer
 
-หลังอัป:
-1. Ctrl+F5
-2. Backoffice > ตั้งค่าเว็บไซต์ > โลโก้เว็บไซต์
-3. อัปโหลดโลโก้ (แนะนำ 400x160 px PNG/WebP โปร่งใส)
-4. กด บันทึกการตั้งค่า
-5. โลโก้เดียวกันจะขึ้นหน้าปกติ + Dealer
-6. ถ้าไม่มีโลโก้ จะซ่อนรูป ไม่แสดง broken image/alt text
+แก้:
+1) PDF Library
+- คืน pdfFiles / pdfState / loadPdfLibrary() ที่หลุดหายตอนรวมไฟล์
+- เมนู PDF ต้องโหลดรายการและอัปโหลดได้อีกครั้ง
 
-Favicon:
-- ใช้ favicon2.ico ที่พี่ส่งมา เปลี่ยนชื่อเป็น favicon.ico ให้แล้ว
-- ทุกหน้าชี้ไป /favicon.ico?v=20260821 เพื่อช่วยตัด cache เก่า
+2) Google Sheet
+- แก้ s.unlinked -> s.unmapped
+- เมนู Google Sheet ต้องเปิดได้และแสดงสถานะ Tabs ได้อีกครั้ง
+
+3) Website Logo spec
+- แนะนำ 320 × 120 px
+- หรือ 512 × 192 px สำหรับความคมชัด
+- เหมาะกับ Header มากกว่า 400 × 160 px

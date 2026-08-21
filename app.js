@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       dealer_pdf: item.dealer_pdf || "",
       sort: item.sort || "",
       status: item.status || "",
+      dealerEnabled: item.dealerEnabled ?? item.dealer_enabled ?? "TRUE",
     };
   }
 
@@ -121,6 +122,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที",
         coverSlides,
         coverInterval: siteMeta.coverInterval || meta.coverInterval || 3,
+        lineUrl: siteMeta.lineUrl || "",
+        lineEnabled: String(siteMeta.lineEnabled || "TRUE").toUpperCase() !== "FALSE",
+        facebookUrl: siteMeta.facebookUrl || "",
+        facebookEnabled: String(siteMeta.facebookEnabled || "TRUE").toUpperCase() !== "FALSE",
+        phone: siteMeta.phone || "",
+        phoneEnabled: String(siteMeta.phoneEnabled || "TRUE").toUpperCase() !== "FALSE",
         categories,
       };
 
@@ -136,6 +143,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       data.siteSubtitle ||
         "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ"
     );
+
+
+    const contactBar=document.getElementById("contactBar");
+    if(contactBar){
+      const links=[];
+      if(data.lineEnabled && data.lineUrl) links.push(`<a class="contact-pill line" href="${data.lineUrl}" target="_blank" rel="noopener">LINE</a>`);
+      if(data.facebookEnabled && data.facebookUrl) links.push(`<a class="contact-pill facebook" href="${data.facebookUrl}" target="_blank" rel="noopener">Facebook</a>`);
+      if(data.phoneEnabled && data.phone) links.push(`<a class="contact-pill phone" href="tel:${String(data.phone).replace(/[^0-9+]/g,"")}">โทร ${data.phone}</a>`);
+      contactBar.innerHTML=links.join("");
+      contactBar.style.display=links.length?"flex":"none";
+    }
 
     const coverHeadlineEl = document.getElementById("coverHeadline");
     const coverSubtextEl = document.getElementById("coverSubtext");

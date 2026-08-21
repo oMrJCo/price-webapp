@@ -305,6 +305,55 @@ async function renderBrandManager(){
   </div>`;
 }
 
+
+let siteSettings={};
+async function loadSiteSettings(){
+  try{const j=await apiGet({action:"adminSettings"});siteSettings=j.data||{}}
+  catch(e){console.warn("adminSettings failed",e);siteSettings={}}
+}
+async function saveSiteSettings(){
+  return await apiGet({
+    action:"saveSettings",
+    facebookUrl:document.querySelector("#settingFacebook")?.value.trim()||"",
+    facebookEnabled:document.querySelector("#settingFacebookEnabled")?.checked?"TRUE":"FALSE",
+    lineUrl:document.querySelector("#settingLine")?.value.trim()||"",
+    lineEnabled:document.querySelector("#settingLineEnabled")?.checked?"TRUE":"FALSE",
+    phone:document.querySelector("#settingPhone")?.value.trim()||"",
+    phoneEnabled:document.querySelector("#settingPhoneEnabled")?.checked?"TRUE":"FALSE",
+    dealerCode:document.querySelector("#settingDealerCode")?.value.trim()||""
+  });
+}
+async function renderSettingsView(){
+  title.textContent='ตั้งค่าเว็บไซต์';
+  subtitle.textContent='ช่องทางติดต่อและการเข้าถึงราคาตัวแทนจำหน่าย';
+  content.innerHTML='<div class="panel"><div class="empty">กำลังโหลดการตั้งค่า...</div></div>';
+  await loadSiteSettings();
+  const s=siteSettings||{};
+  content.innerHTML=`
+    <div class="settings-grid">
+      <div class="panel settings-card">
+        <h2>ช่องทางการติดต่อ</h2>
+        <div class="settings-note">ถ้าเปิดใช้งาน ช่องทางนั้นจะขึ้นทั้งหน้าปกติและหน้าตัวแทนจำหน่าย</div>
+        <label class="setting-row"><span><b>LINE</b><small>LINE URL</small></span><input id="settingLine" value="${esc(s.lineUrl||"")}" placeholder="https://line.me/..."><input id="settingLineEnabled" type="checkbox" ${String(s.lineEnabled??"TRUE").toUpperCase()!=="FALSE"?"checked":""}></label>
+        <label class="setting-row"><span><b>Facebook</b><small>Page / Profile URL</small></span><input id="settingFacebook" value="${esc(s.facebookUrl||"")}" placeholder="https://facebook.com/..."><input id="settingFacebookEnabled" type="checkbox" ${String(s.facebookEnabled??"TRUE").toUpperCase()!=="FALSE"?"checked":""}></label>
+        <label class="setting-row"><span><b>เบอร์โทร</b><small>เบอร์ที่ต้องการแสดง</small></span><input id="settingPhone" value="${esc(s.phone||"")}" placeholder="08x-xxx-xxxx"><input id="settingPhoneEnabled" type="checkbox" ${String(s.phoneEnabled??"TRUE").toUpperCase()!=="FALSE"?"checked":""}></label>
+      </div>
+      <div class="panel settings-card">
+        <h2>ราคาตัวแทนจำหน่าย</h2>
+        <div class="settings-note">ปุ่มราคาตัวแทนหน้าเว็บจะให้กรอกรหัสก่อนเข้าเหมือนระบบเดิม</div>
+        <label class="setting-block"><b>ตั้ง/เปลี่ยนรหัสตัวแทน</b><input id="settingDealerCode" type="password" placeholder="${s.hasDealerCode?"มีรหัสใช้งานอยู่แล้ว — เว้นว่างถ้าไม่เปลี่ยน":"กรอกรหัสตัวแทน"}"><small>เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสเดิม</small></label>
+      </div>
+    </div>
+    <div class="settings-save"><button class="primary" id="saveSettingsBtn">บันทึกการตั้งค่า</button><span id="settingsMsg" class="media-msg"></span></div>`;
+  document.querySelector("#saveSettingsBtn").onclick=async()=>{
+    const btn=document.querySelector("#saveSettingsBtn"),msg=document.querySelector("#settingsMsg");
+    btn.disabled=true;msg.textContent="กำลังบันทึก...";
+    try{await saveSiteSettings();document.querySelector("#settingDealerCode").value="";msg.className="media-msg success";msg.textContent="บันทึกการตั้งค่าแล้ว"}
+    catch(e){msg.className="media-msg error";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}
+    finally{btn.disabled=false}
+  };
+}
+
 function val(v){return v==null?"":String(v)}
 function esc(v){return val(v).replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]))}
 function activeText(v){return String(v||"").toUpperCase()==="ACTIVE"}
@@ -348,6 +397,7 @@ async function saveCategory(payload){
     titleEN:payload.titleEN||"",
     sheetTab:payload.sheetTab||"",
     status:payload.status||"ACTIVE",
+    dealerEnabled:payload.dealerEnabled||"TRUE",
     sort:payload.sort||"",
     image:payload.image||"",
     pdf_url:payload.pdf_url||"",
@@ -415,7 +465,7 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
       <label>ชื่อหมวดภาษาไทย<input id="catTH" required></label>
       <label>ชื่อหมวดภาษาอังกฤษ<input id="catEN"></label>
       <label id="catTabField">Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option></select><small class="field-note">ใช้สำหรับสลับหมวดเดิมไปยัง Sheet Tab อื่น</small></label>
-      <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label>
+      <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label><label>หน้าตัวแทนจำหน่าย<select id="catDealerEnabled"><option value="TRUE">แสดงราคาตัวแทน</option><option value="FALSE">ซ่อนจากหน้าตัวแทน</option></select><small class="field-note">ถ้าปิด Card หมวดนี้จะไม่แสดงในหน้า Dealer</small></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
       <label>รูปหมวด
         <div class="upload-field"><input id="catImage" placeholder="/assets/... หรือ https://..."><button type="button" class="library-btn" data-picker="image">เลือกจากคลัง</button><button type="button" class="upload-btn" data-kind="image">อัปโหลดรูป</button></div>
@@ -451,7 +501,7 @@ function categoryAdminRows(){
     <div class="cat-order">${esc(x.sort||i+1)}</div>
     ${x.image?`<img class="thumb" src="${esc(x.image)}">`:'<div class="thumb"></div>'}
     <div class="grow"><b>${esc(x.titleTH||x.titleEN||"-")}</b><div class="muted">${esc(x.titleEN||"")} · ${esc(x.sheetTab||sheetFromUrl(x.price_url)||"ยังไม่ผูก Sheet")}</div></div>
-    ${activeText(x.status||"ACTIVE")?badge("เปิด","ok"):badge("ปิด","bad")}
+    ${activeText(x.status||"ACTIVE")?badge("เปิด","ok"):badge("ปิด","bad")} ${String(x.dealerEnabled??x.dealer_enabled??"TRUE").toUpperCase()==="FALSE"?badge("Dealer ปิด","bad"):badge("Dealer เปิด","ok")}
     <button class="edit-cat" data-i="${i}">แก้ไข</button>
   </div>`).join("");
 }
@@ -556,7 +606,7 @@ async function openCategoryModal(x=null){
     tabSelect.innerHTML='<option value="">-- สร้าง Tab อัตโนมัติ --</option>';
     tabSelect.value="";
   }
-  document.querySelector("#catStatus").value=(x?.status||"ACTIVE").toUpperCase()==="ACTIVE"?"ACTIVE":"INACTIVE";
+  document.querySelector("#catStatus").value=(x?.status||"ACTIVE").toUpperCase()==="ACTIVE"?"ACTIVE":"INACTIVE";document.querySelector("#catDealerEnabled").value=String(x?.dealerEnabled??x?.dealer_enabled??"TRUE").toUpperCase()==="FALSE"?"FALSE":"TRUE";
   document.querySelector("#catSort").value=x?.sort||"";
   document.querySelector("#catImage").value=x?.image||"";
   document.querySelector("#catPdf").value=x?.pdf_url||"";
@@ -583,6 +633,7 @@ async function openCategoryModal(x=null){
         titleEN:document.querySelector("#catEN").value.trim(),
         sheetTab:tab,
         status:document.querySelector("#catStatus").value,
+        dealerEnabled:document.querySelector("#catDealerEnabled").value,
         sort:document.querySelector("#catSort").value,
         image:document.querySelector("#catImage").value.trim(),
         pdf_url:document.querySelector("#catPdf").value.trim(),

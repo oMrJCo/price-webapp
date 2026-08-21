@@ -1,35 +1,36 @@
-PHASE 4D — HERO BANNER + BRAND LOGO MANAGER
+PHASE 5B — DEALER & CONTACT CONTROL
 
 GitHub วางทับ:
+- /admin/index.html
 - /admin/admin.js
 - /admin/admin.css
+- /index.html
 - /app.js
+- /dealer/home.html
+- /dealer/app.js
+- /dealer/price_sheet.html
+- /dealer/price_sheet.js
 
 Google Apps Script:
 - ใช้ Code.gs ใน ZIP แทน Code.gs ปัจจุบัน
 - Save
 - Deploy > Manage deployments > Edit > New version > Deploy
 
-เมนู รูปและสื่อ จะเพิ่ม:
+Backoffice:
+- เมนูใหม่ "ตั้งค่าเว็บไซต์"
+- LINE / Facebook / เบอร์โทร + เปิด/ปิด
+- ตั้ง/เปลี่ยนรหัสตัวแทน
+- หมวดสินค้าเพิ่ม "หน้าตัวแทนจำหน่าย" เปิด/ปิดได้
 
-1) สื่อหน้าแรก / Hero Banner
-- ขนาดแนะนำ 1600 × 500 px (16:5)
-- Safe Area แนะนำ 1400 × 420 px
-- เลือกจาก Media Library ได้
-- เพิ่มหลาย Banner ได้ (สูงสุด API รองรับ 10)
-- หัวข้อ / ข้อความรอง / Link เป็น optional
-- ตั้งเวลาเปลี่ยน Slide 2–10 วินาที
-- Frontend อ่านค่าจาก meta.sheet แล้วแสดง Slider เดิม
-
-2) โลโก้แบรนด์
-- เลือก Sheet Tab/หมวด
-- ระบบอ่าน Unique brand จากคอลัมน์ brand ของสินค้าจริง
-- ตัด __META__ / __BRAND_IMAGE__ / __CATEGORY_IMAGE__ ออกจากรายการ
-- ขนาดแนะนำ 256 × 256 px (1:1), PNG/WebP พื้นหลังโปร่งใส
-- เลือกจากคลังหรืออัปโหลดใหม่ได้
-- โลโก้ถูกเก็บใน meta sheet: type=brand, key=ชื่อแบรนด์, value=URL
-- หน้า price_sheet เดิมรองรับ meta.brand อยู่แล้ว จึงไม่ต้องแก้ price_sheet.js รอบนี้
+Frontend:
+- แสดงช่องทางติดต่อจาก Backoffice
+- กด "ราคาตัวแทนจำหน่าย" แล้วกรอกรหัสใน Popup
+- รหัสตรวจจาก Apps Script
+- Dealer Home ใช้ UI / Hero / Contact / Cards แบบเดียวกับหน้าปกติ
+- หมวดที่ปิด Dealer จะไม่แสดง Card ใน Dealer Home
+- Dealer price sheet ใช้ dealer_price เป็นหลัก
+- หน้า Dealer price ใช้ HTML ชุดเดียวกับหน้าปกติ
 
 หมายเหตุ:
-- รอบนี้ยังไม่ลบแถว __BRAND_IMAGE__ เก่าในสินค้า เพราะ Frontend ยังมี fallback อยู่
-- เมื่อระบบใหม่ผ่าน ค่อย Cleanup ของเก่า
+- หมวดเก่าที่ dealerEnabled ว่าง = เปิด Dealer เพื่อไม่ให้ข้อมูลหาย
+- รหัส fallback เดิม LEEPLUS2026 จนกว่าจะตั้งรหัสใหม่

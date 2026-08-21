@@ -580,6 +580,10 @@
       .line-sticky{bottom:12px}
     }
 
+
+.contact-bar{display:flex;gap:8px;flex-wrap:wrap;margin:-3px 0 14px 62px}.contact-pill{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:#fff;text-decoration:none;font-size:11px;font-weight:800;background:#111722}.contact-pill.line{border-color:rgba(6,199,85,.40)}.contact-pill.facebook{border-color:rgba(24,119,242,.45)}.contact-pill.phone{border-color:rgba(234,179,8,.40)}
+.dealerNavBtn{font-family:inherit;cursor:pointer}.dealer-access-modal{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:9999;display:none;place-items:center;padding:20px}.dealer-access-modal.show{display:grid}.dealer-access-card{position:relative;width:min(390px,100%);background:#0d1119;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.65)}.dealer-access-close{position:absolute;right:14px;top:12px;border:0;background:#171c26;color:#fff;width:34px;height:34px;border-radius:50%;font-size:22px;cursor:pointer}.dealer-access-brand{font-weight:950;font-size:18px}.dealer-access-brand span{color:#eab308;font-size:10px;letter-spacing:2px;display:block;margin-top:2px}.dealer-access-card h2{margin:24px 0 5px;font-size:21px}.dealer-access-card p{margin:0 0 16px;color:#9299a8;font-size:12px}.dealer-access-card input{width:100%;height:48px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:#090c12;color:#fff;padding:0 13px;font-size:16px;outline:none}.dealer-access-submit{width:100%;height:46px;border:0;border-radius:11px;background:#eab308;color:#090b10;font-weight:900;margin-top:10px;cursor:pointer}.dealer-access-error{min-height:18px;color:#ff7777;font-size:11px;margin-top:9px}@media(max-width:760px){.contact-bar{margin:0 0 12px 0}.contact-pill{flex:1;min-width:88px}}
+
 </style>
 </head>
 
@@ -596,9 +600,10 @@
       </div>
 
       <nav class="topNav">
-        <a href="/dealer/" class="dealerNavBtn">ราคาตัวแทนจำหน่าย</a>
+        <button type="button" class="dealerNavBtn" id="dealerAccessBtn">ราคาตัวแทนจำหน่าย</button>
       </nav>
     </header>
+<div id="contactBar" class="contact-bar" style="display:none"></div>
 
     <div class="cover-box" aria-label="โปรโมชั่นและสินค้าแนะนำ">
       <div id="coverSlider" class="cover-slider" role="region" aria-roledescription="carousel" aria-label="Cover Slider">
@@ -617,6 +622,27 @@
     </div>
 
     <div id="categoriesGrid" class="grid"></div>
+
+<div id="dealerAccessModal" class="dealer-access-modal" aria-hidden="true">
+  <div class="dealer-access-card">
+    <button class="dealer-access-close" id="dealerAccessClose" type="button">×</button>
+    <div class="dealer-access-brand">LEEPLUS <span>DEALER</span></div>
+    <h2>ราคาตัวแทนจำหน่าย</h2><p>กรอกรหัสเพื่อเข้าสู่รายการราคาตัวแทน</p>
+    <input id="dealerAccessCode" type="password" placeholder="รหัสตัวแทน">
+    <button id="dealerAccessSubmit" class="dealer-access-submit" type="button">เข้าสู่ระบบ</button>
+    <div id="dealerAccessError" class="dealer-access-error"></div>
+  </div>
+</div>
+<script>
+(function(){
+ const API="https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec",modal=document.getElementById("dealerAccessModal"),input=document.getElementById("dealerAccessCode"),err=document.getElementById("dealerAccessError");
+ function open(){modal.classList.add("show");setTimeout(()=>input.focus(),50)} function close(){modal.classList.remove("show");input.value="";err.textContent=""}
+ document.getElementById("dealerAccessBtn")?.addEventListener("click",open);document.getElementById("dealerAccessClose")?.addEventListener("click",close);modal?.addEventListener("click",e=>{if(e.target===modal)close()});
+ async function submit(){const code=input.value.trim();if(!code)return;err.textContent="กำลังตรวจสอบ...";try{const r=await fetch(`${API}?action=dealerLogin&code=${encodeURIComponent(code)}&t=${Date.now()}`,{cache:"no-store"});const j=await r.json();if(j.authorized){sessionStorage.setItem("leeplus_dealer_auth","1");location.href="/dealer/home.html"}else{err.textContent="รหัสไม่ถูกต้อง";input.select()}}catch(e){err.textContent="เชื่อมต่อระบบไม่สำเร็จ"}}
+ document.getElementById("dealerAccessSubmit")?.addEventListener("click",submit);input?.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+})();
+</script>
+
 <script src="app.js" defer></script>
 
   <!-- Sticky LINE CTA (Mobile) -->

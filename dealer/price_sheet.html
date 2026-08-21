@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LEEPLUS Price Sheet</title>
-  <meta name="robots" content="noindex, nofollow">
 
   <style>
     :root{
@@ -572,59 +571,7 @@
       body::before{ animation: none; }
     }
 </style>
-
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
-  <script>checkAuth();</script>
-
-<style>
-  .dealerLogoutPill{
-    position: fixed;
-    right: 14px;
-    bottom: 14px;
-    z-index: 9999;
-    padding: 10px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.16);
-    background: rgba(0,0,0,.35);
-    color: var(--text, #fff);
-    backdrop-filter: blur(10px);
-    cursor: pointer;
-    font-weight: 800;
-  }
-  .dealerLogoutPill:hover{ filter: brightness(1.08); }
-</style>
-
-
-<style>
-  .dealerBadgeWrap{ display:flex; justify-content:flex-start; margin: 2px 0 10px; }
-  .dealerBadge{
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    padding: 10px 14px;
-    border-radius: 16px;
-    border: 1px solid rgba(234,179,8,.38);
-    background: linear-gradient(180deg, rgba(234,179,8,.14), rgba(234,179,8,.08));
-    box-shadow: 0 0 0 1px rgba(234,179,8,.08) inset, 0 10px 30px rgba(0,0,0,.22);
-    color: var(--text);
-    font-weight: 950;
-    letter-spacing: .2px;
-  }
-  .dealerBadgeDot{
-    width:10px; height:10px; border-radius:999px;
-    background: rgba(234,179,8,.95);
-    box-shadow: 0 0 0 4px rgba(234,179,8,.18);
-  }
-  .dealerBadgeSub{
-    margin-left: 8px;
-    font-weight: 700;
-    color: var(--muted);
-    font-size: 12.5px;
-  }
-</style>
-
-</head>
+<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}</script></head>
 
 <body>
   <div class="wrap">
@@ -641,7 +588,6 @@
           </div>
 
           <div class="titleBlock">
-            <div class="dealerBadgeWrap"><div class="dealerBadge"><span class="dealerBadgeDot"></span>ราคาตัวแทนจำหน่าย<span class="dealerBadgeSub">เฉพาะโซน Dealer</span></div></div>
             <div class="crumb" id="crumb">Sheet › ...</div>
             <h1 class="h1" id="pageTitle">...</h1>
             <div class="updated" id="updateText">อัปเดต: -</div>
@@ -698,6 +644,5 @@
   </div>
 
   <script src="./price_sheet.js"></script>
-<button class="dealerLogoutPill" onclick="logout()">ออกจากระบบ</button>
 </body>
 </html>

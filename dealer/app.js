@@ -4,16 +4,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const API_URL =
     "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
 
-  const GH_BASE = "/dealer/";
+  const FALLBACK_CATEGORIES_URL =
+    "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 
-  function resolveAssetPath(p) {
-    const s = String(p || "").trim();
-    if (!s) return "";
-    if (/^https?:\/\//i.test(s) || s.startsWith("data:")) return s;
-    if (s.startsWith("/price-webapp/")) return s.replace("/price-webapp", "");
-    if (s.startsWith("/")) return s;
-    return "/" + s.replace(/^\.\/?/, "");
-  }
+  const GH_BASE = "/dealer/";
 
   function buildPriceSheetUrlFromTab(tabName) {
     return `${GH_BASE}price_sheet.html?tab=${encodeURIComponent(tabName)}`;
@@ -28,9 +22,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function setText(id, text) {
-    const node = document.getElementById(id);
-    if (node && text !== undefined && text !== null) {
-      node.textContent = text;
+    const el = document.getElementById(id);
+    if (el && text !== undefined && text !== null) {
+      el.textContent = text;
     }
   }
 
@@ -45,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       dealer_pdf: item.dealer_pdf || "",
       sort: item.sort || "",
       status: item.status || "",
+      dealerEnabled: item.dealerEnabled ?? item.dealer_enabled ?? "TRUE",
     };
   }
 
@@ -53,10 +48,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error("Meta API failed");
+    if (!res.ok) throw new Error("Meta API load failed");
 
     const json = await res.json();
-    if (!json.success) throw new Error("Meta API success false");
+
+    if (!json.success) {
+      throw new Error(json.message || "Meta API success false");
+    }
 
     return json.data || {};
   }
@@ -66,39 +64,78 @@ document.addEventListener("DOMContentLoaded", async () => {
       cache: "no-store",
     });
 
-    if (!res.ok) throw new Error("Categories API failed");
+    if (!res.ok) throw new Error("Categories API load failed");
 
     const json = await res.json();
-    if (!json.success) throw new Error("Categories API success false");
+
+    if (!json.success) {
+      throw new Error(json.message || "Categories API success false");
+    }
 
     return (json.data || []).map(normalizeCategory);
   }
 
+  async function loadFallbackJson() {
+    const res = await fetch(`${FALLBACK_CATEGORIES_URL}?v=${Date.now()}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) throw new Error("Fallback categories.json failed");
+
+    return await res.json();
+  }
+
   try {
-    const [metaRaw, categories] = await Promise.all([
-      loadMeta(),
-      loadCategories(),
-    ]);
+    let data;
 
-    const meta = metaRaw.site || {};
+    try {
+      const [meta, categories] = await Promise.all([
+        loadMeta(),
+        loadCategories(),
+      ]);
 
-    const data = {
-      siteTitle: meta.siteTitle || "LEEPLUS",
-      siteSubtitle:
-        meta.siteSubtitle ||
-        "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ",
-      lineUrl: meta.lineUrl || "",
-      lineStickyEnabled:
-        String(meta.lineStickyEnabled || "true").toLowerCase() !== "false",
-      lineCtaText:
-        meta.lineCtaText || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
-      coverHeadline: meta.coverHeadline || "LEEPLUS DEALER PRICE",
-      coverSubtext:
-        meta.coverSubtext ||
-        "ราคาตัวแทนจำหน่าย สำหรับสมาชิก Dealer เท่านั้น",
-      coverSlides: [],
-      categories,
-    };
+      const siteMeta = meta.site || meta || {};
+      let coverSlides = [];
+      try {
+        coverSlides = Array.isArray(siteMeta.coverSlides)
+          ? siteMeta.coverSlides
+          : JSON.parse(siteMeta.coverSlides || "[]");
+      } catch (_) {
+        coverSlides = [];
+      }
+
+      data = {
+        siteTitle: siteMeta.siteTitle || meta.siteTitle || "LEEPLUS",
+        siteSubtitle:
+          siteMeta.siteSubtitle ||
+          meta.siteSubtitle ||
+          "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ",
+        lineUrl: siteMeta.lineUrl || meta.lineUrl || "https://line.me/R/ti/p/@leeplus",
+        lineStickyEnabled:
+          String(siteMeta.lineStickyEnabled || meta.lineStickyEnabled || "true").toLowerCase() !== "false",
+        lineCtaText:
+          siteMeta.lineCtaText || meta.lineCtaText || "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที",
+        coverHeadline: siteMeta.coverHeadline || meta.coverHeadline || "LEEPLUS PRICE LIST",
+        coverSubtext:
+          siteMeta.coverSubtext ||
+          meta.coverSubtext ||
+          "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที",
+        coverSlides,
+        coverInterval: siteMeta.coverInterval || meta.coverInterval || 3,
+        lineUrl: siteMeta.lineUrl || "",
+        lineEnabled: String(siteMeta.lineEnabled || "TRUE").toUpperCase() !== "FALSE",
+        facebookUrl: siteMeta.facebookUrl || "",
+        facebookEnabled: String(siteMeta.facebookEnabled || "TRUE").toUpperCase() !== "FALSE",
+        phone: siteMeta.phone || "",
+        phoneEnabled: String(siteMeta.phoneEnabled || "TRUE").toUpperCase() !== "FALSE",
+        categories,
+      };
+
+      console.log("Loaded meta/categories from Google Sheet API");
+    } catch (apiErr) {
+      console.warn("Sheet API failed, fallback to categories.json", apiErr);
+      data = await loadFallbackJson();
+    }
 
     setText("siteTitle", data.siteTitle || "LEEPLUS");
     setText(
@@ -107,6 +144,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         "ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ"
     );
 
+
+    const contactBar=document.getElementById("contactBar");
+    if(contactBar){
+      const links=[];
+      if(data.lineEnabled && data.lineUrl) links.push(`<a class="contact-pill line" href="${data.lineUrl}" target="_blank" rel="noopener">LINE</a>`);
+      if(data.facebookEnabled && data.facebookUrl) links.push(`<a class="contact-pill facebook" href="${data.facebookUrl}" target="_blank" rel="noopener">Facebook</a>`);
+      if(data.phoneEnabled && data.phone) links.push(`<a class="contact-pill phone" href="tel:${String(data.phone).replace(/[^0-9+]/g,"")}">โทร ${data.phone}</a>`);
+      contactBar.innerHTML=links.join("");
+      contactBar.style.display=links.length?"flex":"none";
+    }
+
     const coverHeadlineEl = document.getElementById("coverHeadline");
     const coverSubtextEl = document.getElementById("coverSubtext");
     const sliderEl = document.getElementById("coverSlider");
@@ -114,30 +162,216 @@ document.addEventListener("DOMContentLoaded", async () => {
     const prevBtn = document.getElementById("coverPrev");
     const nextBtn = document.getElementById("coverNext");
 
-    const slides = [];
+    const singleCover = data.coverImage
+      ? [
+          {
+            image: data.coverImage,
+            headline: data.coverHeadline || "",
+            subtext: data.coverSubtext || "",
+            link: data.coverLink || "",
+          },
+        ]
+      : [];
 
-    if (coverHeadlineEl) {
-      coverHeadlineEl.textContent = data.coverHeadline;
+    const slidesRaw = Array.isArray(data.coverSlides)
+      ? data.coverSlides
+      : Array.isArray(data.coverImages)
+      ? data.coverImages
+      : [];
+
+    const slides = (slidesRaw.length ? slidesRaw : singleCover)
+      .map((s) => ({
+        image: s && (s.image || s.src || s.url) ? s.image || s.src || s.url : "",
+        headline:
+          s && (s.headline || s.title || s.text)
+            ? s.headline || s.title || s.text
+            : "",
+        subtext:
+          s && (s.subtext || s.subtitle || s.desc)
+            ? s.subtext || s.subtitle || s.desc
+            : "",
+        link: s && (s.link || s.href) ? s.link || s.href : "",
+      }))
+      .filter((s) => !!String(s.image || "").trim());
+
+    const coverIntervalSecRaw = Number(data.coverInterval);
+    const coverIntervalSec = Number.isFinite(coverIntervalSecRaw)
+      ? Math.min(10, Math.max(2, coverIntervalSecRaw))
+      : 3;
+    const coverIntervalMs = Math.round(coverIntervalSec * 1000);
+
+    function setCoverText(i) {
+      const s = slides[i] || {};
+      const hasCustomSlides = slidesRaw.length > 0;
+      const headline = hasCustomSlides ? (s.headline || "") : (s.headline || data.coverHeadline || "LEEPLUS PRICE LIST");
+      const subtext = hasCustomSlides ? (s.subtext || "") : (s.subtext || data.coverSubtext || "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที");
+
+      if (coverHeadlineEl) coverHeadlineEl.textContent = headline;
+      if (coverSubtextEl) coverSubtextEl.textContent = subtext;
+
+      const textBox = coverHeadlineEl?.closest(".cover-txt");
+      if (textBox) textBox.classList.toggle("is-empty", !headline && !subtext);
     }
-    if (coverSubtextEl) {
-      coverSubtextEl.textContent = data.coverSubtext;
+
+    function renderSlider() {
+      if (!sliderEl) return;
+      sliderEl.innerHTML = "";
+      if (dotsEl) dotsEl.innerHTML = "";
+
+      slides.forEach((s, idx) => {
+        const slide = document.createElement("div");
+        slide.className = "cover-slide";
+
+        const inner = document.createElement(s.link ? "a" : "div");
+        if (s.link) {
+          inner.href = s.link;
+          inner.target = "_blank";
+          inner.rel = "noopener";
+        }
+
+        const img = document.createElement("img");
+        img.src = s.image;
+        img.alt = s.headline || "cover";
+        img.loading = "eager";
+
+        inner.appendChild(img);
+        slide.appendChild(inner);
+        sliderEl.appendChild(slide);
+
+        if (dotsEl) {
+          const d = document.createElement("button");
+          d.type = "button";
+          d.className = "cover-dot";
+          d.setAttribute("aria-label", `ไปยังสไลด์ที่ ${idx + 1}`);
+          d.addEventListener("click", () => go(idx, true));
+          dotsEl.appendChild(d);
+        }
+      });
     }
-    if (sliderEl) sliderEl.innerHTML = "";
-    if (dotsEl) dotsEl.style.display = "none";
-    if (prevBtn) prevBtn.style.display = "none";
-    if (nextBtn) nextBtn.style.display = "none";
+
+    let active = 0;
+    let timer = null;
+    let isDragging = false;
+    let startX = 0;
+    let dx = 0;
+
+    function updateUI() {
+      if (!sliderEl) return;
+      sliderEl.style.transform = `translateX(${-active * 100}%)`;
+      if (dotsEl) {
+        [...dotsEl.children].forEach((el, i) =>
+          el.classList.toggle("active", i === active)
+        );
+      }
+      setCoverText(active);
+    }
+
+    function stopAuto() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function startAuto() {
+      stopAuto();
+      if (slides.length <= 1) return;
+      timer = setInterval(() => go(active + 1), coverIntervalMs);
+    }
+
+    function go(i, userAction = false) {
+      if (!slides.length) return;
+      active = (i + slides.length) % slides.length;
+      updateUI();
+      if (userAction) startAuto();
+    }
+
+    renderSlider();
+
+    if (!slides.length) {
+      if (coverHeadlineEl) {
+        coverHeadlineEl.textContent =
+          data.coverHeadline || "LEEPLUS PRICE LIST";
+      }
+      if (coverSubtextEl) {
+        coverSubtextEl.textContent =
+          data.coverSubtext ||
+          "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที";
+      }
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
+      if (dotsEl) dotsEl.style.display = "none";
+    } else {
+      updateUI();
+      startAuto();
+
+      if (prevBtn) {
+        prevBtn.addEventListener("click", () => go(active - 1, true));
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener("click", () => go(active + 1, true));
+      }
+
+      const coverBox = sliderEl?.parentElement;
+      if (coverBox && slides.length > 1) {
+        coverBox.addEventListener("pointerdown", (e) => {
+          isDragging = true;
+          startX = e.clientX;
+          dx = 0;
+          stopAuto();
+          coverBox.setPointerCapture?.(e.pointerId);
+        });
+
+        coverBox.addEventListener("pointermove", (e) => {
+          if (!isDragging) return;
+          dx = e.clientX - startX;
+        });
+
+        const endDrag = () => {
+          if (!isDragging) return;
+          isDragging = false;
+          const threshold = 42;
+          if (dx > threshold) go(active - 1, true);
+          else if (dx < -threshold) go(active + 1, true);
+          else startAuto();
+          dx = 0;
+        };
+
+        coverBox.addEventListener("pointerup", endDrag);
+        coverBox.addEventListener("pointercancel", endDrag);
+        coverBox.addEventListener("pointerleave", endDrag);
+
+        coverBox.addEventListener("touchstart", () => stopAuto(), {
+          passive: true,
+        });
+        coverBox.addEventListener("touchend", () => startAuto(), {
+          passive: true,
+        });
+      }
+
+      sliderEl?.parentElement?.addEventListener("mouseenter", stopAuto);
+      sliderEl?.parentElement?.addEventListener("mouseleave", startAuto);
+    }
 
     const lineSticky = document.getElementById("lineSticky");
+    const stickyEnabled =
+      typeof data.lineStickyEnabled === "boolean"
+        ? data.lineStickyEnabled
+        : true;
+    const stickyText =
+      String(data.lineCtaText || "").trim() ||
+      "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที";
+
     if (lineSticky) {
-      if (!data.lineStickyEnabled) {
+      if (!stickyEnabled) {
         lineSticky.style.display = "none";
       } else {
-        lineSticky.textContent = data.lineCtaText;
+        lineSticky.textContent = stickyText;
         if (data.lineUrl) lineSticky.href = data.lineUrl;
       }
     }
 
-    const items = Array.isArray(data.categories) ? data.categories : [];
+    const items = (Array.isArray(data.categories) ? data.categories : []).filter(item => String(item.dealerEnabled ?? "TRUE").toUpperCase() !== "FALSE");
 
     if (!items.length) {
       grid.innerHTML = `<div style="padding:16px;">ยังไม่มีหมวดสินค้าที่เปิดใช้งาน</div>`;
@@ -159,7 +393,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           return renderCard({ title, item, href: priceUrl });
         }
 
-        const pdf = item.dealer_pdf || item.pdf || item.pdf_file || "";
+        const pdf = item.pdf || item.pdf_file || "";
         const pdfHref = `${GH_BASE}price.html?title=${encodeURIComponent(
           title
         )}&pdf=${encodeURIComponent(pdf)}`;
@@ -170,9 +404,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function renderCard({ title, item, href }) {
       const imgHtml = item.image
-        ? `<img src="${resolveAssetPath(
-            item.image
-          )}" alt="${title}" loading="lazy" onerror="this.remove();">`
+        ? `<img src="${item.image}" alt="${title}" loading="lazy" onerror="this.remove();">`
         : `<div class="placeholder">LEEPLUS</div>`;
 
       return `

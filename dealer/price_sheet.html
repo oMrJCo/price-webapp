@@ -1,585 +1,101 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LEEPLUS Price Sheet</title>
-
-  <style>
-    :root{
-      --bg:#070b12;
-      --line:rgba(255,255,255,.08);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.65);
-      --pill:rgba(255,255,255,.06);
-      --pillLine:rgba(255,255,255,.10);
-      --accent:#f6c845;
-      --price:#ffcc00;
-      --danger:#ff3b30;
-      --radius:22px;
-    }
-
-    *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
-      background: #070b12;
-      color:var(--text);
-      overflow-x:hidden;
-      position: relative;
-    }
-
-    /* Hi-tech smooth background layers (no banding / no seams) */
-    body::before{
-      content:"";
-      position: fixed;
-      inset: 0;
-      z-index: -2;
-      background:
-        radial-gradient(1100px 700px at 18% 12%, rgba(85,135,255,.20), transparent 62%),
-        radial-gradient(900px 600px at 78% 18%, rgba(246,200,69,.16), transparent 60%),
-        radial-gradient(900px 700px at 55% 92%, rgba(120,255,214,.10), transparent 62%),
-        linear-gradient(180deg, #070b12 0%, #0a1120 45%, #0a0f1c 100%);
-      transform: translateZ(0);
-    }
-
-    /* Subtle grid overlay for a 'tech' feel */
-    body::after{
-      content:"";
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background:
-        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.030) 1px, transparent 1px),
-        radial-gradient(circle at 30% 20%, rgba(255,255,255,.05), transparent 55%);
-      background-size: 36px 36px, 36px 36px, auto;
-      opacity: .35;
-      pointer-events: none;
-      mix-blend-mode: overlay;
-      transform: translateZ(0);
-    }
-
-
-    .wrap{
-      max-width: 1080px;
-      margin: 28px auto 60px;
-      padding: 0 18px;
-    }
-
-    .card{
-      border:1px solid var(--line);
-      background: rgba(12,16,26,.72); backdrop-filter: blur(10px);
-      border-radius: var(--radius);
-      box-shadow: 0 18px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-      overflow:hidden;
-    }
-
-    /* Allow list rows to render without being clipped */
-    .card.content{ overflow: visible; background: rgba(12,16,26,.72); backdrop-filter: blur(10px); }
-
-    /* ===== Header (clean) ===== */
-    .header{
-      position:relative;
-      padding: 18px 18px 16px;
-      background: transparent;
-    }
-
-    .headerInner{
-      display:flex;
-      gap:16px;
-      align-items:center;
-      justify-content:space-between;
-      min-height: 92px;
-    }
-
-    .leftGroup{
-      display:flex;
-      gap:14px;
-      align-items:center;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-
-    .backBtn{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      text-decoration:none;
-      white-space:nowrap;
-      flex: 0 0 auto;
-    }
-    .backBtn:hover{ background: rgba(255,255,255,.09); }
-
-    #catThumb{
-      display:none;
-      width: 56px;
-      height: 56px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.25);
-      overflow:hidden;
-      flex: 0 0 auto;
-      box-shadow: 0 12px 24px rgba(0,0,0,.35);
-    }
-    #catThumb img{
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      display:block;
-    }
-
-    .titleBlock{
-      min-width: 0;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      flex: 1 1 auto;
-    }
-    .crumb{
-      font-size: 12px;
-      color: rgba(255,255,255,.70);
-      letter-spacing:.2px;
-    }
-    .h1{
-      font-size: 26px;
-      line-height: 1.1;
-      font-weight: 900;
-      margin:0;
-      word-break: break-word;
-      white-space: normal;
-    }
-    .updated{
-      font-size: 12px;
-      color: rgba(255,255,255,.60);
-    }
-
-    .rightGroup{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      flex: 0 0 auto;
-    }
-
-    .hint{
-      display:none;
-      align-items:center;
-      gap:8px;
-      color: var(--danger);
-      font-weight: 900;
-      font-size: 13px;
-      white-space:nowrap;
-    }
-    .hint .arrow{ font-size: 16px; line-height: 1; }
-
-    .pdfBtn{
-      display:none; /* JS will show */
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      border:1px solid rgba(246,200,69,.45);
-      background: rgba(246,200,69,.10);
-      color: rgba(255,255,255,.92);
-      font-weight: 900;
-      text-decoration:none;
-      white-space:nowrap;
-    }
-    .pdfBtn:hover{ background: rgba(246,200,69,.16); }
-
-    /* ===== Content ===== */
-    .content{
-      margin-top: 12px;
-      padding: 14px 18px 16px;
-    }
-
-    .note{
-      color: rgba(255,255,255,.70);
-      font-size: 13px;
-      margin: 0 0 10px;
-    }
-
-    .searchWrap{
-      position:relative;
-      margin: 6px 0 10px;
-    }
-    .searchWrap .icon{
-      position:absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      width:18px;
-      height:18px;
-      opacity:.75;
-      pointer-events:none;
-    }
-    #search{
-      width: 100%;
-      padding: 13px 14px 13px 44px;
-      border-radius: 999px;
-      border:1px solid var(--line);
-      background: rgba(0,0,0,.22);
-      color: var(--text);
-      outline:none;
-      font-size: 14px;
-    }
-    #search:focus{
-      border-color: rgba(246,200,69,.45);
-      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
-    }
-
-    #tabs{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin: 8px 0 12px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border:1px solid var(--pillLine);
-      background: var(--pill);
-      color: rgba(255,255,255,.88);
-      cursor:pointer;
-      user-select:none;
-      font-weight: 800;
-      font-size: 13px;
-    }
-    .pill:hover{ background: rgba(255,255,255,.08); }
-    .pill.active{
-      border-color: rgba(246,200,69,.75);
-      background: rgba(246,200,69,.18);
-      color: rgba(255,255,255,.95);
-      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
-    }
-
-    /* Tap/Focus polish (better on iOS) */
-    button, a{ -webkit-tap-highlight-color: transparent; }
-    .pill:focus-visible, .backBtn:focus-visible, .pdfBtn:focus-visible, .thumb:focus-visible{
-      outline: 2px solid rgba(246,200,69,.65);
-      outline-offset: 2px;
-    }
-
-    /* ✅ Icons + thumbs are styled by CSS (avoid inline styles; easier to tune on mobile) */
-    .tabIcon{
-      width:18px;height:18px;border-radius:999px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      flex:0 0 auto;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .tabIconImg{ width:100%;height:100%;object-fit:cover;display:block; }
-
-    .brandIcon{
-      width:20px;height:20px;border-radius:999px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      flex:0 0 auto;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .brandIconImg{ width:100%;height:100%;object-fit:cover;display:block; }
-
-    .thumb{
-      width:54px;height:54px;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.03);
-      flex:0 0 auto;
-      cursor:pointer;
-    }
-    .thumb img{ width:100%;height:100%;object-fit:cover;display:block; }
-
-    table{
-      width:100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: transparent;
-      /* สำคัญ: อย่า overflow hidden บนมือถือ (จะตัด price) */
-      overflow: visible;
-    }
-
-    thead th{
-      text-align:left;
-      font-size: 13px;
-      color: rgba(255,255,255,.72);
-      padding: 14px 14px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-    }
-    thead th:last-child{ text-align:right; }
-
-    tbody tr td{
-      padding: 14px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-      vertical-align: middle;
-    }
-    tbody tr:last-child td{ border-bottom: none; }
-
-
-    /* Soft separators (continuous look) */
-    tbody tr td{
-      border-bottom-color: rgba(255,255,255,.05);
-    }
-    tbody tr{
-      background: transparent;
-    }
-
-    .model{
-      font-weight: 900;
-      letter-spacing:.2px;
-    }
-
-    /* ✅ NEW badge */
-    .badgeNew{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      margin-left: 8px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(255,59,48,.16);
-      border: 1px solid rgba(255,59,48,.55);
-      color: var(--danger);
-      font-weight: 900;
-      font-size: 12px;
-      line-height: 1;
-      vertical-align: middle;
-      white-space: nowrap;
-    }
-
-    .price{
-      text-align:right;
-      font-weight: 900;
-      color: var(--price);
-      white-space: nowrap;
-    }
-    .priceValue{ display:inline; }
-    .priceUnit{ display:inline; opacity:.85; font-weight: 800; }
-
-    .brandHeaderRow td{
-      padding: 12px 14px;
-      background: rgba(255,255,255,.03);
-    }
-
-    .brandHeader{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: transparent;
-      font-weight: 900;
-    }
-    .dot{
-      width: 10px;
-      height: 10px;
-      border-radius: 99px;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(246,200,69,.10);
-    }
-
-    #empty{
-      display:none;
-      margin-top: 12px;
-      color: rgba(255,255,255,.70);
-      font-size: 14px;
-      padding: 14px 12px;
-      border: 1px dashed rgba(255,255,255,.18);
-      border-radius: 16px;
-    }
-
-    /* ===== Modal ===== */
-    .modal{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.62);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 9999;
-    }
-    .modal.show{ display:flex; }
-    .modalCard{
-      width: min(860px, 95vw);
-      border-radius: 18px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(10,14,22,.92);
-      overflow:hidden;
-      box-shadow: 0 24px 70px rgba(0,0,0,.55);
-    }
-    .modalHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      color: rgba(255,255,255,.92);
-      font-weight: 900;
-    }
-    .modalClose{
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.90);
-      border-radius: 12px;
-      padding: 8px 10px;
-      cursor:pointer;
-      font-weight: 900;
-    }
-    .modalBody{
-      padding: 14px;
-      background: rgba(0,0,0,.25);
-    }
-    .modalBody img{
-      width:100%;
-      height:auto;
-      display:block;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-    }
-
-    /* ===== Responsive (แก้ 2 ปัญหา: title โดนบีบ + ราคาไม่ขึ้น) ===== */
-    @media (max-width: 720px){
-      .wrap{ margin-top: 16px; }
-      .header{ padding: 14px 14px 12px; }
-      #catThumb{ width: 48px; height: 48px; }
-      .h1{ font-size: 22px; }
-      .hint{ display:flex; }
-      .backBtn{ padding: 9px 12px; }
-      .pdfBtn{ padding: 9px 12px; }
-      .content{ padding: 12px 14px 14px; }
-    }
-
-    /* ⭐ มือถือเล็ก: เปลี่ยนตารางเป็น list layout เพื่อให้ "ราคา" ไม่หาย */
-    @media (max-width: 520px){
-      .headerInner{
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-        min-height: unset;
-      }
-      .leftGroup{
-        width: 100%;
-      }
-      .rightGroup{
-        width: 100%;
-        justify-content: flex-end;
-      }
-      .crumb{ display:none; }
-
-      thead{ display:none; }
-      tbody tr{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-      }
-      tbody tr td{
-        border-bottom:none;
-        padding: 14px 12px;
-      }
-      tbody tr{
-        border-bottom: 1px solid rgba(255,255,255,.06);
-      }
-      tbody tr:last-child{
-        border-bottom: none;
-      }
-      tbody tr td:first-child{
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      tbody tr td:last-child{
-        flex: 0 0 auto;
-        text-align:right;
-        white-space: nowrap;
-      }
-
-      /* brand header row ให้ไม่เพี้ยน */
-      .brandHeaderRow{
-        display:block !important;
-      }
-      .brandHeaderRow td{
-        display:block !important;
-        padding: 12px 12px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-      }
-
-      /* Mobile polish */
-      #tabs{ gap:8px; }
-      .pill{ padding: 7px 10px; font-size: 12.5px; }
-      .thumb{ width:46px; height:46px; border-radius:14px; }
-      tbody tr{ gap:10px; }
-      tbody tr td{ padding: 12px 12px; }
-      .price{ font-size: 14px; }
-
-
-      /* Price fit fix: prevent overflow on small phones */
-      tbody tr td:last-child{ padding-left: 6px; }
-      .price{ font-size: 13px; }
-      .priceUnit{ font-size: 12px; opacity:.8; }
-      /* If still tight, allow unit to wrap under number */
-      @supports (text-wrap: balance){ }
-      .priceUnit{ display:inline; }
-      @media (max-width: 360px){
-        .priceUnit{ display:block; margin-top:2px; }
-        .price{ text-align:right; }
-      }
-
-
-      /* Universal mobile list layout (better cross-device, incl. iOS Safari) */
-      table{ display:block; width:100%; }
-      tbody{ display:block; width:100%; }
-      tbody tr{ display:flex; width:100%; }
-      tbody tr td{ display:block; }
-      tbody tr td:first-child{ flex: 1 1 58%; min-width: 0; }
-      tbody tr td:last-child{ flex: 0 0 auto; max-width: 42%; }
-
-      /* Ensure long model names wrap and don't push price out */
-      .model{ overflow-wrap:anywhere; }
-
-    }
-  
-
-    /* Hi-tech ambient animation (very subtle) */
-    @keyframes floatGlow{
-      0%{ filter: hue-rotate(0deg); opacity:.34; }
-      50%{ filter: hue-rotate(10deg); opacity:.42; }
-      100%{ filter: hue-rotate(0deg); opacity:.34; }
-    }
-    body::before{ animation: floatGlow 10s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce){
-      body::before{ animation: none; }
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0f">
+<title>LEEPLUS Dealer Price</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260821">
+<style>
+:root{
+  --bg:#080a0f;
+  --panel:#10131a;
+  --panel2:#0c0f15;
+  --line:rgba(255,255,255,.09);
+  --line2:rgba(255,255,255,.06);
+  --text:#f7f8fb;
+  --muted:#8f96a3;
+  --accent:#f2c300;
+  --accent2:#ffda28;
+  --danger:#ff5a52;
+  --shadow:0 18px 50px rgba(0,0,0,.30);
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(900px 460px at 12% -8%,rgba(242,195,0,.08),transparent 58%),
+    radial-gradient(720px 480px at 98% 0%,rgba(79,108,255,.08),transparent 62%),
+    var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+button,input,a{font:inherit}
+a{-webkit-tap-highlight-color:transparent}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 22px 64px}
+.card{border:1px solid var(--line);background:rgba(16,19,26,.92);box-shadow:var(--shadow)}
+.header{border-radius:20px;padding:15px 16px;margin-bottom:14px;position:relative;overflow:hidden}
+.header::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.headerInner{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:76px}
+.leftGroup{display:flex;align-items:center;gap:13px;min-width:0;flex:1}
+.backBtn{
+  width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;
+  border:1px solid var(--line);background:#171b23;color:#fff;text-decoration:none;font-weight:900;
+}
+.backBtn span:last-child{display:none}.backBtn span:first-child{font-size:28px;line-height:1;margin-top:-2px}
+.backBtn:hover{border-color:rgba(242,195,0,.45);background:#1c2029}
+#catThumb{display:none;width:54px;height:54px;flex:0 0 54px;border-radius:14px;background:#f6f6f6;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+#catThumb img{width:100%;height:100%;object-fit:contain;display:block}
+.titleBlock{min-width:0;display:flex;flex-direction:column;gap:3px}.crumb{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--accent)}
+.h1{font-size:25px;line-height:1.15;font-weight:900;margin:0;overflow-wrap:anywhere}.updated{font-size:11px;color:var(--muted)}
+.rightGroup{display:flex;align-items:center;gap:8px;flex:0 0 auto}.hint{display:none}.pdfBtn{
+  display:none;align-items:center;justify-content:center;min-height:42px;padding:0 15px;border-radius:12px;
+  border:1px solid rgba(242,195,0,.45);background:rgba(242,195,0,.10);color:#fff;text-decoration:none;font-size:12px;font-weight:900
+}
+.pdfBtn::before{content:"PDF";font-size:9px;letter-spacing:.7px;color:#101216;background:var(--accent);padding:3px 5px;border-radius:5px}.pdfBtn:hover{background:rgba(242,195,0,.17)}
+.content{border-radius:20px;padding:16px 16px 18px;overflow:visible}
+.searchWrap{position:relative;margin:0 0 13px}.searchWrap .icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:18px;height:18px;opacity:.60;pointer-events:none}
+#search{
+  width:100%;height:48px;padding:0 16px 0 44px;border:1px solid var(--line);border-radius:13px;
+  background:#090c12;color:#fff;outline:none;font-size:13px;transition:.18s ease
+}
+#search::placeholder{color:#69717d}#search:focus{border-color:rgba(242,195,0,.55);box-shadow:0 0 0 3px rgba(242,195,0,.08);background:#0b0e14}
+#tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:1px 0 13px;margin:0 0 2px;flex-wrap:nowrap}#tabs::-webkit-scrollbar{display:none}
+.pill{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px;border-radius:10px;
+  border:1px solid var(--line);background:#151922;color:#b9c0cb;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap;transition:.16s ease
+}
+.pill:hover{border-color:rgba(255,255,255,.18);color:#fff}.pill.active{background:var(--accent);border-color:var(--accent);color:#111318;box-shadow:0 7px 18px rgba(242,195,0,.14)}
+.tabIcon,.brandIcon{width:20px;height:20px;border-radius:7px;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(255,255,255,.12);flex:0 0 auto}
+.tabIconImg,.brandIconImg{width:100%;height:100%;object-fit:contain;display:block}
+table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0b0e14}
+thead th{height:42px;padding:0 14px;text-align:left;background:#141820;color:#6f7784;font-size:10px;font-weight:900;letter-spacing:.65px;text-transform:uppercase;border-bottom:1px solid var(--line)}thead th:last-child{text-align:right}
+tbody tr{transition:.13s ease}tbody tr:not(.brandHeaderRow):hover{background:rgba(255,255,255,.025)}tbody tr td{padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:middle}tbody tr:last-child td{border-bottom:0}
+.brandHeaderRow td{padding:9px 12px;background:#11151d;border-bottom:1px solid var(--line)}.brandHeader{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:900;color:#d9dde4}.dot{width:5px;height:15px;border-radius:5px;background:var(--accent)}
+.model{font-size:13px;font-weight:800;line-height:1.35;color:#edf0f4}.badgeNew{display:inline-flex;align-items:center;margin-left:7px;padding:3px 6px;border-radius:5px;background:rgba(255,90,82,.12);border:1px solid rgba(255,90,82,.32);color:#ff756d;font-size:9px;font-weight:900;vertical-align:1px}
+.price{text-align:right;white-space:nowrap;font-size:14px;font-weight:950;color:var(--accent2);font-variant-numeric:tabular-nums}.priceUnit{font-size:10px;color:#8f96a3;font-weight:700;margin-left:2px}
+.thumb{width:48px;height:48px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#fff;flex:0 0 auto;cursor:pointer}.thumb img{width:100%;height:100%;object-fit:contain;display:block}
+#empty{display:none;margin-top:12px;padding:18px;border:1px dashed rgba(255,255,255,.13);border-radius:13px;color:var(--muted);font-size:12px;text-align:center}
+.modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px)}.modal.show{display:flex}.modalCard{width:min(820px,96vw);max-height:92vh;overflow:auto;border-radius:18px;border:1px solid var(--line);background:#10131a;box-shadow:0 30px 90px rgba(0,0,0,.60)}.modalHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:12px;font-weight:900}.modalClose{border:1px solid var(--line);background:#181c24;color:#fff;border-radius:9px;padding:7px 10px;cursor:pointer}.modalBody{padding:12px;background:#080a0f}.modalBody img{width:100%;height:auto;display:block;border-radius:12px;background:#fff;object-fit:contain}
+.pill:focus-visible,.backBtn:focus-visible,.pdfBtn:focus-visible,.thumb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:720px){
+  .wrap{padding:12px 10px 42px}.header{border-radius:16px;padding:11px 11px}.headerInner{min-height:64px;gap:10px}.leftGroup{gap:9px}.backBtn{width:38px;height:38px;flex-basis:38px;border-radius:10px}#catThumb{width:44px;height:44px;flex-basis:44px;border-radius:11px}.crumb{display:none}.h1{font-size:19px}.updated{font-size:10px}.rightGroup{gap:5px}.pdfBtn{min-height:38px;padding:0 10px;font-size:10px}.pdfBtn::before{font-size:8px}.content{border-radius:16px;padding:11px}.searchWrap{margin-bottom:10px}#search{height:44px;border-radius:11px;font-size:12px}#tabs{gap:6px;padding-bottom:10px}.pill{min-height:34px;padding:0 10px;border-radius:9px;font-size:10.5px}
+  thead{display:none}table{border:0;background:transparent;overflow:visible}tbody{display:block}tbody tr{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#0b0e14;border:1px solid var(--line);border-radius:12px;margin-bottom:7px;overflow:hidden}tbody tr td{display:block;border:0;padding:10px 11px}tbody tr td:first-child{flex:1;min-width:0}tbody tr td:last-child{flex:0 0 auto;text-align:right;max-width:42%}.brandHeaderRow{display:block!important;border:0!important;background:transparent!important;margin:13px 0 6px!important}.brandHeaderRow td{display:block!important;padding:0 2px!important;background:transparent!important;border:0!important}.brandHeader{font-size:10.5px}.model{font-size:12px;overflow-wrap:anywhere}.price{font-size:13px}.priceUnit{font-size:9px}.thumb{width:42px;height:42px;border-radius:9px}
+}
+@media(max-width:360px){.h1{font-size:17px}.pdfBtn{padding:0 8px}.priceUnit{display:block;margin-top:1px}.rightGroup{align-self:flex-start}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
-<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}</script>  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260821">
+<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}</script>
 </head>
-
 <body>
   <div class="wrap">
     <div class="card header">
       <div class="headerInner">
         <div class="leftGroup">
-          <a class="backBtn" href="./index.html">
+          <a class="backBtn" href="./home.html">
             <span aria-hidden="true">‹</span>
             <span>กลับหน้าหมวด</span>
           </a>
@@ -588,8 +104,8 @@
             <img id="catThumbImg" alt="category" />
           </div>
 
-          <div class="titleBlock">
-            <div class="crumb" id="crumb">Sheet › ...</div>
+          <div class="titleBlock"><div class="crumb">LEEPLUS · DEALER PRICE</div>
+            
             <h1 class="h1" id="pageTitle">...</h1>
             <div class="updated" id="updateText">อัปเดต: -</div>
           </div>

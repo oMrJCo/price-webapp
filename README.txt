@@ -1,16 +1,23 @@
-PHASE 5B.5 — LOGO DISPLAY FIX
+PHASE 6A — SMART PRICE UI
 
 วางทับ GitHub แค่:
-- /admin/admin.js
-- /app.js
-- /dealer/app.js
+- /price_sheet.html
+- /dealer/price_sheet.html
 
+ไม่ต้องแก้ JS
 ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script ใหม่
-ไม่แตะ PDF / Google Sheet / Dealer logic
+ไม่ต้อง Deploy Apps Script
+ไม่แตะ Backoffice / Dealer Login / ราคา / PDF logic
 
-แก้เฉพาะ:
-1. Logo spec ใน Backoffice = 512 × 512 px (1:1)
-2. Frontend bug: app.js และ dealer/app.js ลืม map siteMeta.logoUrl -> data.logoUrl
-   ทำให้แม้ Backoffice บันทึก Logo สำเร็จ หน้าเว็บก็อ่านค่าเป็นว่าง
-3. หลังวางไฟล์ กด Ctrl+F5
+แนว UI ใหม่:
+- Smart / Clean / อ่านง่าย
+- หน้าปกติและ Dealer ใช้หน้าตาเดียวกัน
+- Dealer ต่างเฉพาะข้อมูล dealer_price จาก JS เดิม
+- Brand filter เป็นแถบเลื่อนแนวนอน ไม่รก
+- Search ชัดและใช้ง่าย
+- Desktop เป็น Table ที่เบาและอ่านราคาเร็ว
+- Mobile เปลี่ยนเป็น List Card อัตโนมัติ
+- ราคาเด่นแต่ไม่ตะโกนเกินไป
+- Product image / Brand logo ใช้ contain ไม่ตัดภาพ
+- PDF / Back / Modal ใช้ภาษาดีไซน์เดียวกัน
+- ลด gradient/grid/animation ที่ทำให้หน้าดู AI และรก

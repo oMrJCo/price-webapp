@@ -184,16 +184,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function setCoverText(i) {
       const s = slides[i] || {};
-      if (coverHeadlineEl) {
-        coverHeadlineEl.textContent =
-          s.headline || data.coverHeadline || "LEEPLUS PRICE LIST";
-      }
-      if (coverSubtextEl) {
-        coverSubtextEl.textContent =
-          s.subtext ||
-          data.coverSubtext ||
-          "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที";
-      }
+      const hasCustomSlides = slidesRaw.length > 0;
+      const headline = hasCustomSlides ? (s.headline || "") : (s.headline || data.coverHeadline || "LEEPLUS PRICE LIST");
+      const subtext = hasCustomSlides ? (s.subtext || "") : (s.subtext || data.coverSubtext || "เช็คราคา เช็คสต็อก และดาวน์โหลดไฟล์ PDF ได้ทันที");
+
+      if (coverHeadlineEl) coverHeadlineEl.textContent = headline;
+      if (coverSubtextEl) coverSubtextEl.textContent = subtext;
+
+      const textBox = coverHeadlineEl?.closest(".cover-txt");
+      if (textBox) textBox.classList.toggle("is-empty", !headline && !subtext);
     }
 
     function renderSlider() {

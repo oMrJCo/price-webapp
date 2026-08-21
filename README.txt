@@ -1,20 +1,21 @@
-PHASE 4D.1 — HERO + BRAND FIX
+PHASE 5A — FRONTEND UI REFRESH
 
-วางทับใน GitHub:
-- /admin/admin.js
+วางทับ GitHub:
+- /index.html
+- /app.js
 
-ไม่ต้องแก้ admin.css
-ไม่ต้องแก้ app.js
-ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script
+ไม่แตะ Backoffice / Code.gs / Google Sheet / price_sheet.js
 
-แก้ 2 จุด:
-1. Hero Banner
-- หน้า รูปและสื่อ มี Media Picker ของตัวเองแล้ว
-- ปุ่ม "เลือกจากคลัง" ใช้งานได้โดยไม่พึ่งหน้า หมวดสินค้า
+สิ่งที่แก้:
+- Hero Desktop ใช้ 16:5 จริง ตรงกับ Artwork 1600 × 500 px
+- Mobile ใช้ 16:7 เพื่อให้ดูง่าย แต่ยังไม่บิดภาพ
+- object-fit: cover และไม่ยืดภาพ
+- ถ้า Banner ไม่ใส่หัวข้อ/ข้อความรอง จะไม่เอาข้อความ default ไปทับ artwork
+- ปรับ arrow/dot ของ Slider ให้เล็กและไม่กินพื้นที่สื่อ
+- Header และปุ่มราคาตัวแทนดูสะอาดขึ้น
+- Category cards จัด spacing/เงา/ขนาดใหม่
+- Mobile แสดงหมวด 2 คอลัมน์ ลดความยาวหน้า
 
-2. Brand Logo
-- Dropdown แสดงเฉพาะหมวดที่มี sheetTab ใน categories จริง
-- ไม่เอา Ex image url / Tab ระบบ / Tab ที่ไม่ใช่หมวดมาปน
-- แสดงชื่อหมวดไทย + ชื่อ Sheet Tab
-- เมื่อเลือกหมวด จะอ่าน Unique brand จากคอลัมน์ brand ใน Tab นั้น
+ขนาดสื่อที่ยึด:
+- Hero: 1600 × 500 px (16:5)
+- Safe area: ประมาณ 1400 × 420 px

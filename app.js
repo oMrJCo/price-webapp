@@ -155,12 +155,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const contactBar=document.getElementById("contactBar");
     if(contactBar){
-      const links=[];
-      if(data.lineEnabled && data.lineUrl) links.push(`<a class="contact-pill line" href="${data.lineUrl}" target="_blank" rel="noopener">LINE</a>`);
-      if(data.facebookEnabled && data.facebookUrl) links.push(`<a class="contact-pill facebook" href="${data.facebookUrl}" target="_blank" rel="noopener">Facebook</a>`);
-      if(data.phoneEnabled && data.phone){const phoneText=String(data.phone).trim();links.push(`<a class="contact-pill phone" href="tel:${phoneText.replace(/[^0-9+]/g,"")}">โทร ${phoneText}</a>`);}
-      contactBar.innerHTML=links.join("");
-      contactBar.style.display=links.length?"flex":"none";
+      const cards=[];
+
+      const headsetIcon=`<span class="contact-icon support-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1v-6Z"/><path d="M20 13h-2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1"/><path d="M19 20c0 1-1 2-3 2h-2"/></svg>
+      </span>`;
+
+      cards.push(`<div class="contact-intro">${headsetIcon}<span><b>ติดต่อเรา</b><small>พร้อมดูแลคุณ</small></span></div>`);
+
+      if(data.lineEnabled && data.lineUrl){
+        cards.push(`<a class="contact-card contact-line" href="${data.lineUrl}" target="_blank" rel="noopener">
+          <span class="contact-icon line-logo"><span>LINE</span></span>
+          <span class="contact-copy"><b>LINE</b><small>สอบถามผ่านแชท</small></span>
+          <span class="contact-arrow">›</span>
+        </a>`);
+      }
+
+      if(data.facebookEnabled && data.facebookUrl){
+        cards.push(`<a class="contact-card contact-facebook" href="${data.facebookUrl}" target="_blank" rel="noopener">
+          <span class="contact-icon facebook-logo">f</span>
+          <span class="contact-copy"><b>Facebook</b><small>ติดตามข่าวสาร</small></span>
+          <span class="contact-arrow">›</span>
+        </a>`);
+      }
+
+      if(data.phoneEnabled && data.phone){
+        const phoneText=String(data.phone).trim();
+        cards.push(`<a class="contact-card contact-phone" href="tel:${phoneText.replace(/[^0-9+]/g,"")}">
+          <span class="contact-icon phone-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7.2 3.5 5.1 5.6c-.8.8-.9 2-.4 3 2.1 4.4 5.4 7.7 9.8 9.8 1 .5 2.2.4 3-.4l2.1-2.1c.5-.5.6-1.2.2-1.8l-2-3c-.4-.6-1.2-.8-1.8-.4l-1.7 1c-.5.3-1.1.2-1.5-.2l-2.3-2.3c-.4-.4-.5-1-.2-1.5l1-1.7c.4-.6.2-1.4-.4-1.8l-3-2c-.6-.4-1.3-.3-1.8.2Z"/></svg>
+          </span>
+          <span class="contact-copy"><b>โทร ${phoneText}</b><small>แตะเพื่อโทรออก</small></span>
+          <span class="contact-arrow">›</span>
+        </a>`);
+      }
+
+      contactBar.innerHTML=cards.join("");
+      contactBar.style.display=cards.length>1?"grid":"none";
     }
 
     const coverHeadlineEl = document.getElementById("coverHeadline");

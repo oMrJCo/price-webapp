@@ -1,15 +1,18 @@
-CHANGE 02 — STEP 6 GViz FIX
-
-สาเหตุ:
-Google GViz บางกรณีส่ง cols.id เป็น A/B/C... และ label ของหัวตารางไม่ถูกส่งกลับตามที่ตัวอ่านเดิมคาดไว้
-ทำให้ Compatibility หา index ของ type/code/brand/models ไม่เจอ และกรองออกหมด
-
-แก้:
-- อ่านทั้ง cols.label และ cols.id
-- ถ้ายังหา header ไม่เจอ ใช้ schema ที่ระบบสร้างเองเป็น fallback:
-  A=type, B=code, C=brand, D=models, E=image_url, F=updated
-- ไม่แตะ renderer ของหมวด PRICE
+CHANGE 02 — STEP 7 SMART COMPATIBILITY UI
 
 วางทับ:
 - /price_sheet.js
 - /dealer/price_sheet.js
+
+เปลี่ยนเฉพาะหมวด categoryType=COMPATIBILITY:
+- 1 code = 1 กลุ่ม
+- ภายในเป็นตาราง Brand | Models
+- ไม่แตกแต่ละ Brand เป็น Card
+- ถ้ามี image_url ของรหัส แสดงรูปในหัวกลุ่ม
+- รูปเสียซ่อนอัตโนมัติ
+- Search:
+  * ค้น LP16 = แสดงทั้ง LP16
+  * ค้น Y27 = แสดง LP16 เฉพาะ Brand/row ที่มี Y27
+  * ค้น Xiaomi = แสดงทุก code ที่มี Xiaomi เฉพาะแถว Xiaomi
+  * ค้นชื่อรุ่นได้จากข้อความ models
+- หมวด PRICE เดิมไม่แตะ

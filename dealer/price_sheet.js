@@ -495,7 +495,61 @@ async function loadCompatibilitySheet(tab) {
   }).filter(r => r.code || r.brand || r.models);
 }
 
+function ensureCompatibilityStyles() {
+  if (document.getElementById("compatibilityStyles")) return;
+  const style = document.createElement("style");
+  style.id = "compatibilityStyles";
+  style.textContent = `
+    .compat-wrap{display:grid;gap:10px;width:100%}
+    .compat-group{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0e131b;overflow:hidden}
+    .compat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;background:#121923;border-bottom:1px solid rgba(255,255,255,.07)}
+    .compat-code{display:flex;align-items:center;gap:8px;font-weight:950;color:#fff;font-size:14px}
+    .compat-code::before{content:"";width:18px;height:4px;border-radius:999px;background:#f3c900}
+    .compat-type{font-size:10px;font-weight:800;color:#8d96a3;letter-spacing:.25px}
+    .compat-body{display:grid}
+    .compat-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0;border-bottom:1px solid rgba(255,255,255,.055)}
+    .compat-row:last-child{border-bottom:0}
+    .compat-brand{padding:10px 12px;font-size:11px;font-weight:900;color:#f3c900;background:rgba(255,255,255,.015);border-right:1px solid rgba(255,255,255,.055)}
+    .compat-models{padding:10px 14px;font-size:12px;line-height:1.65;color:#d5dae1;overflow-wrap:anywhere}
+    .compat-image{width:48px;height:48px;border-radius:10px;background:#fff;overflow:hidden;flex:0 0 48px;border:1px solid rgba(255,255,255,.08)}
+    .compat-image img{width:100%;height:100%;object-fit:contain;display:block}
+    .compat-head-main{display:flex;align-items:center;gap:10px;min-width:0}
+    .compat-empty{padding:22px;text-align:center;color:#7f8895;border:1px dashed rgba(255,255,255,.09);border-radius:13px;background:#0d1117}
+    .compat-summary{font-size:9px;color:#6f7884;white-space:nowrap}
+    @media(max-width:720px){
+      .compat-group{border-radius:12px}
+      .compat-head{padding:10px 11px}
+      .compat-code{font-size:13px}
+      .compat-row{grid-template-columns:92px minmax(0,1fr)}
+      .compat-brand{padding:9px 9px;font-size:10px}
+      .compat-models{padding:9px 10px;font-size:11px;line-height:1.55}
+      .compat-summary{display:none}
+      .compat-image{width:42px;height:42px;flex-basis:42px}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function groupCompatibilityRows(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    const key = String(r.code || "-").trim() || "-";
+    if (!map.has(key)) map.set(key, {
+      code:key,
+      type:String(r.type || "").trim(),
+      image_url:String(r.image_url || "").trim(),
+      rows:[]
+    });
+    const g = map.get(key);
+    if (!g.type && r.type) g.type=String(r.type).trim();
+    if (!g.image_url && r.image_url) g.image_url=String(r.image_url).trim();
+    g.rows.push(r);
+  }
+  return [...map.values()];
+}
+
 function renderCompatibility(rows) {
+  ensureCompatibilityStyles();
   const tbody = el("tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
@@ -509,35 +563,88 @@ function renderCompatibility(rows) {
   }
   if (el("empty")) el("empty").style.display = "none";
 
-  let lastCode = null;
-  for (const r of rows) {
-    if (r.code !== lastCode) {
-      lastCode = r.code;
-      const group = document.createElement("tr");
-      group.className = "brandHeaderRow";
-      const typeText = r.type ? ` <span style="opacity:.55;font-weight:600;">${escapeHTML(r.type)}</span>` : "";
-      group.innerHTML = `<td colspan="2"><span class="brandHeader"><span class="dot"></span>${escapeHTML(r.code || "-")}${typeText}</span></td>`;
-      tbody.appendChild(group);
-    }
+  const groups = groupCompatibilityRows(rows);
 
-    const img = normalizeImageUrl(r.image_url);
-    const thumb = img ? `<div class="thumb" tabindex="0" role="button" data-full="${escapeHTML(img)}" data-title="${escapeHTML(r.code)}"><img src="${escapeHTML(img)}" alt="" loading="lazy"></div>` : "";
+  for (const g of groups) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td colspan="2">
-        <div style="display:flex;align-items:flex-start;gap:12px;min-width:0;">
-          ${thumb}
-          <div style="min-width:0;flex:1;">
-            <div class="model" style="margin-bottom:5px;">${escapeHTML(r.brand || "-")}</div>
-            <div style="opacity:.78;line-height:1.65;overflow-wrap:anywhere;">${escapeHTML(r.models || "-")}</div>
+    tr.style.display = "table-row";
+    tr.style.background = "transparent";
+    tr.style.border = "0";
+    tr.style.boxShadow = "none";
+
+    const td = document.createElement("td");
+    td.colSpan = 2;
+    td.style.padding = "0 0 10px";
+    td.style.border = "0";
+
+    const imageUrl = normalizeImageUrl(g.image_url);
+    const imageHtml = imageUrl
+      ? `<div class="compat-image"><img src="${escapeHTML(imageUrl)}" alt="" loading="lazy"></div>`
+      : "";
+
+    const brandRows = g.rows.map(r => `
+      <div class="compat-row">
+        <div class="compat-brand">${escapeHTML(r.brand || "-")}</div>
+        <div class="compat-models">${escapeHTML(r.models || "-")}</div>
+      </div>
+    `).join("");
+
+    td.innerHTML = `
+      <div class="compat-group">
+        <div class="compat-head">
+          <div class="compat-head-main">
+            ${imageHtml}
+            <div>
+              <div class="compat-code">${escapeHTML(g.code)}</div>
+              ${g.type ? `<div class="compat-type">${escapeHTML(g.type)}</div>` : ""}
+            </div>
           </div>
+          <div class="compat-summary">${g.rows.length} BRAND${g.rows.length>1?"S":""}</div>
         </div>
-      </td>`;
-    const image = tr.querySelector(".thumb img");
-    if (image) image.addEventListener("error", () => image.closest(".thumb")?.remove(), {once:true});
+        <div class="compat-body">${brandRows}</div>
+      </div>`;
+
+    const img = td.querySelector(".compat-image img");
+    if (img) img.addEventListener("error",()=>img.closest(".compat-image")?.remove(),{once:true});
+
+    tr.appendChild(td);
     tbody.appendChild(tr);
   }
 }
+
+function filterCompatibilityRows(all, query) {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return all;
+
+  const compact = normalizeSearchCompact(q);
+  const tokens = normalizeSearchTokens(q);
+  const groups = groupCompatibilityRows(all);
+  const result = [];
+
+  for (const g of groups) {
+    const groupHay = `${g.code} ${g.type}`.toLowerCase();
+    const groupCompact = normalizeSearchCompact(groupHay);
+    const groupMatch =
+      (compact && groupCompact.includes(compact)) ||
+      (tokens.length && tokens.every(t => groupHay.includes(t)));
+
+    if (groupMatch) {
+      result.push(...g.rows);
+      continue;
+    }
+
+    for (const r of g.rows) {
+      const hay = `${r.brand || ""} ${r.models || ""}`.toLowerCase();
+      const hayCompact = normalizeSearchCompact(hay);
+      const rowMatch =
+        (compact && hayCompact.includes(compact)) ||
+        (tokens.length && tokens.every(t => hay.includes(t)));
+      if (rowMatch) result.push(r);
+    }
+  }
+  return result;
+}
+
 
 /* ===== render ===== */
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
@@ -689,22 +796,15 @@ function applyCategoryThumb(categoryImageUrl) {
     const upd = all.find(r => r.updated)?.updated || "-";
     el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
 
-    // Compatibility uses the same search field, but searches code + brand + every model string.
+    // Compatibility uses a smart search:
+    // code/type match = show whole group, brand/model match = show only matching rows.
     const tabsRoot = el("tabs");
     if (tabsRoot) tabsRoot.style.display = "none";
 
     const search = el("search");
+    if (search) search.placeholder = "ค้นหารุ่น เช่น Y27 / iPhone 15 Pro / Redmi Note 13 / LP16";
     const applyCompatibility = () => {
-      const q = String(search?.value || "").trim().toLowerCase();
-      if (!q) return renderCompatibility(all);
-      const compact = normalizeSearchCompact(q);
-      const tokens = normalizeSearchTokens(q);
-      const filtered = all.filter(r => {
-        const hay = `${r.type} ${r.code} ${r.brand} ${r.models}`.toLowerCase();
-        if (compact && normalizeSearchCompact(hay).includes(compact)) return true;
-        return tokens.length ? tokens.every(t => hay.includes(t)) : false;
-      });
-      renderCompatibility(filtered);
+      renderCompatibility(filterCompatibilityRows(all, search?.value || ""));
     };
     search?.addEventListener("input", applyCompatibility);
     renderCompatibility(all);

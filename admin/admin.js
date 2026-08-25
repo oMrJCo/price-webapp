@@ -1,3 +1,62 @@
+
+(function(){
+  if(document.getElementById("backofficeSmartUI"))return;
+  const st=document.createElement("style");
+  st.id="backofficeSmartUI";
+  st.textContent=`
+    :root{--bo-yellow:#f3c900;--bo-ink:#111318;--bo-muted:#7c8490;--bo-line:#e8e9ec;--bo-bg:#f4f5f7}
+    body{background:var(--bo-bg)!important}
+    #content{max-width:1480px;margin:0 auto;padding-bottom:90px}
+    .panel{border:1px solid var(--bo-line)!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(15,20,30,.04)!important;background:#fff!important}
+    .cards{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+    .card{border-radius:15px!important;border:1px solid var(--bo-line)!important;padding:16px!important;background:#fff!important;box-shadow:none!important}
+    .card strong{font-size:28px!important;line-height:1!important}
+    .card .muted,.muted{color:var(--bo-muted)!important}
+    .dashboard-health-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:14px;margin-top:14px}
+    .smart-list{display:grid;gap:8px}
+    .smart-item{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:12px;align-items:center;padding:11px 12px;border:1px solid #eceef1;border-radius:12px;background:#fbfcfd}
+    .smart-item-main{min-width:0}.smart-item-main b{display:block;font-size:13px}.smart-item-main small{display:block;color:#8b929b;margin-top:2px}
+    .smart-badges{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+    .smart-badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#f0f2f5;color:#59616c;font-size:10px;font-weight:850}
+    .smart-badge.ok{background:#e9f8ef;color:#16814b}.smart-badge.warn{background:#fff5d4;color:#8b6800}.smart-badge.bad{background:#ffe9e7;color:#b42318}
+    .health-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.health-row:last-child{border-bottom:0}
+    .health-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px}.health-dot.ok{background:#22b573}.health-dot.warn{background:#f3c900}.health-dot.bad{background:#d92d20}
+    .dashboard-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .dashboard-actions button{min-height:38px}
+    .settings-grid{grid-template-columns:1fr!important}
+    .settings-card{padding:18px!important}
+    .dynamic-contact-panel{overflow:hidden}
+    #contactManagerRows{overflow:auto;border:1px solid #eceef1;border-radius:14px}
+    .contact-admin-item{display:grid!important;grid-template-columns:52px 1fr!important;padding:12px 14px!important;margin:0!important;border:0!important;border-bottom:1px solid #eceef1!important;border-radius:0!important;background:#fff!important}
+    .contact-admin-item:last-child{border-bottom:0!important}
+    .contact-admin-top{grid-column:1;grid-row:1;margin:0!important;display:block!important}
+    .contact-admin-icon-preview{width:42px!important;height:42px!important}
+    .contact-admin-title{display:none!important}.contact-admin-top .danger{display:block!important;width:42px!important;margin-top:6px!important;padding:5px!important;font-size:9px!important}
+    .contact-admin-grid{grid-column:2;grid-row:1;display:grid!important;grid-template-columns:1.05fr 1.1fr .72fr .88fr 90px 74px 1.45fr!important;gap:8px!important;align-items:end}
+    .contact-admin-grid input,.contact-admin-grid select{width:100%;min-width:0}
+    .contact-admin-grid label>span{font-size:9px!important;color:#777!important}
+    .contact-icon-field{grid-column:auto!important}
+    .contact-icon-field .upload-field{display:flex;gap:5px}.contact-icon-field .upload-field input{min-width:70px}
+    .contact-flags{grid-column:1/-1!important;padding-top:6px;border-top:1px dashed #eceef1}
+    .contact-flags label{font-size:10px!important}
+    .contact-admin-item{position:relative}
+    
+    .settings-save{position:sticky!important;bottom:12px!important;z-index:40;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(10px);border:1px solid #e6e7ea;border-radius:14px;padding:10px 12px!important;box-shadow:0 12px 35px rgba(0,0,0,.12)}
+    .cat-toolbar{position:sticky;top:0;z-index:20;background:rgba(244,245,247,.94);backdrop-filter:blur(10px);padding:8px 0}
+    @media(max-width:1100px){
+      .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      .dashboard-health-grid{grid-template-columns:1fr}
+      .contact-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    }
+    @media(max-width:700px){
+      .cards{grid-template-columns:1fr!important}
+      .contact-admin-item{grid-template-columns:44px 1fr!important;padding:10px!important}
+      .contact-admin-grid{grid-template-columns:1fr!important}
+    }
+  `;
+  document.head.appendChild(st);
+})();
+
 const ADMIN_CODE="451520210", AUTH_KEY="leeplus_admin_until";
 function authOK(){return Number(sessionStorage.getItem(AUTH_KEY)||0)>Date.now()}
 function showGate(){const g=document.querySelector("#loginGate");if(g)g.classList.remove("hidden");setTimeout(()=>document.querySelector("#adminCode")?.focus(),50)}
@@ -549,6 +608,7 @@ async function saveCategory(payload){
     row:payload.__row||"",
     titleTH:payload.titleTH||"",
     titleEN:payload.titleEN||"",
+    categoryType:payload.categoryType||"PRICE",
     sheetTab:payload.sheetTab||"",
     status:payload.status||"ACTIVE",
     dealerEnabled:payload.dealerEnabled||"TRUE",
@@ -609,7 +669,120 @@ function sheetRows(){
 const content=document.querySelector('#content'), title=document.querySelector('#title'), subtitle=document.querySelector('#subtitle');let db={categories:[]};
 async function load(){await Promise.all([loadSheetTabs(),loadCategoryApi(),(async()=>{try{const r=await fetch('../categories.json?ts='+Date.now());db=await r.json()}catch(e){console.error(e)}})()]);render('dashboard')}
 function cats(){return db.categories||[]}
-const views={dashboard(){title.textContent='ภาพรวม';subtitle.textContent='สถานะข้อมูลที่ใช้ในเว็บใบราคา';const c=cats();content.innerHTML=`<div class="warn">Backoffice รุ่นนี้เป็นฐานใหม่ที่ไม่ใช้ Netlify หรือ Decap การบันทึกจริงและการ Sync Google Sheet จะเชื่อมในขั้นถัดไป</div><div class="cards"><div class="card"><span class="muted">หมวดสินค้าทั้งหมด</span><strong>${c.length}</strong></div><div class="card"><span class="muted">มีรูปหมวด</span><strong>${c.filter(x=>x.image).length}</strong></div><div class="card"><span class="muted">มี PDF</span><strong>${c.filter(x=>x.pdf_url).length}</strong></div><div class="card"><span class="muted">เชื่อม Sheet Tab</span><strong>${c.filter(x=>x.sheetTab||x.price_url).length}</strong></div></div><div class="panel"><h2>หมวดสินค้าปัจจุบัน</h2>${rows(c)}</div>`},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
+
+async function loadDashboardLive(){
+  const cats=liveCats();
+  const active=cats.filter(c=>String(c.status||"ACTIVE").toUpperCase()==="ACTIVE");
+  const result={
+    total:cats.length,active:active.length,items:0,newCount:0,tagCount:0,
+    emptySheets:0,noImage:0,noPdf:0,dealerIssues:0,lastUpdated:"-",
+    categories:[],apiOk:true
+  };
+  const dates=[];
+  await Promise.all(active.map(async c=>{
+    const tab=catTab(c);
+    const type=String(c.categoryType||"PRICE").toUpperCase();
+    const item={title:c.titleTH||c.titleEN||tab||"หมวด",tab,type,count:0,updated:"-",image:!!String(c.image||"").trim(),pdf:!!String(c.pdf_url||"").trim(),dealer:String(c.dealerEnabled??"TRUE").toUpperCase()!=="FALSE",dealerPdf:!!String(c.dealer_pdf_url||"").trim(),empty:false,error:false};
+    if(!item.image) result.noImage++;
+    if(!item.pdf) result.noPdf++;
+    if(item.dealer && !item.dealerPdf) result.dealerIssues++;
+
+    if(tab){
+      try{
+        const j=await apiGet({action:"prices",tab});
+        const rows=Array.isArray(j.data)?j.data:[];
+        const clean=rows.filter(r=>{
+          const vals=Object.values(r||{}).map(v=>String(v??"").trim().toLowerCase());
+          return !(
+            vals.includes("brand")&&vals.includes("model") ||
+            vals.includes("type")&&vals.includes("code")&&vals.includes("models")
+          );
+        }).filter(r=>Object.values(r||{}).some(v=>String(v??"").trim()!==""));
+        item.count=clean.length;
+        item.empty=clean.length===0;
+        result.items+=clean.length;
+        if(item.empty)result.emptySheets++;
+
+        clean.forEach(r=>{
+          const text=String(r.model||r.models||"");
+          if(/\bNEW\b/i.test(text))result.newCount++;
+          if(/\([^()]+\)\s*$/.test(text))result.tagCount++;
+          const u=String(r.updated||"").trim();
+          if(u)dates.push(u);
+        });
+        const upd=clean.find(r=>String(r.updated||"").trim())?.updated;
+        if(upd)item.updated=String(upd);
+      }catch(_){item.error=true;result.apiOk=false}
+    }else{item.empty=true;result.emptySheets++}
+    result.categories.push(item);
+  }));
+  if(dates.length) result.lastUpdated=dates.sort().slice(-1)[0];
+  result.categories.sort((a,b)=>String(a.title).localeCompare(String(b.title),"th"));
+  return result;
+}
+function dashboardBadge(text,type=""){return `<span class="smart-badge ${type}">${text}</span>`}
+async function renderLiveDashboard(){
+  title.textContent='ภาพรวม';
+  subtitle.textContent='สถานะระบบและข้อมูลล่าสุดจาก Google Sheet';
+  content.innerHTML='<div class="panel"><div class="empty">กำลังอ่านข้อมูลสดจากระบบ...</div></div>';
+  const d=await loadDashboardLive();
+  const issueCount=d.emptySheets+d.noImage+d.dealerIssues;
+  const recent=d.categories.slice().sort((a,b)=>String(b.updated).localeCompare(String(a.updated))).slice(0,8);
+
+  content.innerHTML=`
+    <div class="cards">
+      <div class="card"><span class="muted">หมวดเปิดใช้งาน</span><strong>${d.active}</strong><small>จากทั้งหมด ${d.total} หมวด</small></div>
+      <div class="card"><span class="muted">รายการข้อมูลรวม</span><strong>${d.items}</strong><small>อ่านสดจากทุก Sheet</small></div>
+      <div class="card"><span class="muted">NEW / Tag</span><strong>${d.newCount} / ${d.tagCount}</strong><small>รายการใหม่ / ข้อความเน้นในวงเล็บ</small></div>
+      <div class="card"><span class="muted">ต้องตรวจสอบ</span><strong>${issueCount}</strong><small>Sheet ว่าง / รูป / Dealer</small></div>
+    </div>
+
+    <div class="dashboard-health-grid">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+          <div><h2 style="margin:0">สถานะหมวดสินค้า</h2><div class="muted" style="font-size:11px;margin-top:3px">จำนวนรายการและความพร้อมของแต่ละหมวด</div></div>
+          <button class="secondary" id="refreshDashboardBtn">รีเฟรช</button>
+        </div>
+        <div class="smart-list">
+          ${d.categories.map(c=>`<div class="smart-item">
+            <div class="smart-item-main"><b>${esc(c.title)}</b><small>${esc(c.tab||"ยังไม่เชื่อม Sheet")} · ${c.type==="COMPATIBILITY"?"Compatibility":"Price List"} · อัปเดต ${esc(c.updated)}</small></div>
+            <div class="smart-badges">
+              ${dashboardBadge(c.count+" รายการ",c.empty?"warn":"ok")}
+              ${dashboardBadge(c.image?"รูป ✓":"ไม่มีรูป",c.image?"ok":"warn")}
+              ${dashboardBadge(c.pdf?"PDF ✓":"ไม่มี PDF",c.pdf?"ok":"warn")}
+              ${c.dealer?dashboardBadge(c.dealerPdf?"Dealer ✓":"Dealer PDF ?",c.dealerPdf?"ok":"warn"):dashboardBadge("Dealer ปิด")}
+              ${c.error?dashboardBadge("API Error","bad"):""}
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>
+
+      <div>
+        <div class="panel" style="margin-bottom:14px">
+          <h2>System Health</h2>
+          <div class="health-row"><span><i class="health-dot ${d.apiOk?"ok":"bad"}"></i>Google Sheet API</span><b>${d.apiOk?"พร้อมใช้งาน":"มีข้อผิดพลาด"}</b></div>
+          <div class="health-row"><span><i class="health-dot ${d.emptySheets?"warn":"ok"}"></i>Sheet ว่าง</span><b>${d.emptySheets}</b></div>
+          <div class="health-row"><span><i class="health-dot ${d.noImage?"warn":"ok"}"></i>หมวดไม่มีรูป</span><b>${d.noImage}</b></div>
+          <div class="health-row"><span><i class="health-dot ${d.noPdf?"warn":"ok"}"></i>หมวดไม่มี PDF</span><b>${d.noPdf}</b></div>
+          <div class="health-row"><span><i class="health-dot ${d.dealerIssues?"warn":"ok"}"></i>Dealer ยังไม่ครบ</span><b>${d.dealerIssues}</b></div>
+          <div class="health-row"><span><i class="health-dot ok"></i>อัปเดตล่าสุด</span><b>${esc(d.lastUpdated)}</b></div>
+        </div>
+        <div class="panel">
+          <h2>เข้าถึงงานเร็ว</h2>
+          <div class="dashboard-actions">
+            <button class="primary" data-go="categories">จัดการหมวด</button>
+            <button class="secondary" data-go="media">รูปและสื่อ</button>
+            <button class="secondary" data-go="pdf">ไฟล์ PDF</button>
+            <button class="secondary" data-go="settings">ตั้งค่าเว็บไซต์</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.querySelector("#refreshDashboardBtn")?.addEventListener("click",renderLiveDashboard);
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>render(b.dataset.go));
+}
+
+const views={dashboard(){renderLiveDashboard()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
 <div class="cat-toolbar"><button class="primary" id="addCategory">+ เพิ่มหมวดสินค้า</button><button class="secondary" id="reloadCats">รีเฟรช</button></div>
 <div class="panel"><h2>รายการหมวดสินค้า</h2><div id="catAdminRows">${categoryAdminRows()}</div></div>
 <div id="categoryModal" class="modal hidden"><div class="modal-card">
@@ -619,6 +792,13 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div class="form-grid">
       <label>ชื่อหมวดภาษาไทย<input id="catTH" required></label>
       <label>ชื่อหมวดภาษาอังกฤษ<input id="catEN"></label>
+      <label>รูปแบบรายการ
+        <select id="catType">
+          <option value="PRICE">รายการราคา</option>
+          <option value="COMPATIBILITY">รายการรุ่น / Compatibility</option>
+        </select>
+        <small class="field-note">หมวดใหม่จะสร้าง Google Sheet ตามรูปแบบที่เลือก</small>
+      </label>
       <label id="catTabField">Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option></select><small class="field-note">ใช้สำหรับสลับหมวดเดิมไปยัง Sheet Tab อื่น</small></label>
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label><label>หน้าตัวแทนจำหน่าย<select id="catDealerEnabled"><option value="TRUE">แสดงราคาตัวแทน</option><option value="FALSE">ซ่อนจากหน้าตัวแทน</option></select><small class="field-note">ถ้าปิด Card หมวดนี้จะไม่แสดงในหน้า Dealer</small></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
@@ -760,6 +940,9 @@ async function openCategoryModal(x=null){
   document.querySelector("#catRow").value=x?.__row||"";
   document.querySelector("#catTH").value=x?.titleTH||"";
   document.querySelector("#catEN").value=x?.titleEN||"";
+  const catTypeEl=document.querySelector("#catType");
+  catTypeEl.value=String(x?.categoryType||"PRICE").toUpperCase()==="COMPATIBILITY"?"COMPATIBILITY":"PRICE";
+  catTypeEl.disabled=!!x?.__row;
   const tabField=document.querySelector("#catTabField"), tabSelect=document.querySelector("#catTab");
   if(x){
     tabField.classList.remove("hidden");
@@ -807,6 +990,7 @@ async function openCategoryModal(x=null){
         __row:document.querySelector("#catRow").value,
         titleTH:document.querySelector("#catTH").value.trim(),
         titleEN:document.querySelector("#catEN").value.trim(),
+        categoryType:document.querySelector("#catType").value,
         sheetTab:tab,
         status:document.querySelector("#catStatus").value,
         dealerEnabled:document.querySelector("#catDealerEnabled").value,

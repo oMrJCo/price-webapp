@@ -1,29 +1,42 @@
-CHANGE 03 — DYNAMIC CONTACT MANAGER
+CHANGE 04 — BACKOFFICE SMART UI + LIVE DASHBOARD
 
-ไฟล์ GitHub:
+สำคัญ:
+ชุดนี้ merge Dynamic Contact Manager + Category Type/Compatibility กลับไว้ครบแล้ว
+
+Google Apps Script:
+- Code.gs
+- Deploy New version
+
+GitHub:
 - /app.js
 - /dealer/app.js
 - /admin/admin.js
 
-Google Apps Script:
-- Code.gs
+สิ่งที่เปลี่ยน:
+1. Live Dashboard
+- หมวดเปิดใช้งาน / ทั้งหมด
+- จำนวนรายการรวมจากทุก Sheet
+- NEW / Auto Tag
+- จุดที่ต้องตรวจสอบ
+- Category Status: จำนวนรายการ, รูป, PDF, Dealer PDF, updated
+- System Health
+- Quick Actions
+- Refresh อ่านข้อมูลสด
 
-Backoffice ใหม่:
-- เพิ่ม/ลบช่องทางติดต่อ
-- ชื่อช่องทาง
-- ข้อความรอง
-- Action: URL / โทรศัพท์
-- URL หรือเบอร์โทร
-- อัปโหลด Icon เอง
-- เลือก Accent Color
-- เปิด/ปิด
-- แสดง Contact Card
-- แสดง Bottom CTA
-- ลำดับ
+2. Backoffice UI Refresh
+- panel/card/spacing ใหม่
+- Settings หน้าเดียวอ่านง่ายขึ้น
+- Contact Manager compact
+- Sticky Save bar
+- Responsive notebook/tablet
 
-การทำงาน:
-- ค่า LINE/Facebook/Phone เดิมถูกใช้เป็น fallback อัตโนมัติ ถ้ายังไม่มี contacts JSON
-- เมื่อบันทึก Contact Manager ครั้งแรก ระบบใช้ contacts JSON เป็นหลัก
-- Retail และ Dealer ใช้ Contact Manager ชุดเดียวกัน
-- Bottom CTA เลือกจากรายการที่ติ๊ก "แสดงแถบด้านล่าง"
-- แนะนำเลือก Bottom CTA เพียง 1 รายการ (ระบบใช้รายการแรกตามลำดับ)
+3. Contact Frontend
+- Desktop อยู่แถวเดียว ย่ออัตโนมัติตามจำนวน
+- Mobile 2 columns
+- ไม่มี Icon = ไม่แสดงวง icon เปล่า
+- Retail / Dealer ใช้ข้อมูลเดียวกัน
+
+4. Preserved
+- Category Type: PRICE / COMPATIBILITY
+- Auto-create Sheet ตาม Category Type
+- Dealer / PDF / Upload / Media / Category logic เดิม

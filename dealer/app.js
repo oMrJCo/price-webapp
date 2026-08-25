@@ -6,6 +6,14 @@
     .dynamic-contact-icon img{width:72%;height:72%;object-fit:contain;display:block}
     .dynamic-contact-card{transition:transform .18s ease,filter .18s ease}
     .dynamic-contact-card:hover{transform:translateY(-2px);filter:brightness(1.08)}
+    #contactBar{grid-template-columns:repeat(var(--contact-count,4),minmax(0,1fr))!important;gap:10px!important}
+    #contactBar .contact-intro,#contactBar .contact-card{min-width:0!important}
+    #contactBar .contact-copy{min-width:0}
+    #contactBar .contact-copy b,#contactBar .contact-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    @media(max-width:760px){
+      #contactBar{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      #contactBar .contact-intro{grid-column:span 2}
+    }
   `;document.head.appendChild(st);
 })();
 
@@ -200,10 +208,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const href=normalizeContactHref(c);if(!href)return;
         const accent=/^#[0-9a-f]{6}$/i.test(String(c.accent||""))?c.accent:"#F3C900";
         const icon=String(c.icon||"").trim();
-        const iconHtml=icon?`<span class="contact-icon dynamic-contact-icon" style="border-color:${accent}33;background:${accent}14"><img src="${icon}" alt="" onerror="this.closest('.contact-icon').style.display='none'"></span>`:`<span class="contact-icon dynamic-contact-icon" style="color:${accent};border-color:${accent}55;background:${accent}12">●</span>`;
+        const iconHtml=icon?`<span class="contact-icon dynamic-contact-icon" style="border-color:${accent}33;background:${accent}14"><img src="${icon}" alt="" onerror="this.closest('.contact-icon').remove()"></span>`:"";
         cards.push(`<a class="contact-card dynamic-contact-card" style="border-color:${accent}66;background:linear-gradient(135deg,${accent}18,transparent 58%),#101720" href="${href}" ${String(c.actionType||"URL").toUpperCase()==="TEL"?"":'target="_blank" rel="noopener"'}>${iconHtml}<span class="contact-copy"><b>${String(c.name||"")}</b><small>${String(c.subtext||"")}</small></span><span class="contact-arrow" style="color:${accent}">›</span></a>`);
       });
       contactBar.innerHTML=cards.join("");
+      contactBar.style.setProperty("--contact-count", String(Math.max(1,cards.length)));
       contactBar.style.display=cards.length>1?"grid":"none";
     }
 

@@ -593,7 +593,7 @@ function renderCompatibility(rows, query = "") {
 
     const brandRows = g.rows.map(r => `
       <div class="compat-row">
-        <div class="compat-brand">${highlightHTML(r.brand || "-", query)}</div>
+        <div class="compat-brand">${escapeHTML(r.brand || "-")}</div>
         <div class="compat-models">${highlightHTML(r.models || "-", query)}</div>
       </div>
     `).join("");

@@ -461,24 +461,36 @@ async function loadCompatibilitySheet(tab) {
   const cols = Array.isArray(table?.cols) ? table.cols : [];
   const rows = Array.isArray(table?.rows) ? table.rows : [];
 
+  // GViz can return column IDs (A/B/C...) instead of the visible header labels.
+  // Prefer labels when present, but fall back to the fixed Compatibility schema.
+  const findCol = (names, fallback) => {
+    const wanted = names.map(v => String(v).trim().toLowerCase());
+    const i = cols.findIndex(col => {
+      const label = String(col?.label || "").trim().toLowerCase();
+      const id = String(col?.id || "").trim().toLowerCase();
+      return wanted.includes(label) || wanted.includes(id);
+    });
+    return i >= 0 ? i : fallback;
+  };
+
   const idx = {
-    type: pickIndex(cols, ["type", "Type"]),
-    code: pickIndex(cols, ["code", "Code"]),
-    brand: pickIndex(cols, ["brand", "Brand"]),
-    models: pickIndex(cols, ["models", "Models", "model"]),
-    image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
-    updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"])
+    type: findCol(["type"], 0),
+    code: findCol(["code"], 1),
+    brand: findCol(["brand"], 2),
+    models: findCol(["models", "model"], 3),
+    image_url: findCol(["image_url", "image url", "imageurl", "img", "imgurl"], 4),
+    updated: findCol(["updated", "update", "lastupdate", "last updated"], 5)
   };
 
   return rows.map(r => {
     const c = Array.isArray(r.c) ? r.c : [];
     return {
-      type: idx.type >= 0 ? String(cellValue(c[idx.type]) || "").trim() : "",
-      code: idx.code >= 0 ? String(cellValue(c[idx.code]) || "").trim() : "",
-      brand: idx.brand >= 0 ? String(cellValue(c[idx.brand]) || "").trim() : "",
-      models: idx.models >= 0 ? String(cellValue(c[idx.models]) || "").trim() : "",
-      image_url: idx.image_url >= 0 ? String(cellValue(c[idx.image_url]) || "").trim() : "",
-      updated: idx.updated >= 0 ? String(cellValue(c[idx.updated]) || "").trim() : ""
+      type: String(cellValue(c[idx.type]) || "").trim(),
+      code: String(cellValue(c[idx.code]) || "").trim(),
+      brand: String(cellValue(c[idx.brand]) || "").trim(),
+      models: String(cellValue(c[idx.models]) || "").trim(),
+      image_url: String(cellValue(c[idx.image_url]) || "").trim(),
+      updated: String(cellValue(c[idx.updated]) || "").trim()
     };
   }).filter(r => r.code || r.brand || r.models);
 }

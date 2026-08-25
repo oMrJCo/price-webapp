@@ -450,6 +450,83 @@ async function loadSheetWithMeta(tab) {
   return { rows: products, categoryImageUrl, brandImageMap };
 }
 
+
+async function loadCompatibilitySheet(tab) {
+  const url = gvizJsonUrl(tab);
+  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch Compatibility GViz JSON");
+  const text = await res.text();
+  const json = parseGvizResponse(text);
+  const table = json?.table;
+  const cols = Array.isArray(table?.cols) ? table.cols : [];
+  const rows = Array.isArray(table?.rows) ? table.rows : [];
+
+  const idx = {
+    type: pickIndex(cols, ["type", "Type"]),
+    code: pickIndex(cols, ["code", "Code"]),
+    brand: pickIndex(cols, ["brand", "Brand"]),
+    models: pickIndex(cols, ["models", "Models", "model"]),
+    image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
+    updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"])
+  };
+
+  return rows.map(r => {
+    const c = Array.isArray(r.c) ? r.c : [];
+    return {
+      type: idx.type >= 0 ? String(cellValue(c[idx.type]) || "").trim() : "",
+      code: idx.code >= 0 ? String(cellValue(c[idx.code]) || "").trim() : "",
+      brand: idx.brand >= 0 ? String(cellValue(c[idx.brand]) || "").trim() : "",
+      models: idx.models >= 0 ? String(cellValue(c[idx.models]) || "").trim() : "",
+      image_url: idx.image_url >= 0 ? String(cellValue(c[idx.image_url]) || "").trim() : "",
+      updated: idx.updated >= 0 ? String(cellValue(c[idx.updated]) || "").trim() : ""
+    };
+  }).filter(r => r.code || r.brand || r.models);
+}
+
+function renderCompatibility(rows) {
+  const tbody = el("tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!rows.length) {
+    if (el("empty")) {
+      el("empty").style.display = "block";
+      el("empty").textContent = "ไม่พบรุ่นที่รองรับ";
+    }
+    return;
+  }
+  if (el("empty")) el("empty").style.display = "none";
+
+  let lastCode = null;
+  for (const r of rows) {
+    if (r.code !== lastCode) {
+      lastCode = r.code;
+      const group = document.createElement("tr");
+      group.className = "brandHeaderRow";
+      const typeText = r.type ? ` <span style="opacity:.55;font-weight:600;">${escapeHTML(r.type)}</span>` : "";
+      group.innerHTML = `<td colspan="2"><span class="brandHeader"><span class="dot"></span>${escapeHTML(r.code || "-")}${typeText}</span></td>`;
+      tbody.appendChild(group);
+    }
+
+    const img = normalizeImageUrl(r.image_url);
+    const thumb = img ? `<div class="thumb" tabindex="0" role="button" data-full="${escapeHTML(img)}" data-title="${escapeHTML(r.code)}"><img src="${escapeHTML(img)}" alt="" loading="lazy"></div>` : "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td colspan="2">
+        <div style="display:flex;align-items:flex-start;gap:12px;min-width:0;">
+          ${thumb}
+          <div style="min-width:0;flex:1;">
+            <div class="model" style="margin-bottom:5px;">${escapeHTML(r.brand || "-")}</div>
+            <div style="opacity:.78;line-height:1.65;overflow-wrap:anywhere;">${escapeHTML(r.models || "-")}</div>
+          </div>
+        </div>
+      </td>`;
+    const image = tr.querySelector(".thumb img");
+    if (image) image.addEventListener("error", () => image.closest(".thumb")?.remove(), {once:true});
+    tbody.appendChild(tr);
+  }
+}
+
 /* ===== render ===== */
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
@@ -542,16 +619,6 @@ function renderTable(rows, brandImageMap) {
       <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
     `;
 
-    // Product image is optional. If the URL is broken, remove only the image box
-    // and keep the product row/text intact.
-    const productImage = tr.querySelector(".thumb img");
-    if (productImage) {
-      productImage.addEventListener("error", () => {
-        const thumb = productImage.closest(".thumb");
-        if (thumb) thumb.remove();
-      }, { once: true });
-    }
-
     tbody.appendChild(tr);
   }
 }
@@ -602,6 +669,35 @@ function applyCategoryThumb(categoryImageUrl) {
 
   const meta = await loadMetaConfig();
   const categoryRecord = await loadCategoryByTab(tab);
+  const categoryType = String(categoryRecord?.categoryType || "PRICE").trim().toUpperCase();
+
+  if (categoryType === "COMPATIBILITY") {
+    const all = await loadCompatibilitySheet(tab);
+    applyCategoryThumb(normalizeImageUrl(categoryRecord?.image || categoryRecord?.image_url || ""));
+    const upd = all.find(r => r.updated)?.updated || "-";
+    el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
+
+    // Compatibility uses the same search field, but searches code + brand + every model string.
+    const tabsRoot = el("tabs");
+    if (tabsRoot) tabsRoot.style.display = "none";
+
+    const search = el("search");
+    const applyCompatibility = () => {
+      const q = String(search?.value || "").trim().toLowerCase();
+      if (!q) return renderCompatibility(all);
+      const compact = normalizeSearchCompact(q);
+      const tokens = normalizeSearchTokens(q);
+      const filtered = all.filter(r => {
+        const hay = `${r.type} ${r.code} ${r.brand} ${r.models}`.toLowerCase();
+        if (compact && normalizeSearchCompact(hay).includes(compact)) return true;
+        return tokens.length ? tokens.every(t => hay.includes(t)) : false;
+      });
+      renderCompatibility(filtered);
+    };
+    search?.addEventListener("input", applyCompatibility);
+    renderCompatibility(all);
+    return;
+  }
 
   const {
     rows: all,

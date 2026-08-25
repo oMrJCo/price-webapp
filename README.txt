@@ -1,10 +1,16 @@
-CHANGE 02 — STEP 1
-1) GitHub: วางทับ /admin/admin.js
-2) Apps Script: วาง Code.gs ทั้งไฟล์ แล้ว Deploy เวอร์ชันใหม่
-3) Backoffice > เพิ่มหมวดสินค้า จะมี 'รูปแบบรายการ'
-   - รายการราคา = PRICE
-   - รายการรุ่น / Compatibility = COMPATIBILITY
-4) หมวดเดิมถูกอ่านเป็น PRICE หากไม่มี categoryType
-5) หมวดใหม่ Compatibility จะสร้างหัว Sheet:
-   type | code | brand | models | image_url | updated
-รอบนี้ยังไม่แก้ Frontend render ของ Compatibility
+CHANGE 02 — STEP 5 Compatibility Frontend
+
+วางทับ:
+- /price_sheet.js
+- /dealer/price_sheet.js
+
+ผล:
+- categoryType=COMPATIBILITY จะอ่าน type|code|brand|models|image_url|updated
+- จัดกลุ่มตาม code
+- แสดง brand + models
+- Search ค้น type/code/brand/models ได้
+- ซ่อน Brand filter ของระบบราคาในหมวด Compatibility
+- หมวด PRICE เดิมไม่เปลี่ยน
+- Retail/Dealer Compatibility แสดงข้อมูลรุ่นเหมือนกัน (ไม่มีราคา)
+
+ยังไม่ใช่ Final UI; รอบนี้ทดสอบ data/render/search ก่อน

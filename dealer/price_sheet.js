@@ -516,19 +516,21 @@ function ensureCompatibilityStyles() {
     .compat-body{display:grid}
     .compat-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0;border-bottom:1px solid rgba(255,255,255,.055)}
     .compat-row:last-child{border-bottom:0}
-    .compat-brand{padding:10px 12px;font-size:11px;font-weight:900;color:#f3c900;background:rgba(255,255,255,.015);border-right:1px solid rgba(255,255,255,.055)}
+    .compat-brand{padding:10px 12px;font-size:13px;font-weight:950;color:#f3c900;background:rgba(255,255,255,.015);border-right:1px solid rgba(255,255,255,.055)}
     .compat-models{padding:11px 14px;font-size:15px;line-height:1.65;color:#e2e6eb;overflow-wrap:anywhere;text-align:left!important}
     .compat-image{width:48px;height:48px;border-radius:10px;background:#fff;overflow:hidden;flex:0 0 48px;border:1px solid rgba(255,255,255,.08)}
     .compat-image img{width:100%;height:100%;object-fit:contain;display:block}
     .compat-head-main{display:flex;align-items:center;gap:10px;min-width:0}
     .compat-empty{padding:22px;text-align:center;color:#7f8895;border:1px dashed rgba(255,255,255,.09);border-radius:13px;background:#0d1117}
+    .search-hit{background:rgba(243,201,0,.22);color:#ffe45e;border-radius:4px;padding:0 2px;font-weight:950}
+    .autoTagBadge{display:inline-flex;align-items:center;margin-left:7px;padding:3px 7px;border-radius:999px;background:rgba(243,201,0,.10);border:1px solid rgba(243,201,0,.28);color:#f3c900;font-size:10px;font-weight:950;vertical-align:middle}
     .compat-summary{display:none!important}
     @media(max-width:720px){
       .compat-group{border-radius:12px}
       .compat-head{padding:10px 11px}
       .compat-code{font-size:13px}
       .compat-row{grid-template-columns:92px minmax(0,1fr)}
-      .compat-brand{padding:9px 9px;font-size:10px}
+      .compat-brand{padding:9px 9px;font-size:12px}
       .compat-models{padding:10px 10px;font-size:14px;line-height:1.6;text-align:left!important}
       .compat-summary{display:none}
       .compat-image{width:42px;height:42px;flex-basis:42px}
@@ -555,7 +557,7 @@ function groupCompatibilityRows(rows) {
   return [...map.values()];
 }
 
-function renderCompatibility(rows) {
+function renderCompatibility(rows, query = "") {
   ensureCompatibilityStyles();
   const tbody = el("tbody");
   if (!tbody) return;
@@ -591,8 +593,8 @@ function renderCompatibility(rows) {
 
     const brandRows = g.rows.map(r => `
       <div class="compat-row">
-        <div class="compat-brand">${escapeHTML(r.brand || "-")}</div>
-        <div class="compat-models">${escapeHTML(r.models || "-")}</div>
+        <div class="compat-brand">${highlightHTML(r.brand || "-", query)}</div>
+        <div class="compat-models">${highlightHTML(r.models || "-", query)}</div>
       </div>
     `).join("");
 
@@ -650,6 +652,50 @@ function filterCompatibilityRows(all, query) {
 
 
 /* ===== render ===== */
+
+
+function ensureSmartModelStyles() {
+  if (document.getElementById("smartModelStyles")) return;
+  const style=document.createElement("style");
+  style.id="smartModelStyles";
+  style.textContent=`
+    .autoTagBadge{display:inline-flex;align-items:center;margin-left:7px;padding:3px 7px;border-radius:999px;background:rgba(243,201,0,.10);border:1px solid rgba(243,201,0,.28);color:#f3c900;font-size:10px;font-weight:950;vertical-align:middle}
+    .search-hit{background:rgba(243,201,0,.22);color:#ffe45e;border-radius:4px;padding:0 2px;font-weight:950}
+  `;
+  document.head.appendChild(style);
+}
+
+function escapeRegExp(s) {
+  return String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightHTML(text, query) {
+  const raw = String(text ?? "");
+  const q = String(query || "").trim();
+  if (!q) return escapeHTML(raw);
+
+  const tokens = q.split(/\s+/).filter(Boolean).sort((a,b)=>b.length-a.length);
+  if (!tokens.length) return escapeHTML(raw);
+
+  const re = new RegExp("(" + tokens.map(escapeRegExp).join("|") + ")", "ig");
+  return escapeHTML(raw).replace(re, '<mark class="search-hit">$1</mark>');
+}
+
+function formatModelWithAutoBadge(model) {
+  const raw = String(model || "").trim();
+  if (!raw) return "";
+
+  // Use the final parenthesis group as an automatic UI tag.
+  const m = raw.match(/^(.*?)(?:\s*\(([^()]+)\))\s*$/);
+  if (!m) return formatModelHTML(raw);
+
+  const name = m[1].trim();
+  const tag = m[2].trim();
+  if (!name || !tag) return formatModelHTML(raw);
+
+  return `${formatModelHTML(name)} <span class="autoTagBadge">${escapeHTML(tag)}</span>`;
+}
+
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
   if (!root) return;
@@ -735,7 +781,7 @@ function renderTable(rows, brandImageMap) {
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px; min-width:0;">
           ${thumbHtml}
-          <div class="model">${formatModelHTML(r.model)}</div>
+          <div class="model">${formatModelWithAutoBadge(r.model)}</div>
         </div>
       </td>
       <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
@@ -780,6 +826,7 @@ function applyCategoryThumb(categoryImageUrl) {
 }
 
 (async function init() {
+  ensureSmartModelStyles();
   setupImageModal();
 
   const tab = getParam("tab") || "Battery";
@@ -807,10 +854,10 @@ function applyCategoryThumb(categoryImageUrl) {
     const search = el("search");
     if (search) search.placeholder = "ค้นหารุ่น เช่น Y27 / iPhone 15 Pro / Redmi Note 13 / LP16";
     const applyCompatibility = () => {
-      renderCompatibility(filterCompatibilityRows(all, search?.value || ""));
+      renderCompatibility(filterCompatibilityRows(all, search?.value || ""), search?.value || "");
     };
     search?.addEventListener("input", applyCompatibility);
-    renderCompatibility(all);
+    renderCompatibility(all, "");
     return;
   }
 

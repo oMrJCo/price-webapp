@@ -492,7 +492,14 @@ async function loadCompatibilitySheet(tab) {
       image_url: String(cellValue(c[idx.image_url]) || "").trim(),
       updated: String(cellValue(c[idx.updated]) || "").trim()
     };
-  }).filter(r => r.code || r.brand || r.models);
+  }).filter(r => {
+    if (!(r.code || r.brand || r.models)) return false;
+    const isHeader = String(r.type).trim().toLowerCase()==="type" &&
+      String(r.code).trim().toLowerCase()==="code" &&
+      String(r.brand).trim().toLowerCase()==="brand" &&
+      ["models","model"].includes(String(r.models).trim().toLowerCase());
+    return !isHeader;
+  });
 }
 
 function ensureCompatibilityStyles() {
@@ -503,26 +510,26 @@ function ensureCompatibilityStyles() {
     .compat-wrap{display:grid;gap:10px;width:100%}
     .compat-group{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0e131b;overflow:hidden}
     .compat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;background:#121923;border-bottom:1px solid rgba(255,255,255,.07)}
-    .compat-code{display:flex;align-items:center;gap:8px;font-weight:950;color:#fff;font-size:14px}
+    .compat-code{display:flex;align-items:center;gap:8px;font-weight:950;color:#fff;font-size:15px}
     .compat-code::before{content:"";width:18px;height:4px;border-radius:999px;background:#f3c900}
-    .compat-type{font-size:10px;font-weight:800;color:#8d96a3;letter-spacing:.25px}
+    .compat-type{display:inline-flex;align-items:center;padding:3px 8px;border-radius:7px;background:rgba(243,201,0,.10);border:1px solid rgba(243,201,0,.22);font-size:10px;font-weight:900;color:#f3c900;letter-spacing:.25px}
     .compat-body{display:grid}
     .compat-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0;border-bottom:1px solid rgba(255,255,255,.055)}
     .compat-row:last-child{border-bottom:0}
     .compat-brand{padding:10px 12px;font-size:11px;font-weight:900;color:#f3c900;background:rgba(255,255,255,.015);border-right:1px solid rgba(255,255,255,.055)}
-    .compat-models{padding:10px 14px;font-size:12px;line-height:1.65;color:#d5dae1;overflow-wrap:anywhere}
+    .compat-models{padding:11px 14px;font-size:15px;line-height:1.65;color:#e2e6eb;overflow-wrap:anywhere;text-align:left!important}
     .compat-image{width:48px;height:48px;border-radius:10px;background:#fff;overflow:hidden;flex:0 0 48px;border:1px solid rgba(255,255,255,.08)}
     .compat-image img{width:100%;height:100%;object-fit:contain;display:block}
     .compat-head-main{display:flex;align-items:center;gap:10px;min-width:0}
     .compat-empty{padding:22px;text-align:center;color:#7f8895;border:1px dashed rgba(255,255,255,.09);border-radius:13px;background:#0d1117}
-    .compat-summary{font-size:9px;color:#6f7884;white-space:nowrap}
+    .compat-summary{display:none!important}
     @media(max-width:720px){
       .compat-group{border-radius:12px}
       .compat-head{padding:10px 11px}
       .compat-code{font-size:13px}
       .compat-row{grid-template-columns:92px minmax(0,1fr)}
       .compat-brand{padding:9px 9px;font-size:10px}
-      .compat-models{padding:9px 10px;font-size:11px;line-height:1.55}
+      .compat-models{padding:10px 10px;font-size:14px;line-height:1.6;text-align:left!important}
       .compat-summary{display:none}
       .compat-image{width:42px;height:42px;flex-basis:42px}
     }
@@ -594,12 +601,8 @@ function renderCompatibility(rows) {
         <div class="compat-head">
           <div class="compat-head-main">
             ${imageHtml}
-            <div>
-              <div class="compat-code">${escapeHTML(g.code)}</div>
-              ${g.type ? `<div class="compat-type">${escapeHTML(g.type)}</div>` : ""}
-            </div>
+            <div class="compat-code">${escapeHTML(g.code)}${g.type ? `<span class="compat-type">${escapeHTML(g.type)}</span>` : ""}</div>
           </div>
-          <div class="compat-summary">${g.rows.length} BRAND${g.rows.length>1?"S":""}</div>
         </div>
         <div class="compat-body">${brandRows}</div>
       </div>`;

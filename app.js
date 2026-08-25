@@ -1,3 +1,14 @@
+
+(function(){
+  if(document.getElementById("dynamicContactFrontStyle"))return;
+  const st=document.createElement("style");st.id="dynamicContactFrontStyle";st.textContent=`
+    .dynamic-contact-icon{overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+    .dynamic-contact-icon img{width:72%;height:72%;object-fit:contain;display:block}
+    .dynamic-contact-card{transition:transform .18s ease,filter .18s ease}
+    .dynamic-contact-card:hover{transform:translateY(-2px);filter:brightness(1.08)}
+  `;document.head.appendChild(st);
+})();
+
 document.addEventListener("DOMContentLoaded", async () => {
   const grid = document.getElementById("categoriesGrid");
 
@@ -128,6 +139,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         facebookEnabled: String(siteMeta.facebookEnabled || "TRUE").toUpperCase() !== "FALSE",
         phone: siteMeta.phone || "",
         phoneEnabled: String(siteMeta.phoneEnabled || "TRUE").toUpperCase() !== "FALSE",
+        contacts:(()=>{
+          try{
+            const raw=siteMeta.contacts;
+            const a=Array.isArray(raw)?raw:(raw?JSON.parse(raw):[]);
+            return Array.isArray(a)?a:[];
+          }catch(_){return []}
+        })(),
         logoUrl: siteMeta.logoUrl || "",
         categories,
       };
@@ -154,42 +172,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     const contactBar=document.getElementById("contactBar");
+    const normalizeContactHref=(c)=>{
+      const raw=String(c?.url||"").trim();
+      if(!raw)return "";
+      if(String(c?.actionType||"URL").toUpperCase()==="TEL"){
+        return "tel:"+raw.replace(/[^0-9+]/g,"");
+      }
+      return raw;
+    };
+    const legacyContacts=()=>{
+      const a=[];
+      if(data.lineEnabled&&data.lineUrl)a.push({name:"LINE",subtext:"สอบถามผ่านแชท",url:data.lineUrl,actionType:"URL",accent:"#06C755",enabled:true,showCard:true,showBottom:true,sort:1});
+      if(data.facebookEnabled&&data.facebookUrl)a.push({name:"Facebook",subtext:"ติดตามข่าวสาร",url:data.facebookUrl,actionType:"URL",accent:"#1877F2",enabled:true,showCard:true,showBottom:false,sort:2});
+      if(data.phoneEnabled&&data.phone)a.push({name:"โทร "+data.phone,subtext:"แตะเพื่อโทรออก",url:data.phone,actionType:"TEL",accent:"#F3C900",enabled:true,showCard:true,showBottom:false,sort:3});
+      return a;
+    };
+    const contacts=(Array.isArray(data.contacts)&&data.contacts.length?data.contacts:legacyContacts())
+      .map((c,i)=>({...c,sort:Number(c.sort||i+1)}))
+      .filter(c=>String(c.enabled??"TRUE").toUpperCase()!=="FALSE")
+      .sort((a,b)=>a.sort-b.sort);
+
     if(contactBar){
       const cards=[];
+      cards.push(`<div class="contact-intro"><span class="contact-icon support-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1v-6Z"/><path d="M20 13h-2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1"/><path d="M19 20c0 1-1 2-3 2h-2"/></svg></span><span><b>ติดต่อเรา</b><small>พร้อมดูแลคุณ</small></span></div>`);
 
-      const headsetIcon=`<span class="contact-icon support-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1v-6Z"/><path d="M20 13h-2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1"/><path d="M19 20c0 1-1 2-3 2h-2"/></svg>
-      </span>`;
-
-      cards.push(`<div class="contact-intro">${headsetIcon}<span><b>ติดต่อเรา</b><small>พร้อมดูแลคุณ</small></span></div>`);
-
-      if(data.lineEnabled && data.lineUrl){
-        cards.push(`<a class="contact-card contact-line" href="${data.lineUrl}" target="_blank" rel="noopener">
-          <span class="contact-icon line-logo"><span>LINE</span></span>
-          <span class="contact-copy"><b>LINE</b><small>สอบถามผ่านแชท</small></span>
-          <span class="contact-arrow">›</span>
-        </a>`);
-      }
-
-      if(data.facebookEnabled && data.facebookUrl){
-        cards.push(`<a class="contact-card contact-facebook" href="${data.facebookUrl}" target="_blank" rel="noopener">
-          <span class="contact-icon facebook-logo">f</span>
-          <span class="contact-copy"><b>Facebook</b><small>ติดตามข่าวสาร</small></span>
-          <span class="contact-arrow">›</span>
-        </a>`);
-      }
-
-      if(data.phoneEnabled && data.phone){
-        const phoneText=String(data.phone).trim();
-        cards.push(`<a class="contact-card contact-phone" href="tel:${phoneText.replace(/[^0-9+]/g,"")}">
-          <span class="contact-icon phone-logo" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M7.2 3.5 5.1 5.6c-.8.8-.9 2-.4 3 2.1 4.4 5.4 7.7 9.8 9.8 1 .5 2.2.4 3-.4l2.1-2.1c.5-.5.6-1.2.2-1.8l-2-3c-.4-.6-1.2-.8-1.8-.4l-1.7 1c-.5.3-1.1.2-1.5-.2l-2.3-2.3c-.4-.4-.5-1-.2-1.5l1-1.7c.4-.6.2-1.4-.4-1.8l-3-2c-.6-.4-1.3-.3-1.8.2Z"/></svg>
-          </span>
-          <span class="contact-copy"><b>โทร ${phoneText}</b><small>แตะเพื่อโทรออก</small></span>
-          <span class="contact-arrow">›</span>
-        </a>`);
-      }
-
+      contacts.filter(c=>String(c.showCard??"TRUE").toUpperCase()!=="FALSE").forEach(c=>{
+        const href=normalizeContactHref(c);if(!href)return;
+        const accent=/^#[0-9a-f]{6}$/i.test(String(c.accent||""))?c.accent:"#F3C900";
+        const icon=String(c.icon||"").trim();
+        const iconHtml=icon?`<span class="contact-icon dynamic-contact-icon" style="border-color:${accent}33;background:${accent}14"><img src="${icon}" alt="" onerror="this.closest('.contact-icon').style.display='none'"></span>`:`<span class="contact-icon dynamic-contact-icon" style="color:${accent};border-color:${accent}55;background:${accent}12">●</span>`;
+        cards.push(`<a class="contact-card dynamic-contact-card" style="border-color:${accent}66;background:linear-gradient(135deg,${accent}18,transparent 58%),#101720" href="${href}" ${String(c.actionType||"URL").toUpperCase()==="TEL"?"":'target="_blank" rel="noopener"'}>${iconHtml}<span class="contact-copy"><b>${String(c.name||"")}</b><small>${String(c.subtext||"")}</small></span><span class="contact-arrow" style="color:${accent}">›</span></a>`);
+      });
       contactBar.innerHTML=cards.join("");
       contactBar.style.display=cards.length>1?"grid":"none";
     }
@@ -393,20 +406,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const lineSticky = document.getElementById("lineSticky");
-    const stickyEnabled =
-      typeof data.lineStickyEnabled === "boolean"
-        ? data.lineStickyEnabled
-        : true;
-    const stickyText =
-      String(data.lineCtaText || "").trim() ||
-      "💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที";
-
-    if (lineSticky) {
-      if (!stickyEnabled) {
-        lineSticky.style.display = "none";
-      } else {
-        lineSticky.textContent = stickyText;
-        if (data.lineUrl) lineSticky.href = data.lineUrl;
+    if(lineSticky){
+      const bottom=contacts.find(c=>String(c.showBottom??"FALSE").toUpperCase()==="TRUE");
+      if(!bottom){
+        lineSticky.style.display="none";
+      }else{
+        const href=normalizeContactHref(bottom);
+        const accent=/^#[0-9a-f]{6}$/i.test(String(bottom.accent||""))?bottom.accent:"#06C755";
+        const icon=String(bottom.icon||"").trim();
+        lineSticky.innerHTML=`${icon?`<img src="${icon}" alt="" style="width:20px;height:20px;object-fit:contain;border-radius:5px" onerror="this.remove()">`:""}<span>${String(bottom.name||"")}${bottom.subtext?" · "+String(bottom.subtext):""}</span>`;
+        lineSticky.href=href||"#";
+        lineSticky.style.display=href?"flex":"none";
+        lineSticky.style.background=accent;
+        lineSticky.style.alignItems="center";
+        lineSticky.style.justifyContent="center";
+        lineSticky.style.gap="8px";
       }
     }
 

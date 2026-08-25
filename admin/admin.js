@@ -337,15 +337,124 @@ async function saveSiteSettings(){
     phone:document.querySelector("#settingPhone")?.value.trim()||"",
     phoneEnabled:document.querySelector("#settingPhoneEnabled")?.checked?"TRUE":"FALSE",
     dealerCode:document.querySelector("#settingDealerCode")?.value.trim()||"",
-    logoUrl:document.querySelector("#settingLogoUrl")?.value.trim()||""
+    logoUrl:document.querySelector("#settingLogoUrl")?.value.trim()||"",
+    contacts:JSON.stringify(collectContactRows())
   });
 }
+
+function defaultContactItems(s){
+  if(Array.isArray(s?.contacts) && s.contacts.length) return s.contacts.map((x,i)=>({
+    id:String(x.id||("contact_"+Date.now()+"_"+i)),
+    name:String(x.name||""),
+    subtext:String(x.subtext||""),
+    url:String(x.url||""),
+    actionType:String(x.actionType||"URL").toUpperCase()==="TEL"?"TEL":"URL",
+    icon:String(x.icon||""),
+    accent:String(x.accent||"#F3C900"),
+    enabled:String(x.enabled??"TRUE").toUpperCase()!=="FALSE",
+    showCard:String(x.showCard??"TRUE").toUpperCase()!=="FALSE",
+    showBottom:String(x.showBottom??"FALSE").toUpperCase()==="TRUE",
+    sort:Number(x.sort||i+1)
+  })).sort((a,b)=>a.sort-b.sort);
+
+  const legacy=[];
+  if(s?.lineUrl) legacy.push({id:"line",name:"LINE",subtext:"สอบถามผ่านแชท",url:s.lineUrl,actionType:"URL",icon:"",accent:"#06C755",enabled:String(s.lineEnabled??"TRUE").toUpperCase()!=="FALSE",showCard:true,showBottom:true,sort:1});
+  if(s?.facebookUrl) legacy.push({id:"facebook",name:"Facebook",subtext:"ติดตามข่าวสาร",url:s.facebookUrl,actionType:"URL",icon:"",accent:"#1877F2",enabled:String(s.facebookEnabled??"TRUE").toUpperCase()!=="FALSE",showCard:true,showBottom:false,sort:2});
+  if(s?.phone) legacy.push({id:"phone",name:"โทร "+s.phone,subtext:"แตะเพื่อโทรออก",url:s.phone,actionType:"TEL",icon:"",accent:"#F3C900",enabled:String(s.phoneEnabled??"TRUE").toUpperCase()!=="FALSE",showCard:true,showBottom:false,sort:3});
+  return legacy;
+}
+let contactItems=[];
+
+function contactRowHtml(c,index){
+  return `<div class="contact-admin-item" data-contact-index="${index}">
+    <div class="contact-admin-top">
+      <div class="contact-admin-icon-preview">${c.icon?`<img src="${esc(c.icon)}" onerror="this.remove()">`:`<span>${index+1}</span>`}</div>
+      <div class="contact-admin-title"><b>${esc(c.name||"ช่องทางใหม่")}</b><small>ลำดับ ${index+1}</small></div>
+      <button type="button" class="danger contact-remove" data-index="${index}">ลบ</button>
+    </div>
+    <div class="contact-admin-grid">
+      <label><span>ชื่อช่องทาง</span><input class="contact-name" value="${esc(c.name||"")}" placeholder="LINE / Facebook / โทร / WhatsApp"></label>
+      <label><span>ข้อความรอง</span><input class="contact-subtext" value="${esc(c.subtext||"")}" placeholder="สอบถามผ่านแชท"></label>
+      <label><span>ประเภท Action</span><select class="contact-action"><option value="URL" ${c.actionType!=="TEL"?"selected":""}>เปิดลิงก์</option><option value="TEL" ${c.actionType==="TEL"?"selected":""}>โทรศัพท์</option></select></label>
+      <label><span>ลิงก์ / เบอร์โทร</span><input class="contact-url" value="${esc(c.url||"")}" placeholder="https://... หรือ 097..."></label>
+      <label><span>สี Accent</span><input class="contact-accent" type="color" value="${/^#[0-9a-f]{6}$/i.test(c.accent||"")?esc(c.accent):"#F3C900"}"></label>
+      <label><span>ลำดับ</span><input class="contact-sort" type="number" min="1" value="${Number(c.sort||index+1)}"></label>
+      <label class="contact-icon-field"><span>Icon</span><div class="upload-field"><input class="contact-icon-url" value="${esc(c.icon||"")}" placeholder="URL รูป Icon"><button type="button" class="secondary contact-icon-upload" data-index="${index}">อัปโหลด Icon</button><input class="contact-icon-file file-hidden" data-index="${index}" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"></div></label>
+      <div class="contact-flags">
+        <label><input class="contact-enabled" type="checkbox" ${c.enabled!==false?"checked":""}> เปิดใช้งาน</label>
+        <label><input class="contact-show-card" type="checkbox" ${c.showCard!==false?"checked":""}> แสดง Contact Card</label>
+        <label><input class="contact-show-bottom" type="checkbox" ${c.showBottom===true?"checked":""}> แสดงแถบด้านล่าง</label>
+      </div>
+    </div>
+  </div>`;
+}
+function renderContactManager(){
+  const box=document.querySelector("#contactManagerRows");
+  if(!box)return;
+  contactItems.sort((a,b)=>Number(a.sort||999)-Number(b.sort||999));
+  box.innerHTML=contactItems.length?contactItems.map(contactRowHtml).join(""):'<div class="empty">ยังไม่มีช่องทางติดต่อ</div>';
+  bindContactManager();
+}
+function collectContactRows(){
+  const rows=[...document.querySelectorAll(".contact-admin-item")];
+  return rows.map((row,i)=>({
+    id:contactItems[i]?.id||("contact_"+Date.now()+"_"+i),
+    name:row.querySelector(".contact-name")?.value.trim()||"",
+    subtext:row.querySelector(".contact-subtext")?.value.trim()||"",
+    actionType:row.querySelector(".contact-action")?.value||"URL",
+    url:row.querySelector(".contact-url")?.value.trim()||"",
+    icon:row.querySelector(".contact-icon-url")?.value.trim()||"",
+    accent:row.querySelector(".contact-accent")?.value||"#F3C900",
+    enabled:!!row.querySelector(".contact-enabled")?.checked,
+    showCard:!!row.querySelector(".contact-show-card")?.checked,
+    showBottom:!!row.querySelector(".contact-show-bottom")?.checked,
+    sort:Number(row.querySelector(".contact-sort")?.value||i+1)
+  })).filter(x=>x.name);
+}
+function syncContactItemsFromDom(){contactItems=collectContactRows()}
+function bindContactManager(){
+  document.querySelectorAll(".contact-remove").forEach(b=>b.onclick=()=>{
+    syncContactItemsFromDom();contactItems.splice(Number(b.dataset.index),1);contactItems.forEach((x,i)=>x.sort=i+1);renderContactManager();
+  });
+  document.querySelectorAll(".contact-icon-upload").forEach(b=>b.onclick=()=>document.querySelector(`.contact-icon-file[data-index="${b.dataset.index}"]`)?.click());
+  document.querySelectorAll(".contact-icon-file").forEach(inp=>inp.onchange=async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const idx=Number(inp.dataset.index),btn=document.querySelector(`.contact-icon-upload[data-index="${idx}"]`);
+    if(btn)btn.disabled=true;
+    try{
+      const r=await uploadFile(file,"image");
+      const row=document.querySelector(`.contact-admin-item[data-contact-index="${idx}"]`);
+      if(row){row.querySelector(".contact-icon-url").value=r.url;const pv=row.querySelector(".contact-admin-icon-preview");pv.innerHTML=`<img src="${esc(r.url)}">`;}
+    }catch(err){alert("อัปโหลด Icon ไม่สำเร็จ: "+err.message)}
+    finally{if(btn)btn.disabled=false;e.target.value=""}
+  });
+}
+
+
+(function(){
+  if(document.getElementById("dynamicContactAdminStyle"))return;
+  const st=document.createElement("style");st.id="dynamicContactAdminStyle";st.textContent=`
+    .contact-manager-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+    .contact-admin-item{border:1px solid #e4e4e4;border-radius:14px;padding:14px;margin:10px 0;background:#fafafa}
+    .contact-admin-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .contact-admin-icon-preview{width:44px;height:44px;border-radius:12px;background:#111;display:grid;place-items:center;overflow:hidden;color:#f3c900;font-weight:900}
+    .contact-admin-icon-preview img{width:100%;height:100%;object-fit:contain}
+    .contact-admin-title{display:flex;flex-direction:column;flex:1}.contact-admin-title small{color:#888}
+    .contact-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .contact-admin-grid label>span{display:block;font-size:11px;font-weight:800;margin-bottom:5px}
+    .contact-icon-field{grid-column:span 2}.contact-flags{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .contact-flags label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800}
+    @media(max-width:900px){.contact-admin-grid{grid-template-columns:1fr}.contact-icon-field{grid-column:auto}.contact-manager-head{flex-direction:column}}
+  `;document.head.appendChild(st);
+})();
+
 async function renderSettingsView(){
   title.textContent='ตั้งค่าเว็บไซต์';
   subtitle.textContent='ช่องทางติดต่อและการเข้าถึงราคาตัวแทนจำหน่าย';
   content.innerHTML='<div class="panel"><div class="empty">กำลังโหลดการตั้งค่า...</div></div>';
   await loadSiteSettings();
   const s=siteSettings||{};
+  contactItems=defaultContactItems(s);
   content.innerHTML=`
     <div class="settings-grid">
       <div class="panel settings-card">
@@ -361,12 +470,12 @@ async function renderSettingsView(){
           </div>
         </div>
       </div>
-      <div class="panel settings-card">
-        <h2>ช่องทางการติดต่อ</h2>
-        <div class="settings-note">ถ้าเปิดใช้งาน ช่องทางนั้นจะขึ้นทั้งหน้าปกติและหน้าตัวแทนจำหน่าย</div>
-        <label class="setting-row"><span><b>LINE</b><small>LINE URL</small></span><input id="settingLine" value="${esc(s.lineUrl||"")}" placeholder="https://line.me/..."><input id="settingLineEnabled" type="checkbox" ${String(s.lineEnabled??"TRUE").toUpperCase()!=="FALSE"?"checked":""}></label>
-        <label class="setting-row"><span><b>Facebook</b><small>Page / Profile URL</small></span><input id="settingFacebook" value="${esc(s.facebookUrl||"")}" placeholder="https://facebook.com/..."><input id="settingFacebookEnabled" type="checkbox" ${String(s.facebookEnabled??"TRUE").toUpperCase()!=="FALSE"?"checked":""}></label>
-        <label class="setting-row"><span><b>เบอร์โทร</b><small>เบอร์ที่ต้องการแสดง</small></span><input id="settingPhone" value="${esc(s.phone||"")}" placeholder="08x-xxx-xxxx"><input id="settingPhoneEnabled" type="checkbox" ${String(s.phoneEnabled??"TRUE").toUpperCase()!=="FALSE"?"checked":""}></label>
+      <div class="panel settings-card dynamic-contact-panel">
+        <div class="contact-manager-head">
+          <div><h2>ช่องทางการติดต่อ</h2><div class="settings-note">เพิ่ม/ลบช่องทางเองได้ · Icon อัปโหลดเอง · ใช้ข้อมูลชุดเดียวกับ Contact Cards และแถบด้านล่าง</div></div>
+          <button type="button" class="primary" id="addContactBtn">+ เพิ่มช่องทาง</button>
+        </div>
+        <div id="contactManagerRows"></div>
       </div>
       <div class="panel settings-card">
         <h2>ราคาตัวแทนจำหน่าย</h2>
@@ -375,6 +484,12 @@ async function renderSettingsView(){
       </div>
     </div>
     <div class="settings-save"><button class="primary" id="saveSettingsBtn">บันทึกการตั้งค่า</button><span id="settingsMsg" class="media-msg"></span></div>`;
+  renderContactManager();
+  document.querySelector("#addContactBtn")?.addEventListener("click",()=>{
+    syncContactItemsFromDom();
+    contactItems.push({id:"contact_"+Date.now(),name:"",subtext:"",url:"",actionType:"URL",icon:"",accent:"#F3C900",enabled:true,showCard:true,showBottom:false,sort:contactItems.length+1});
+    renderContactManager();
+  });
   document.querySelector("#uploadSiteLogoBtn")?.addEventListener("click",()=>document.querySelector("#siteLogoFile")?.click());
   document.querySelector("#siteLogoFile")?.addEventListener("change",async e=>{
     const file=e.target.files?.[0]; if(!file)return;
@@ -434,7 +549,6 @@ async function saveCategory(payload){
     row:payload.__row||"",
     titleTH:payload.titleTH||"",
     titleEN:payload.titleEN||"",
-    categoryType:payload.categoryType||"PRICE",
     sheetTab:payload.sheetTab||"",
     status:payload.status||"ACTIVE",
     dealerEnabled:payload.dealerEnabled||"TRUE",
@@ -505,13 +619,6 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div class="form-grid">
       <label>ชื่อหมวดภาษาไทย<input id="catTH" required></label>
       <label>ชื่อหมวดภาษาอังกฤษ<input id="catEN"></label>
-      <label>รูปแบบรายการ
-        <select id="catType">
-          <option value="PRICE">รายการราคา</option>
-          <option value="COMPATIBILITY">รายการรุ่น / Compatibility</option>
-        </select>
-        <small class="field-note">หมวดใหม่จะสร้าง Google Sheet ตามรูปแบบที่เลือก</small>
-      </label>
       <label id="catTabField">Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option></select><small class="field-note">ใช้สำหรับสลับหมวดเดิมไปยัง Sheet Tab อื่น</small></label>
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label><label>หน้าตัวแทนจำหน่าย<select id="catDealerEnabled"><option value="TRUE">แสดงราคาตัวแทน</option><option value="FALSE">ซ่อนจากหน้าตัวแทน</option></select><small class="field-note">ถ้าปิด Card หมวดนี้จะไม่แสดงในหน้า Dealer</small></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
@@ -653,10 +760,6 @@ async function openCategoryModal(x=null){
   document.querySelector("#catRow").value=x?.__row||"";
   document.querySelector("#catTH").value=x?.titleTH||"";
   document.querySelector("#catEN").value=x?.titleEN||"";
-  const catTypeEl=document.querySelector("#catType");
-  catTypeEl.value=String(x?.categoryType||"PRICE").toUpperCase()==="COMPATIBILITY"?"COMPATIBILITY":"PRICE";
-  // Existing categories are locked to their stored structure. New categories can choose the structure.
-  catTypeEl.disabled=!!x?.__row;
   const tabField=document.querySelector("#catTabField"), tabSelect=document.querySelector("#catTab");
   if(x){
     tabField.classList.remove("hidden");
@@ -704,7 +807,6 @@ async function openCategoryModal(x=null){
         __row:document.querySelector("#catRow").value,
         titleTH:document.querySelector("#catTH").value.trim(),
         titleEN:document.querySelector("#catEN").value.trim(),
-        categoryType:document.querySelector("#catType").value,
         sheetTab:tab,
         status:document.querySelector("#catStatus").value,
         dealerEnabled:document.querySelector("#catDealerEnabled").value,

@@ -434,6 +434,7 @@ async function saveCategory(payload){
     row:payload.__row||"",
     titleTH:payload.titleTH||"",
     titleEN:payload.titleEN||"",
+    categoryType:payload.categoryType||"PRICE",
     sheetTab:payload.sheetTab||"",
     status:payload.status||"ACTIVE",
     dealerEnabled:payload.dealerEnabled||"TRUE",
@@ -504,6 +505,13 @@ const views={dashboard(){title.textContent='ภาพรวม';subtitle.textCon
     <div class="form-grid">
       <label>ชื่อหมวดภาษาไทย<input id="catTH" required></label>
       <label>ชื่อหมวดภาษาอังกฤษ<input id="catEN"></label>
+      <label>รูปแบบรายการ
+        <select id="catType">
+          <option value="PRICE">รายการราคา</option>
+          <option value="COMPATIBILITY">รายการรุ่น / Compatibility</option>
+        </select>
+        <small class="field-note">หมวดใหม่จะสร้าง Google Sheet ตามรูปแบบที่เลือก</small>
+      </label>
       <label id="catTabField">Google Sheet Tab<select id="catTab"><option value="">-- ยังไม่เชื่อม --</option></select><small class="field-note">ใช้สำหรับสลับหมวดเดิมไปยัง Sheet Tab อื่น</small></label>
       <label>สถานะ<select id="catStatus"><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select></label><label>หน้าตัวแทนจำหน่าย<select id="catDealerEnabled"><option value="TRUE">แสดงราคาตัวแทน</option><option value="FALSE">ซ่อนจากหน้าตัวแทน</option></select><small class="field-note">ถ้าปิด Card หมวดนี้จะไม่แสดงในหน้า Dealer</small></label>
       <label>ลำดับ<input id="catSort" type="number" min="1"></label>
@@ -645,6 +653,10 @@ async function openCategoryModal(x=null){
   document.querySelector("#catRow").value=x?.__row||"";
   document.querySelector("#catTH").value=x?.titleTH||"";
   document.querySelector("#catEN").value=x?.titleEN||"";
+  const catTypeEl=document.querySelector("#catType");
+  catTypeEl.value=String(x?.categoryType||"PRICE").toUpperCase()==="COMPATIBILITY"?"COMPATIBILITY":"PRICE";
+  // Existing categories are locked to their stored structure. New categories can choose the structure.
+  catTypeEl.disabled=!!x?.__row;
   const tabField=document.querySelector("#catTabField"), tabSelect=document.querySelector("#catTab");
   if(x){
     tabField.classList.remove("hidden");
@@ -692,6 +704,7 @@ async function openCategoryModal(x=null){
         __row:document.querySelector("#catRow").value,
         titleTH:document.querySelector("#catTH").value.trim(),
         titleEN:document.querySelector("#catEN").value.trim(),
+        categoryType:document.querySelector("#catType").value,
         sheetTab:tab,
         status:document.querySelector("#catStatus").value,
         dealerEnabled:document.querySelector("#catDealerEnabled").value,

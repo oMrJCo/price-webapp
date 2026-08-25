@@ -466,6 +466,16 @@ function renderTable(rows, brandImageMap) {
       </td>
       <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
     `;
+    // Product image is optional. If the URL is broken, remove only the image box
+    // and keep the product row/text intact.
+    const productImage = tr.querySelector(".thumb img");
+    if (productImage) {
+      productImage.addEventListener("error", () => {
+        const thumb = productImage.closest(".thumb");
+        if (thumb) thumb.remove();
+      }, { once: true });
+    }
+
     tbody.appendChild(tr);
   }
 }

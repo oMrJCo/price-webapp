@@ -1,19 +1,17 @@
-PHASE 7B — NEW CATEGORY IMAGE FIX
+CHANGE 01 — PRODUCT IMAGE PER ROW
 
-วางทับ GitHub แค่:
+วางทับ GitHub:
 - /price_sheet.js
 - /dealer/price_sheet.js
 
-ไม่ต้องแก้ Code.gs
-ไม่ต้อง Deploy Apps Script
-ไม่แตะ UI / ราคา / PDF / Backoffice
+โครง Sheet เดิมรองรับ image_url รายสินค้าอยู่แล้ว:
+brand | model | price | dealer_price | image_url
 
-สาเหตุ:
-- หน้าใบราคาเดิมหารูปหมวดจาก meta.category หรือ legacy __CATEGORY_IMAGE__
-- หมวดที่สร้างใหม่เก็บรูปไว้ใน categories.image จึงไม่มีรูปในหน้า Price Sheet
+พฤติกรรม:
+- image_url มีค่าและโหลดได้ = แสดงรูปสินค้าหน้ารายการ
+- image_url ว่าง = ไม่สร้างกรอบรูป
+- image_url เสีย/โหลดไม่ได้ = ลบกรอบรูปอัตโนมัติ เหลือข้อความสินค้า
+- Retail / Dealer ใช้รูปเดียวกัน
+- ไม่แตะราคา, PDF, Brand, Category Image หรือ Backoffice
 
-แก้:
-- Retail + Dealer อ่าน categories API
-- จับหมวดด้วย sheetTab
-- ใช้ categories.image เป็นแหล่งรูปหลัก
-- ถ้าไม่มี จึง fallback ไป meta / legacy เดิม
+รอบนี้ยังไม่ทำ Compatibility (Change 02)

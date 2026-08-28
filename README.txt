@@ -1,26 +1,19 @@
-LEEPLUS CHANGE 04.1 — FINAL PERFORMANCE & POLISH
+LEEPLUS FINAL CLEANUP — REMOVE LEGACY PRICE VIEWER
 
-GitHub วางทับ:
-- /admin/admin.js
+1) วางทับ GitHub:
 - /app.js
 - /dealer/app.js
 
-Code.gs:
-- แนบไว้เป็น backup
-- ถ้า Change04 Deploy แล้ว ไม่ต้อง Deploy Apps Script ใหม่
+2) รอ GitHub Pages อัปเดต แล้ว Ctrl+F5
 
-สิ่งที่จบในรอบนี้:
-- Backoffice ไม่สแกนทุก Sheet ตอนเปิด
-- Dashboard ใช้ cache และคำนวณหนักเฉพาะตอนกด Refresh
-- โหลด Sheet Tabs แบบ lazy
-- เปลี่ยนเมนูระหว่าง Refresh แล้วไม่ repaint ทับหน้าอื่น
-- วันที่ Dashboard อ่านง่าย
-- Contact checkbox/label ไม่แตกบรรทัด
-- Contact Desktop ย่ออัตโนมัติแถวเดียว / Mobile 2 columns
-- ไม่มี Icon ไม่สร้างวงกลมเปล่า
+3) ทดสอบ Retail + Dealer เปิดหมวดสินค้า 1-2 หมวด
 
-หลังลง:
-1. Ctrl+F5
-2. สลับเมนู 5-6 ครั้ง ต้องเปิดเร็วขึ้น
-3. กลับ Dashboard จะขึ้น cache/ข้อมูลพื้นฐานทันที
-4. กด Refresh Dashboard 1 ครั้งเมื่อต้องการตัวเลขล่าสุด
+4) ถ้าปกติ ลบได้:
+- /price.html
+- /price.js
+
+ผล:
+- ถอด dependency ของ Legacy Price Viewer แล้ว
+- หมวดที่ใช้ sheetTab ยังเปิด price_sheet.html เหมือนเดิม
+- fallback หมวดเก่าที่มี PDF แต่ไม่มี Sheet จะเปิด PDF โดยตรง
+- ไม่แตะ price_sheet.html / price_sheet.js

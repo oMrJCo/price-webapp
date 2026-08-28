@@ -455,12 +455,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           return renderCard({ title, item, href: priceUrl });
         }
 
-        const pdf = item.pdf || item.pdf_file || "";
-        const pdfHref = `${GH_BASE}price.html?title=${encodeURIComponent(
-          title
-        )}&pdf=${encodeURIComponent(pdf)}`;
-
-        return renderCard({ title, item, href: pdfHref });
+        // Legacy PDF fallback now opens the PDF directly.
+        const pdf = normalizeMaybeRelativeUrl(item.pdf || item.pdf_file || item.pdf_url || "");
+        return renderCard({ title, item, href: pdf || "#" });
       })
       .join("");
 

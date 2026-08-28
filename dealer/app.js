@@ -6,8 +6,8 @@
     .dynamic-contact-icon img{width:72%;height:72%;object-fit:contain;display:block}
     .dynamic-contact-card{transition:transform .18s ease,filter .18s ease}
     .dynamic-contact-card:hover{transform:translateY(-2px);filter:brightness(1.08)}
-    #contactBar{grid-template-columns:repeat(var(--contact-count,4),minmax(0,1fr))!important;gap:10px!important}
-    #contactBar .contact-intro,#contactBar .contact-card{min-width:0!important}
+    #contactBar{grid-template-columns:repeat(var(--contact-count,4),minmax(0,1fr))!important;gap:8px!important}
+    #contactBar .contact-intro,#contactBar .contact-card{min-width:0!important;padding-left:12px!important;padding-right:12px!important}
     #contactBar .contact-copy{min-width:0}
     #contactBar .contact-copy b,#contactBar .contact-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     @media(max-width:760px){

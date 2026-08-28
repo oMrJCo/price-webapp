@@ -1,3 +1,10 @@
+(function(){if(document.getElementById("contactPolish041"))return;const st=document.createElement("style");st.id="contactPolish041";st.textContent=`
+.contact-flags{display:flex!important;align-items:center!important;gap:18px!important;flex-wrap:nowrap!important;white-space:nowrap!important}
+.contact-flags label{display:inline-flex!important;align-items:center!important;gap:6px!important;font-size:11px!important;font-weight:800!important;line-height:1.2!important;white-space:nowrap!important}
+.contact-flags input[type="checkbox"]{width:15px!important;height:15px!important;flex:0 0 15px!important}
+.contact-admin-grid label>span{white-space:nowrap!important}
+@media(max-width:1100px){.contact-flags{flex-wrap:wrap!important}}
+`;document.head.appendChild(st)})();
 
 (function(){
   if(document.getElementById("backofficeSmartUI"))return;
@@ -626,6 +633,7 @@ async function deleteCategoryRow(row){
 
 
 async function loadSheetTabs(){
+  if(sheetLoadState==="loading"||sheetLoadState==="ok")return;
   sheetLoadState="loading";
   try{
     const r=await fetch(`${SHEET_API}?action=tabs&t=${Date.now()}`,{cache:"no-store"});
@@ -667,87 +675,122 @@ function sheetRows(){
 }
 
 const content=document.querySelector('#content'), title=document.querySelector('#title'), subtitle=document.querySelector('#subtitle');let db={categories:[]};
-async function load(){await Promise.all([loadSheetTabs(),loadCategoryApi(),(async()=>{try{const r=await fetch('../categories.json?ts='+Date.now());db=await r.json()}catch(e){console.error(e)}})()]);render('dashboard')}
+async function load(){await Promise.all([loadCategoryApi(),(async()=>{try{const r=await fetch('../categories.json?ts='+Date.now());db=await r.json()}catch(e){console.error(e)}})()]);sheetLoadState="idle";render('dashboard')}
 function cats(){return db.categories||[]}
 
-async function loadDashboardLive(){
+const DASHBOARD_CACHE_KEY="leeplus_bo_dashboard_v1";
+let dashboardRunId=0;
+
+function readDashboardCache(){
+  try{
+    const raw=localStorage.getItem(DASHBOARD_CACHE_KEY);
+    if(!raw)return null;
+    const obj=JSON.parse(raw);
+    return obj&&obj.data?obj:null;
+  }catch(_){return null}
+}
+function writeDashboardCache(data){
+  try{localStorage.setItem(DASHBOARD_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data:data}))}catch(_){}
+}
+function formatDashboardDate(value){
+  const s=String(value||"").trim();
+  if(!s||s==="-")return "-";
+  const d=new Date(s);
+  if(!Number.isNaN(d.getTime())){
+    return new Intl.DateTimeFormat("th-TH",{day:"2-digit",month:"2-digit",year:"numeric"}).format(d);
+  }
+  return s;
+}
+function dashboardCacheAgeText(savedAt){
+  if(!savedAt)return "ยังไม่เคยคำนวณ";
+  const mins=Math.max(0,Math.floor((Date.now()-savedAt)/60000));
+  if(mins<1)return "อัปเดตเมื่อสักครู่";
+  if(mins<60)return `อัปเดตเมื่อ ${mins} นาทีที่แล้ว`;
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return `อัปเดตเมื่อ ${hrs} ชั่วโมงที่แล้ว`;
+  return `อัปเดตเมื่อ ${Math.floor(hrs/24)} วันที่แล้ว`;
+}
+function buildLightDashboard(){
   const cats=liveCats();
   const active=cats.filter(c=>String(c.status||"ACTIVE").toUpperCase()==="ACTIVE");
-  const result={
-    total:cats.length,active:active.length,items:0,newCount:0,tagCount:0,
-    emptySheets:0,noImage:0,noPdf:0,dealerIssues:0,lastUpdated:"-",
-    categories:[],apiOk:true
+  return {
+    total:cats.length,active:active.length,items:null,newCount:null,tagCount:null,
+    emptySheets:null,
+    noImage:active.filter(c=>!String(c.image||"").trim()).length,
+    noPdf:active.filter(c=>!String(c.pdf_url||"").trim()).length,
+    dealerIssues:active.filter(c=>String(c.dealerEnabled??"TRUE").toUpperCase()!=="FALSE"&&!String(c.dealer_pdf_url||"").trim()).length,
+    lastUpdated:"-",apiOk:true,isLight:true,
+    categories:active.map(c=>({
+      title:c.titleTH||c.titleEN||catTab(c)||"หมวด",tab:catTab(c),
+      type:String(c.categoryType||"PRICE").toUpperCase(),count:null,updated:"-",
+      image:!!String(c.image||"").trim(),pdf:!!String(c.pdf_url||"").trim(),
+      dealer:String(c.dealerEnabled??"TRUE").toUpperCase()!=="FALSE",
+      dealerPdf:!!String(c.dealer_pdf_url||"").trim(),empty:false,error:false
+    }))
   };
+}
+async function loadDashboardLive(runId){
+  const cats=liveCats();
+  const active=cats.filter(c=>String(c.status||"ACTIVE").toUpperCase()==="ACTIVE");
+  const result={total:cats.length,active:active.length,items:0,newCount:0,tagCount:0,emptySheets:0,noImage:0,noPdf:0,dealerIssues:0,lastUpdated:"-",categories:[],apiOk:true,isLight:false};
   const dates=[];
-  await Promise.all(active.map(async c=>{
-    const tab=catTab(c);
-    const type=String(c.categoryType||"PRICE").toUpperCase();
-    const item={title:c.titleTH||c.titleEN||tab||"หมวด",tab,type,count:0,updated:"-",image:!!String(c.image||"").trim(),pdf:!!String(c.pdf_url||"").trim(),dealer:String(c.dealerEnabled??"TRUE").toUpperCase()!=="FALSE",dealerPdf:!!String(c.dealer_pdf_url||"").trim(),empty:false,error:false};
-    if(!item.image) result.noImage++;
-    if(!item.pdf) result.noPdf++;
-    if(item.dealer && !item.dealerPdf) result.dealerIssues++;
-
-    if(tab){
+  for(let i=0;i<active.length;i+=3){
+    if(runId!==dashboardRunId)throw new Error("__DASHBOARD_CANCELLED__");
+    const batch=active.slice(i,i+3);
+    const items=await Promise.all(batch.map(async c=>{
+      const tab=catTab(c),type=String(c.categoryType||"PRICE").toUpperCase();
+      const item={title:c.titleTH||c.titleEN||tab||"หมวด",tab,type,count:0,updated:"-",image:!!String(c.image||"").trim(),pdf:!!String(c.pdf_url||"").trim(),dealer:String(c.dealerEnabled??"TRUE").toUpperCase()!=="FALSE",dealerPdf:!!String(c.dealer_pdf_url||"").trim(),empty:false,error:false};
+      if(!item.image)result.noImage++;
+      if(!item.pdf)result.noPdf++;
+      if(item.dealer&&!item.dealerPdf)result.dealerIssues++;
+      if(!tab){item.empty=true;result.emptySheets++;return item}
       try{
-        const j=await apiGet({action:"prices",tab});
-        const rows=Array.isArray(j.data)?j.data:[];
-        const clean=rows.filter(r=>{
-          const vals=Object.values(r||{}).map(v=>String(v??"").trim().toLowerCase());
-          return !(
-            vals.includes("brand")&&vals.includes("model") ||
-            vals.includes("type")&&vals.includes("code")&&vals.includes("models")
-          );
-        }).filter(r=>Object.values(r||{}).some(v=>String(v??"").trim()!==""));
-        item.count=clean.length;
-        item.empty=clean.length===0;
-        result.items+=clean.length;
-        if(item.empty)result.emptySheets++;
-
-        clean.forEach(r=>{
+        const j=await apiGet({action:"prices",tab:tab});
+        const rows=(Array.isArray(j.data)?j.data:[]).filter(r=>Object.values(r||{}).some(v=>String(v??"").trim()!==""));
+        item.count=rows.length;item.empty=!rows.length;result.items+=rows.length;if(item.empty)result.emptySheets++;
+        rows.forEach(r=>{
           const text=String(r.model||r.models||"");
           if(/\bNEW\b/i.test(text))result.newCount++;
           if(/\([^()]+\)\s*$/.test(text))result.tagCount++;
-          const u=String(r.updated||"").trim();
-          if(u)dates.push(u);
+          const u=String(r.updated||"").trim();if(u)dates.push(u);
         });
-        const upd=clean.find(r=>String(r.updated||"").trim())?.updated;
-        if(upd)item.updated=String(upd);
+        const upd=rows.find(r=>String(r.updated||"").trim())?.updated;if(upd)item.updated=String(upd);
       }catch(_){item.error=true;result.apiOk=false}
-    }else{item.empty=true;result.emptySheets++}
-    result.categories.push(item);
-  }));
-  if(dates.length) result.lastUpdated=dates.sort().slice(-1)[0];
+      return item;
+    }));
+    result.categories.push(...items);
+    await new Promise(r=>setTimeout(r,0));
+  }
+  if(runId!==dashboardRunId)throw new Error("__DASHBOARD_CANCELLED__");
+  if(dates.length)result.lastUpdated=dates.sort().slice(-1)[0];
   result.categories.sort((a,b)=>String(a.title).localeCompare(String(b.title),"th"));
+  writeDashboardCache(result);
   return result;
 }
+
 function dashboardBadge(text,type=""){return `<span class="smart-badge ${type}">${text}</span>`}
-async function renderLiveDashboard(){
-  title.textContent='ภาพรวม';
-  subtitle.textContent='สถานะระบบและข้อมูลล่าสุดจาก Google Sheet';
-  content.innerHTML='<div class="panel"><div class="empty">กำลังอ่านข้อมูลสดจากระบบ...</div></div>';
-  const d=await loadDashboardLive();
-  const issueCount=d.emptySheets+d.noImage+d.dealerIssues;
-  const recent=d.categories.slice().sort((a,b)=>String(b.updated).localeCompare(String(a.updated))).slice(0,8);
-
+function dashboardValue(v){return v===null||v===undefined?"—":v}
+function renderDashboardData(d,meta={}){
+  const issueCount=(Number(d.emptySheets)||0)+(Number(d.noImage)||0)+(Number(d.dealerIssues)||0);
   content.innerHTML=`
-    <div class="cards">
-      <div class="card"><span class="muted">หมวดเปิดใช้งาน</span><strong>${d.active}</strong><small>จากทั้งหมด ${d.total} หมวด</small></div>
-      <div class="card"><span class="muted">รายการข้อมูลรวม</span><strong>${d.items}</strong><small>อ่านสดจากทุก Sheet</small></div>
-      <div class="card"><span class="muted">NEW / Tag</span><strong>${d.newCount} / ${d.tagCount}</strong><small>รายการใหม่ / ข้อความเน้นในวงเล็บ</small></div>
-      <div class="card"><span class="muted">ต้องตรวจสอบ</span><strong>${issueCount}</strong><small>Sheet ว่าง / รูป / Dealer</small></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <div class="muted" style="font-size:11px">${meta.cacheText||""}${d.isLight?" · แสดงข้อมูลพื้นฐานก่อนเพื่อให้ Backoffice เปิดเร็ว":""}</div>
+      <button class="primary" id="refreshDashboardBtn">รีเฟรชข้อมูล Dashboard</button>
     </div>
-
+    <div class="cards">
+      <div class="card"><span class="muted">หมวดเปิดใช้งาน</span><strong>${dashboardValue(d.active)}</strong><small>จากทั้งหมด ${dashboardValue(d.total)} หมวด</small></div>
+      <div class="card"><span class="muted">รายการข้อมูลรวม</span><strong>${dashboardValue(d.items)}</strong><small>${d.isLight?"กดรีเฟรชเพื่อคำนวณ":"ข้อมูลจากทุก Sheet"}</small></div>
+      <div class="card"><span class="muted">NEW / Tag</span><strong>${dashboardValue(d.newCount)} / ${dashboardValue(d.tagCount)}</strong><small>รายการใหม่ / ข้อความเน้นในวงเล็บ</small></div>
+      <div class="card"><span class="muted">ต้องตรวจสอบ</span><strong>${d.isLight?"—":issueCount}</strong><small>Sheet ว่าง / รูป / Dealer</small></div>
+    </div>
     <div class="dashboard-health-grid">
       <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
-          <div><h2 style="margin:0">สถานะหมวดสินค้า</h2><div class="muted" style="font-size:11px;margin-top:3px">จำนวนรายการและความพร้อมของแต่ละหมวด</div></div>
-          <button class="secondary" id="refreshDashboardBtn">รีเฟรช</button>
-        </div>
+        <h2>สถานะหมวดสินค้า</h2>
         <div class="smart-list">
-          ${d.categories.map(c=>`<div class="smart-item">
-            <div class="smart-item-main"><b>${esc(c.title)}</b><small>${esc(c.tab||"ยังไม่เชื่อม Sheet")} · ${c.type==="COMPATIBILITY"?"Compatibility":"Price List"} · อัปเดต ${esc(c.updated)}</small></div>
+          ${(d.categories||[]).map(c=>`<div class="smart-item">
+            <div class="smart-item-main"><b>${esc(c.title)}</b><small>${esc(c.tab||"ยังไม่เชื่อม Sheet")} · ${c.type==="COMPATIBILITY"?"Compatibility":"Price List"} · อัปเดต ${esc(formatDashboardDate(c.updated))}</small></div>
             <div class="smart-badges">
-              ${dashboardBadge(c.count+" รายการ",c.empty?"warn":"ok")}
+              ${c.count===null?dashboardBadge("ยังไม่คำนวณ"):dashboardBadge(c.count+" รายการ",c.empty?"warn":"ok")}
               ${dashboardBadge(c.image?"รูป ✓":"ไม่มีรูป",c.image?"ok":"warn")}
               ${dashboardBadge(c.pdf?"PDF ✓":"ไม่มี PDF",c.pdf?"ok":"warn")}
               ${c.dealer?dashboardBadge(c.dealerPdf?"Dealer ✓":"Dealer PDF ?",c.dealerPdf?"ok":"warn"):dashboardBadge("Dealer ปิด")}
@@ -756,16 +799,15 @@ async function renderLiveDashboard(){
           </div>`).join("")}
         </div>
       </div>
-
       <div>
         <div class="panel" style="margin-bottom:14px">
           <h2>System Health</h2>
           <div class="health-row"><span><i class="health-dot ${d.apiOk?"ok":"bad"}"></i>Google Sheet API</span><b>${d.apiOk?"พร้อมใช้งาน":"มีข้อผิดพลาด"}</b></div>
-          <div class="health-row"><span><i class="health-dot ${d.emptySheets?"warn":"ok"}"></i>Sheet ว่าง</span><b>${d.emptySheets}</b></div>
-          <div class="health-row"><span><i class="health-dot ${d.noImage?"warn":"ok"}"></i>หมวดไม่มีรูป</span><b>${d.noImage}</b></div>
-          <div class="health-row"><span><i class="health-dot ${d.noPdf?"warn":"ok"}"></i>หมวดไม่มี PDF</span><b>${d.noPdf}</b></div>
-          <div class="health-row"><span><i class="health-dot ${d.dealerIssues?"warn":"ok"}"></i>Dealer ยังไม่ครบ</span><b>${d.dealerIssues}</b></div>
-          <div class="health-row"><span><i class="health-dot ok"></i>อัปเดตล่าสุด</span><b>${esc(d.lastUpdated)}</b></div>
+          <div class="health-row"><span><i class="health-dot ${Number(d.emptySheets)?"warn":"ok"}"></i>Sheet ว่าง</span><b>${dashboardValue(d.emptySheets)}</b></div>
+          <div class="health-row"><span><i class="health-dot ${Number(d.noImage)?"warn":"ok"}"></i>หมวดไม่มีรูป</span><b>${dashboardValue(d.noImage)}</b></div>
+          <div class="health-row"><span><i class="health-dot ${Number(d.noPdf)?"warn":"ok"}"></i>หมวดไม่มี PDF</span><b>${dashboardValue(d.noPdf)}</b></div>
+          <div class="health-row"><span><i class="health-dot ${Number(d.dealerIssues)?"warn":"ok"}"></i>Dealer ยังไม่ครบ</span><b>${dashboardValue(d.dealerIssues)}</b></div>
+          <div class="health-row"><span><i class="health-dot ok"></i>อัปเดตข้อมูลล่าสุด</span><b>${esc(formatDashboardDate(d.lastUpdated))}</b></div>
         </div>
         <div class="panel">
           <h2>เข้าถึงงานเร็ว</h2>
@@ -778,8 +820,25 @@ async function renderLiveDashboard(){
         </div>
       </div>
     </div>`;
-  document.querySelector("#refreshDashboardBtn")?.addEventListener("click",renderLiveDashboard);
+  document.querySelector("#refreshDashboardBtn")?.addEventListener("click",refreshDashboardHeavy);
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>render(b.dataset.go));
+}
+function renderLiveDashboard(){
+  title.textContent='ภาพรวม';subtitle.textContent='สถานะระบบและข้อมูลล่าสุดจาก Google Sheet';
+  const cached=readDashboardCache();
+  if(cached?.data)renderDashboardData(cached.data,{cacheText:dashboardCacheAgeText(cached.savedAt)});
+  else renderDashboardData(buildLightDashboard(),{cacheText:"ยังไม่มี Dashboard cache"});
+}
+async function refreshDashboardHeavy(){
+  const runId=++dashboardRunId;
+  const btn=document.querySelector("#refreshDashboardBtn");if(btn){btn.disabled=true;btn.textContent="กำลังคำนวณ..."}
+  try{
+    const d=await loadDashboardLive(runId);
+    const active=[...document.querySelectorAll(".nav")].some(b=>b.dataset.view==="dashboard"&&b.classList.contains("active"));
+    if(active)renderDashboardData(d,{cacheText:"อัปเดตเมื่อสักครู่"});
+  }catch(err){
+    if(String(err?.message||err)!=="__DASHBOARD_CANCELLED__")console.warn(err);
+  }finally{if(btn){btn.disabled=false;btn.textContent="รีเฟรชข้อมูล Dashboard"}}
 }
 
 const views={dashboard(){renderLiveDashboard()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
@@ -1011,4 +1070,4 @@ async function openCategoryModal(x=null){
   };
 }
 
-function render(v){document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();
+function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();

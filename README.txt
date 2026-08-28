@@ -1,42 +1,26 @@
-CHANGE 04 — BACKOFFICE SMART UI + LIVE DASHBOARD
+LEEPLUS CHANGE 04.1 — FINAL PERFORMANCE & POLISH
 
-สำคัญ:
-ชุดนี้ merge Dynamic Contact Manager + Category Type/Compatibility กลับไว้ครบแล้ว
-
-Google Apps Script:
-- Code.gs
-- Deploy New version
-
-GitHub:
+GitHub วางทับ:
+- /admin/admin.js
 - /app.js
 - /dealer/app.js
-- /admin/admin.js
 
-สิ่งที่เปลี่ยน:
-1. Live Dashboard
-- หมวดเปิดใช้งาน / ทั้งหมด
-- จำนวนรายการรวมจากทุก Sheet
-- NEW / Auto Tag
-- จุดที่ต้องตรวจสอบ
-- Category Status: จำนวนรายการ, รูป, PDF, Dealer PDF, updated
-- System Health
-- Quick Actions
-- Refresh อ่านข้อมูลสด
+Code.gs:
+- แนบไว้เป็น backup
+- ถ้า Change04 Deploy แล้ว ไม่ต้อง Deploy Apps Script ใหม่
 
-2. Backoffice UI Refresh
-- panel/card/spacing ใหม่
-- Settings หน้าเดียวอ่านง่ายขึ้น
-- Contact Manager compact
-- Sticky Save bar
-- Responsive notebook/tablet
+สิ่งที่จบในรอบนี้:
+- Backoffice ไม่สแกนทุก Sheet ตอนเปิด
+- Dashboard ใช้ cache และคำนวณหนักเฉพาะตอนกด Refresh
+- โหลด Sheet Tabs แบบ lazy
+- เปลี่ยนเมนูระหว่าง Refresh แล้วไม่ repaint ทับหน้าอื่น
+- วันที่ Dashboard อ่านง่าย
+- Contact checkbox/label ไม่แตกบรรทัด
+- Contact Desktop ย่ออัตโนมัติแถวเดียว / Mobile 2 columns
+- ไม่มี Icon ไม่สร้างวงกลมเปล่า
 
-3. Contact Frontend
-- Desktop อยู่แถวเดียว ย่ออัตโนมัติตามจำนวน
-- Mobile 2 columns
-- ไม่มี Icon = ไม่แสดงวง icon เปล่า
-- Retail / Dealer ใช้ข้อมูลเดียวกัน
-
-4. Preserved
-- Category Type: PRICE / COMPATIBILITY
-- Auto-create Sheet ตาม Category Type
-- Dealer / PDF / Upload / Media / Category logic เดิม
+หลังลง:
+1. Ctrl+F5
+2. สลับเมนู 5-6 ครั้ง ต้องเปิดเร็วขึ้น
+3. กลับ Dashboard จะขึ้น cache/ข้อมูลพื้นฐานทันที
+4. กด Refresh Dashboard 1 ครั้งเมื่อต้องการตัวเลขล่าสุด

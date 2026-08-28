@@ -1,19 +1,21 @@
-LEEPLUS FINAL CLEANUP — REMOVE LEGACY PRICE VIEWER
+LEEPLUS — MULTI PARENTHESIS TAG FIX
 
-1) วางทับ GitHub:
-- /app.js
-- /dealer/app.js
+วางทับ GitHub 2 ไฟล์:
+1. /price_sheet.js
+2. /dealer/price_sheet.js
 
-2) รอ GitHub Pages อัปเดต แล้ว Ctrl+F5
+แก้ Logic:
+- เดิมอ่าน Auto Tag เฉพาะวงเล็บชุดสุดท้าย
+- ใหม่อ่านวงเล็บได้ทุกตำแหน่งในชื่อรุ่น
+- (NEW) = Badge NEW เหมือนเดิม
+- วงเล็บข้อมูลความจุแบบตัวเลข เช่น (3,349 mAh up to 3,640 mAh) = ข้อความปกติ
+- วงเล็บ Tag เช่น (เพิ่มความจุ 3,630 mAh), (ปรับราคาลง), (สินค้ามาใหม่) = Badge สีเหลือง
+- ข้อความนอกวงเล็บ เช่น ชิ้นส่วนแท้ = แสดงเป็นข้อความปกติ
+- แก้ทั้ง Retail และ Dealer
 
-3) ทดสอบ Retail + Dealer เปิดหมวดสินค้า 1-2 หมวด
+ตัวอย่าง:
+iPhone 15 : (3,349 mAh up to 3,640 mAh) (NEW)
+=> iPhone 15 : (3,349 mAh up to 3,640 mAh) + NEW badge
 
-4) ถ้าปกติ ลบได้:
-- /price.html
-- /price.js
-
-ผล:
-- ถอด dependency ของ Legacy Price Viewer แล้ว
-- หมวดที่ใช้ sheetTab ยังเปิด price_sheet.html เหมือนเดิม
-- fallback หมวดเก่าที่มี PDF แต่ไม่มี Sheet จะเปิด PDF โดยตรง
-- ไม่แตะ price_sheet.html / price_sheet.js
+iPhone 13 (เพิ่มความจุ 3,630 mAh) ชิ้นส่วนแท้
+=> iPhone 13 + [เพิ่มความจุ 3,630 mAh] badge + ชิ้นส่วนแท้

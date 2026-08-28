@@ -681,19 +681,59 @@ function highlightHTML(text, query) {
   return escapeHTML(raw).replace(re, '<mark class="search-hit">$1</mark>');
 }
 
+function isTechnicalParenthesisTag(text) {
+  const t = String(text || "").trim();
+
+  // Technical capacity values should stay as normal model text.
+  // Examples:
+  // (3,349 mAh up to 3,640 mAh)
+  // (3,630 mAh)
+  return /^[\d,.]+\s*mAh(?:\s*up\s*to\s*[\d,.]+\s*mAh)?$/i.test(t);
+}
+
 function formatModelWithAutoBadge(model) {
-  const raw = String(model || "").trim();
+  let raw = String(model || "").trim();
   if (!raw) return "";
 
-  // Use the final parenthesis group as an automatic UI tag.
-  const m = raw.match(/^(.*?)(?:\s*\(([^()]+)\))\s*$/);
-  if (!m) return formatModelHTML(raw);
+  // NEW is a dedicated badge and may appear anywhere in the model text.
+  let isNew = false;
+  raw = raw.replace(/\(\s*NEW\s*\)|\bNEW\b\s*!*/gi, () => {
+    isNew = true;
+    return "";
+  }).replace(/\s{2,}/g, " ").trim();
 
-  const name = m[1].trim();
-  const tag = m[2].trim();
-  if (!name || !tag) return formatModelHTML(raw);
+  const parts = [];
+  let lastIndex = 0;
+  const re = /\(([^()]+)\)/g;
+  let m;
 
-  return `${formatModelHTML(name)} <span class="autoTagBadge">${escapeHTML(tag)}</span>`;
+  while ((m = re.exec(raw)) !== null) {
+    const before = raw.slice(lastIndex, m.index);
+    if (before) parts.push(escapeHTML(before));
+
+    const tag = String(m[1] || "").trim();
+    if (tag) {
+      if (isTechnicalParenthesisTag(tag)) {
+        // Keep technical capacity parenthesis as plain text.
+        parts.push(`(${escapeHTML(tag)})`);
+      } else {
+        // Any other parenthesis group is an automatic badge,
+        // regardless of whether it is at the end or in the middle.
+        parts.push(`<span class="autoTagBadge">${escapeHTML(tag)}</span>`);
+      }
+    }
+
+    lastIndex = re.lastIndex;
+  }
+
+  const after = raw.slice(lastIndex);
+  if (after) parts.push(escapeHTML(after));
+
+  let html = parts.join("").replace(/\s{2,}/g, " ").trim();
+  if (!html) html = escapeHTML(raw);
+
+  if (isNew) html += `<span class="badgeNew">NEW</span>`;
+  return html;
 }
 
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {

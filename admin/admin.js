@@ -852,7 +852,7 @@ function renderDashboardData(d,meta={}){
         <h2>สถานะหมวดสินค้า</h2>
         <div class="smart-list">
           ${(d.categories||[]).map(c=>`<div class="smart-item">
-            <div class="smart-item-main"><b>${esc(c.title)}</b><small>${esc(c.tab||"ยังไม่เชื่อม Sheet")} · ${c.type==="COMPATIBILITY"?"Compatibility":"Price List"} · อัปเดต ${esc(formatDashboardDate(c.updated))}</small></div>
+            <div class="smart-item-main"><b>${esc(c.title)}</b><small>${esc(c.tab||"ยังไม่เชื่อม Sheet")} · ${c.type==="COMPATIBILITY"?"Compatibility":c.type==="VISUAL_CATALOG"?"Visual Catalog":"Price List"} · อัปเดต ${esc(formatDashboardDate(c.updated))}</small></div>
             <div class="smart-badges">
               ${c.count===null?dashboardBadge("ยังไม่คำนวณ"):dashboardBadge(c.count+" รายการ",c.empty?"warn":"ok")}
               ${dashboardBadge(c.image?"รูป ✓":"ไม่มีรูป",c.image?"ok":"warn")}
@@ -918,7 +918,7 @@ const views={dashboard(){renderLiveDashboard()},categories(){title.textContent='
       <label>รูปแบบรายการ
         <select id="catType">
           <option value="PRICE">รายการราคา</option>
-          <option value="COMPATIBILITY">รายการรุ่น / Compatibility</option>
+          <option value="COMPATIBILITY">รายการรุ่น / Compatibility</option>\n          <option value="VISUAL_CATALOG">Visual Catalog / รูป + รุ่น + สี</option>
         </select>
         <small class="field-note">หมวดใหม่จะสร้าง Google Sheet ตามรูปแบบที่เลือก</small>
       </label>
@@ -1095,7 +1095,10 @@ async function openCategoryModal(x=null){
   document.querySelector("#catTH").value=x?.titleTH||"";
   document.querySelector("#catEN").value=x?.titleEN||"";
   const catTypeEl=document.querySelector("#catType");
-  catTypeEl.value=String(x?.categoryType||"PRICE").toUpperCase()==="COMPATIBILITY"?"COMPATIBILITY":"PRICE";
+  {
+    const t=String(x?.categoryType||"PRICE").toUpperCase();
+    catTypeEl.value=["PRICE","COMPATIBILITY","VISUAL_CATALOG"].includes(t)?t:"PRICE";
+  }
   catTypeEl.disabled=!!x?.__row;
   const tabField=document.querySelector("#catTabField"), tabSelect=document.querySelector("#catTab");
   if(x){

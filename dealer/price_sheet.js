@@ -670,6 +670,152 @@ function filterCompatibilityRows(all, query) {
 }
 
 
+
+async function loadVisualCatalogSheet(tab) {
+  const url = gvizJsonUrl(tab);
+  const res = await fetch(`${url}&v=${Date.now()}`, { cache:"no-store" });
+  if (!res.ok) throw new Error("Failed to fetch Visual Catalog GViz JSON");
+  const json = parseGvizResponse(await res.text());
+  const table=json?.table||{}, cols=Array.isArray(table.cols)?table.cols:[], rows=Array.isArray(table.rows)?table.rows:[];
+
+  const findCol=(names,fallback)=>{
+    const wanted=names.map(v=>String(v).trim().toLowerCase());
+    const i=cols.findIndex(col=>wanted.includes(String(col?.label||"").trim().toLowerCase())||wanted.includes(String(col?.id||"").trim().toLowerCase()));
+    return i>=0?i:fallback;
+  };
+  const idx={
+    group:findCol(["group","type","category"],0),
+    code:findCol(["code","sku"],1),
+    model:findCol(["model"],2),
+    variant:findCol(["variant","style","product type"],3),
+    color:findCol(["color","colour"],4),
+    image_url:findCol(["image_url","image url","imageurl","img","imgurl"],5),
+    updated:findCol(["updated","update","last updated"],6)
+  };
+
+  let inheritedImage="";
+  let inheritedKey="";
+  const data=[];
+  for(const r of rows){
+    const c=Array.isArray(r.c)?r.c:[];
+    const item={
+      group:String(cellValue(c[idx.group])||"").trim(),
+      code:String(cellValue(c[idx.code])||"").trim(),
+      model:String(cellValue(c[idx.model])||"").trim(),
+      variant:String(cellValue(c[idx.variant])||"").trim(),
+      color:String(cellValue(c[idx.color])||"").trim(),
+      image_url:String(cellValue(c[idx.image_url])||"").trim(),
+      updated:String(cellValue(c[idx.updated])||"").trim()
+    };
+    const low=[item.group,item.code,item.model,item.variant,item.color].map(v=>v.toLowerCase());
+    if(low[0]==="group"&&low[1]==="code"&&low[2]==="model") continue;
+    if(!(item.group||item.code||item.model||item.variant||item.color)) continue;
+
+    // Image inheritance is intentionally scoped to the same group/code/model/variant.
+    const key=[item.group,item.code,item.model,item.variant].map(v=>v.toLowerCase()).join("|");
+    if(item.image_url){
+      inheritedImage=item.image_url;
+      inheritedKey=key;
+    }else if(inheritedKey===key){
+      item.image_url=inheritedImage;
+    }else{
+      inheritedImage="";
+      inheritedKey=key;
+    }
+    data.push(item);
+  }
+  return data;
+}
+
+function ensureVisualCatalogStyles(){
+  if(document.getElementById("visualCatalogStyles"))return;
+  const style=document.createElement("style");
+  style.id="visualCatalogStyles";
+  style.textContent=`
+    .vc-wrap{display:grid;gap:14px;width:100%}
+    .vc-group{border:1px solid rgba(243,201,0,.28);border-radius:16px;background:#0e131b;overflow:hidden}
+    .vc-title{padding:12px 15px;background:#121923;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;font-weight:950;color:#fff;display:flex;align-items:center;gap:9px}
+    .vc-title:before{content:"";width:18px;height:4px;border-radius:99px;background:#f3c900}
+    .vc-content{display:grid;grid-template-columns:220px minmax(0,1fr);gap:0}
+    .vc-gallery{padding:14px;border-right:1px solid rgba(255,255,255,.07);display:grid;gap:10px;align-content:start}
+    .vc-gallery-item{background:#fff;border-radius:12px;overflow:hidden;aspect-ratio:1/1;display:grid;place-items:center}
+    .vc-gallery-item img{width:100%;height:100%;object-fit:contain;display:block}
+    .vc-list{display:grid;align-content:start}
+    .vc-model{display:grid;grid-template-columns:150px minmax(0,1fr);border-bottom:1px solid rgba(255,255,255,.06)}
+    .vc-model:last-child{border-bottom:0}
+    .vc-model-name{padding:14px 12px;color:#f3c900;font-weight:950;border-right:1px solid rgba(255,255,255,.06)}
+    .vc-model-info{padding:11px 14px;display:grid;gap:7px}
+    .vc-variant{font-size:11px;color:#8993a2;font-weight:800}
+    .vc-colors{display:flex;flex-wrap:wrap;gap:7px}
+    .vc-color{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#111822;border:1px solid rgba(255,255,255,.09);font-size:12px;color:#e8ebef}
+    .vc-empty{padding:24px;text-align:center;color:#7f8895}
+    @media(max-width:760px){
+      .vc-content{grid-template-columns:1fr}
+      .vc-gallery{grid-template-columns:repeat(3,1fr);border-right:0;border-bottom:1px solid rgba(255,255,255,.07);padding:10px}
+      .vc-model{grid-template-columns:105px minmax(0,1fr)}
+      .vc-model-name{padding:11px 9px;font-size:12px}
+      .vc-model-info{padding:9px 10px}
+      .vc-color{font-size:11px;padding:5px 7px}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function groupVisualCatalogRows(rows){
+  const groups=new Map();
+  for(const r of rows){
+    const gkey=String(r.group||r.variant||"สินค้า").trim()||"สินค้า";
+    if(!groups.has(gkey))groups.set(gkey,{name:gkey,rows:[]});
+    groups.get(gkey).rows.push(r);
+  }
+  return [...groups.values()];
+}
+
+function renderVisualCatalog(rows,query=""){
+  ensureVisualCatalogStyles();
+  const tbody=el("tbody"); if(!tbody)return;
+  tbody.innerHTML="";
+  if(el("empty"))el("empty").style.display=rows.length?"none":"block";
+  if(!rows.length){if(el("empty"))el("empty").textContent="ไม่พบรายการสินค้า";return;}
+
+  for(const group of groupVisualCatalogRows(rows)){
+    const modelMap=new Map(), images=[];
+    for(const r of group.rows){
+      const key=[r.code,r.model,r.variant].join("|");
+      if(!modelMap.has(key))modelMap.set(key,{code:r.code,model:r.model,variant:r.variant,colors:[],image_url:r.image_url});
+      const m=modelMap.get(key);
+      if(r.color&&!m.colors.includes(r.color))m.colors.push(r.color);
+      if(!m.image_url&&r.image_url)m.image_url=r.image_url;
+      if(r.image_url&&!images.includes(r.image_url))images.push(r.image_url);
+    }
+    const tr=document.createElement("tr"),td=document.createElement("td");
+    td.colSpan=2;td.style.padding="0 0 14px";td.style.border="0";
+    const gallery=images.slice(0,6).map(u=>`<div class="vc-gallery-item"><img src="${escapeHTML(normalizeImageUrl(u))}" alt="" loading="lazy"></div>`).join("");
+    const models=[...modelMap.values()].map(m=>`
+      <div class="vc-model">
+        <div class="vc-model-name">${highlightHTML(m.model||m.code||"-",query)}</div>
+        <div class="vc-model-info">
+          ${m.variant?`<div class="vc-variant">${highlightHTML(m.variant,query)}</div>`:""}
+          <div class="vc-colors">${m.colors.length?m.colors.map(c=>`<span class="vc-color">${highlightHTML(c,query)}</span>`).join(""):'<span class="vc-color">-</span>'}</div>
+        </div>
+      </div>`).join("");
+    td.innerHTML=`<div class="vc-group"><div class="vc-title">${highlightHTML(group.name,query)}</div><div class="vc-content">${gallery?`<div class="vc-gallery">${gallery}</div>`:""}<div class="vc-list">${models}</div></div></div>`;
+    td.querySelectorAll("img").forEach(img=>img.addEventListener("error",()=>img.closest(".vc-gallery-item")?.remove(),{once:true}));
+    tr.appendChild(td);tbody.appendChild(tr);
+  }
+}
+
+function filterVisualCatalogRows(all,query){
+  const q=String(query||"").trim().toLowerCase(); if(!q)return all;
+  const compact=normalizeSearchCompact(q),tokens=normalizeSearchTokens(q);
+  return all.filter(r=>{
+    const hay=[r.group,r.code,r.model,r.variant,r.color].join(" ").toLowerCase();
+    const hc=normalizeSearchCompact(hay);
+    return (compact&&hc.includes(compact))||(tokens.length&&tokens.every(t=>hay.includes(t)));
+  });
+}
+
+
 /* ===== render ===== */
 
 
@@ -898,6 +1044,20 @@ function applyCategoryThumb(categoryImageUrl) {
   const meta = await loadMetaConfig();
   const categoryRecord = await loadCategoryByTab(tab);
   const categoryType = String(categoryRecord?.categoryType || "PRICE").trim().toUpperCase();
+
+  if (categoryType === "VISUAL_CATALOG") {
+    const all = await loadVisualCatalogSheet(tab);
+    applyCategoryThumb(normalizeImageUrl(categoryRecord?.image || categoryRecord?.image_url || ""));
+    const upd = all.find(r => r.updated)?.updated || "-";
+    el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
+    const tabsRoot=el("tabs"); if(tabsRoot)tabsRoot.style.display="none";
+    const search=el("search");
+    if(search)search.placeholder="ค้นหา เช่น i17 / i17 Air / Black / Deep Blue / Aluminum";
+    const applyVisual=()=>renderVisualCatalog(filterVisualCatalogRows(all,search?.value||""),search?.value||"");
+    search?.addEventListener("input",applyVisual);
+    renderVisualCatalog(all,"");
+    return;
+  }
 
   if (categoryType === "COMPATIBILITY") {
     const all = await loadCompatibilitySheet(tab);

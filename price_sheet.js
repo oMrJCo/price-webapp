@@ -1,3 +1,51 @@
+
+(function ensureCustomMobileFullWidthFix(){
+  if(document.getElementById("customMobileFullWidthFix"))return;
+  const st=document.createElement("style");
+  st.id="customMobileFullWidthFix";
+  st.textContent=`
+    @media(max-width:720px){
+      #tbody .compat-host-row,
+      #tbody .vc-host-row{
+        display:block!important;
+        width:100%!important;
+        max-width:100%!important;
+        margin:0!important;
+        border:0!important;
+        background:transparent!important;
+        overflow:visible!important;
+      }
+      #tbody .compat-host-cell,
+      #tbody .vc-host-cell{
+        display:block!important;
+        width:100%!important;
+        max-width:100%!important;
+        min-width:0!important;
+        flex:0 0 100%!important;
+        padding-left:0!important;
+        padding-right:0!important;
+        text-align:left!important;
+      }
+      #tbody .compat-group,
+      #tbody .compat-row,
+      #tbody .vc-group,
+      #tbody .vc-content,
+      #tbody .vc-list{
+        width:100%!important;
+        max-width:100%!important;
+        min-width:0!important;
+      }
+      #tbody .compat-models{
+        min-width:0!important;
+        width:auto!important;
+        overflow-wrap:anywhere!important;
+        word-break:normal!important;
+      }
+    }
+  `;
+  document.head.appendChild(st);
+})();
+
 /* GVIZ_JSON_VERSION: 2026-05-15a (LEEPLUS)
    - Read category/brand images from meta API first
    - Fallback to old __META__ / __BRAND_IMAGE__
@@ -523,12 +571,13 @@ function renderCompatibility(rows, query = "") {
 
   for (const g of groups) {
     const tr = document.createElement("tr");
-    tr.style.display = "table-row";
+    tr.className = "compat-host-row";
     tr.style.background = "transparent";
     tr.style.border = "0";
     tr.style.boxShadow = "none";
 
     const td = document.createElement("td");
+    td.className = "compat-host-cell";
     td.colSpan = 2;
     td.style.padding = "0 0 10px";
     td.style.border = "0";
@@ -806,6 +855,8 @@ function renderVisualCatalog(rows,query=""){
       if(r.image_url&&!images.includes(r.image_url))images.push(r.image_url);
     }
     const tr=document.createElement("tr"),td=document.createElement("td");
+    tr.className="vc-host-row";
+    td.className="vc-host-cell";
     td.colSpan=2;td.style.padding="0 0 14px";td.style.border="0";
     const gallery=images.slice(0,6).map(u=>`<div class="vc-gallery-item"><img src="${escapeHTML(normalizeImageUrl(u))}" alt="" loading="lazy"></div>`).join("");
     const models=[...modelMap.values()].map(m=>`

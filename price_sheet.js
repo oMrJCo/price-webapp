@@ -675,7 +675,7 @@ function ensureVisualCatalogStyles(){
     .vc-model-info{padding:11px 14px;display:grid;gap:7px}
     .vc-variant{font-size:11px;color:#8993a2;font-weight:800}
     .vc-colors{display:flex;flex-wrap:wrap;gap:7px}
-    .vc-color{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#111822;border:1px solid rgba(255,255,255,.09);font-size:12px;color:#e8ebef}
+    .vc-color{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border-radius:999px;background:#111822;border:1px solid rgba(255,255,255,.09);font-size:12px;color:#e8ebef}\n    .vc-swatch{width:20px;height:20px;border-radius:50%;display:inline-block;flex:0 0 20px;border:1px solid rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.22) inset}
     .vc-empty{padding:24px;text-align:center;color:#7f8895}
     @media(max-width:760px){
       .vc-content{grid-template-columns:1fr}
@@ -697,6 +697,34 @@ function groupVisualCatalogRows(rows){
     groups.get(gkey).rows.push(r);
   }
   return [...groups.values()];
+}
+
+
+function visualColorSwatchStyle(colorText){
+  const s=String(colorText||"").toLowerCase();
+  const rules=[
+    [["space black","black","ดำ"],"#0b0d10"],
+    [["lavender","ลาเวนเดอร์","ม่วง"],"#a98bd5"],
+    [["sage","เขียวเสจ"],"#91a889"],
+    [["white silver","ขาวเงิน"],"linear-gradient(135deg,#fff 0%,#e8edf2 48%,#b9c1c9 100%)"],
+    [["mistblue","mist blue","น้ำเงินหมอก"],"#88aebe"],
+    [["light gold","ทองอ่อน"],"#e7cc93"],
+    [["sky blue","ฟ้า"],"#72b6df"],
+    [["cloud white","ขาวมุก","white"],"#f6f7f8"],
+    [["silver","เงิน"],"linear-gradient(135deg,#f4f4f4 0%,#c6cbd0 50%,#91979d 100%)"],
+    [["cosmic orange","ส้มคอสมิก"],"#f06a19"],
+    [["deep blue","น้ำเงินเข้ม"],"#18345f"],
+    [["gold","ทอง"],"#d9b35a"],
+    [["blue","น้ำเงิน"],"#3d78b5"],
+    [["orange","ส้ม"],"#ef7d27"],
+    [["green","เขียว"],"#6f9d68"],
+    [["purple","ม่วง"],"#8f72bd"],
+    [["pink","ชมพู"],"#e8a7b8"],
+    [["red","แดง"],"#c94848"],
+    [["gray","grey","เทา"],"#858b92"]
+  ];
+  for(const [keys,value] of rules){if(keys.some(k=>s.includes(k)))return value}
+  return "linear-gradient(135deg,#747b84,#c8cdd2)";
 }
 
 function renderVisualCatalog(rows,query=""){
@@ -724,7 +752,7 @@ function renderVisualCatalog(rows,query=""){
         <div class="vc-model-name">${highlightHTML(m.model||m.code||"-",query)}</div>
         <div class="vc-model-info">
           ${m.variant?`<div class="vc-variant">${highlightHTML(m.variant,query)}</div>`:""}
-          <div class="vc-colors">${m.colors.length?m.colors.map(c=>`<span class="vc-color">${highlightHTML(c,query)}</span>`).join(""):'<span class="vc-color">-</span>'}</div>
+          <div class="vc-colors">${m.colors.length?m.colors.map(c=>`<span class="vc-color"><i class="vc-swatch" style="background:${visualColorSwatchStyle(c)}"></i><span>${highlightHTML(c,query)}</span></span>`).join(""):'<span class="vc-color">-</span>'}</div>
         </div>
       </div>`).join("");
     td.innerHTML=`<div class="vc-group"><div class="vc-title">${highlightHTML(group.name,query)}</div><div class="vc-content">${gallery?`<div class="vc-gallery">${gallery}</div>`:""}<div class="vc-list">${models}</div></div></div>`;

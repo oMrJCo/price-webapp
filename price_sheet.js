@@ -664,14 +664,14 @@ function ensureVisualCatalogStyles(){
     .vc-group{border:1px solid rgba(243,201,0,.28);border-radius:16px;background:#0e131b;overflow:hidden}
     .vc-title{padding:12px 15px;background:#121923;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;font-weight:950;color:#fff;display:flex;align-items:center;gap:9px}
     .vc-title:before{content:"";width:18px;height:4px;border-radius:99px;background:#f3c900}
-    .vc-content{display:grid;grid-template-columns:220px minmax(0,1fr);gap:0}
+    .vc-content{display:grid;grid-template-columns:210px minmax(0,1fr);gap:0}
     .vc-gallery{padding:14px;border-right:1px solid rgba(255,255,255,.07);display:grid;gap:10px;align-content:start}
     .vc-gallery-item{background:#fff;border-radius:12px;overflow:hidden;aspect-ratio:1/1;display:grid;place-items:center}
     .vc-gallery-item img{width:100%;height:100%;object-fit:contain;display:block}
     .vc-list{display:grid;align-content:start}
-    .vc-model{display:grid;grid-template-columns:150px minmax(0,1fr);border-bottom:1px solid rgba(255,255,255,.06)}
+    .vc-model{display:grid;grid-template-columns:220px minmax(0,1fr);border-bottom:1px solid rgba(255,255,255,.06)}
     .vc-model:last-child{border-bottom:0}
-    .vc-model-name{padding:14px 12px;color:#f3c900;font-weight:950;border-right:1px solid rgba(255,255,255,.06)}
+    .vc-model-name{padding:14px 14px;color:#f3c900;font-weight:950;border-right:1px solid rgba(255,255,255,.06);white-space:nowrap;display:flex;align-items:center;justify-content:center;text-align:center}
     .vc-model-info{padding:11px 14px;display:grid;gap:7px}
     .vc-variant{font-size:11px;color:#8993a2;font-weight:800}
     .vc-colors{display:flex;flex-wrap:wrap;gap:7px}
@@ -680,8 +680,8 @@ function ensureVisualCatalogStyles(){
     @media(max-width:760px){
       .vc-content{grid-template-columns:1fr}
       .vc-gallery{grid-template-columns:repeat(3,1fr);border-right:0;border-bottom:1px solid rgba(255,255,255,.07);padding:10px}
-      .vc-model{grid-template-columns:105px minmax(0,1fr)}
-      .vc-model-name{padding:11px 9px;font-size:12px}
+      .vc-model{grid-template-columns:145px minmax(0,1fr)}
+      .vc-model-name{padding:11px 8px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .vc-model-info{padding:9px 10px}
       .vc-color{font-size:11px;padding:5px 7px}
     }
@@ -700,31 +700,92 @@ function groupVisualCatalogRows(rows){
 }
 
 
+function visualExtractEnglishColor(colorText){
+  const raw=String(colorText||"").trim();
+  const matches=[...raw.matchAll(/\(([^()]*)\)/g)];
+  if(matches.length){
+    const last=String(matches[matches.length-1][1]||"").trim().toLowerCase();
+    if(last)return last;
+  }
+  return raw.toLowerCase();
+}
+
 function visualColorSwatchStyle(colorText){
-  const s=String(colorText||"").toLowerCase();
-  const rules=[
-    [["space black","black","ดำ"],"#0b0d10"],
-    [["lavender","ลาเวนเดอร์","ม่วง"],"#a98bd5"],
-    [["sage","เขียวเสจ"],"#91a889"],
-    [["white silver","ขาวเงิน"],"linear-gradient(135deg,#fff 0%,#e8edf2 48%,#b9c1c9 100%)"],
-    [["mistblue","mist blue","น้ำเงินหมอก"],"#88aebe"],
-    [["light gold","ทองอ่อน"],"#e7cc93"],
-    [["sky blue","ฟ้า"],"#72b6df"],
-    [["cloud white","ขาวมุก","white"],"#f6f7f8"],
-    [["silver","เงิน"],"linear-gradient(135deg,#f4f4f4 0%,#c6cbd0 50%,#91979d 100%)"],
-    [["cosmic orange","ส้มคอสมิก"],"#f06a19"],
-    [["deep blue","น้ำเงินเข้ม"],"#18345f"],
-    [["gold","ทอง"],"#d9b35a"],
-    [["blue","น้ำเงิน"],"#3d78b5"],
-    [["orange","ส้ม"],"#ef7d27"],
-    [["green","เขียว"],"#6f9d68"],
-    [["purple","ม่วง"],"#8f72bd"],
-    [["pink","ชมพู"],"#e8a7b8"],
-    [["red","แดง"],"#c94848"],
-    [["gray","grey","เทา"],"#858b92"]
+  const key=visualExtractEnglishColor(colorText)
+    .replace(/\s+/g," ")
+    .trim();
+
+  // Exact / specific product colors first.
+  const exact={
+    "black":"#0b0d10",
+    "space black":"#15181c",
+    "black graphite":"#41454a",
+    "graphite":"#53575c",
+    "midnight":"#1d2934",
+    "midnight green":"#3f5b52",
+
+    "white":"#f5f5f2",
+    "cloud white":"#f5f5f0",
+    "starlight":"#d9d2c4",
+    "white silver":"linear-gradient(135deg,#ffffff 0%,#e7eaed 48%,#b8bec4 100%)",
+    "silver":"linear-gradient(135deg,#f5f6f7 0%,#cbd0d4 48%,#969ca2 100%)",
+
+    "yellow":"#e7c958",
+    "gold":"#d9b45c",
+    "light gold":"#e7cd99",
+    "rose gold":"#d9a7a0",
+
+    "red":"#d65353",
+    "product red":"#c84f55",
+    "(product)red":"#c84f55",
+    "coral":"#e98568",
+    "orange":"#e9782e",
+    "cosmic orange":"#ef6c1c",
+
+    "green":"#6c9b72",
+    "alpine green":"#5e796b",
+    "sage":"#94a78d",
+
+    "blue":"#668ab4",
+    "pacific blue":"#6f8796",
+    "sierra blue":"#90aabd",
+    "sky blue":"#78b8df",
+    "mist blue":"#91b1bf",
+    "mistblue":"#91b1bf",
+    "deep blue":"#1e3d68",
+
+    "purple":"#9b82cf",
+    "deep purple":"#65547c",
+    "lavender":"#ab91d5",
+
+    "pink":"#e4a6b5"
+  };
+
+  if(exact[key])return exact[key];
+
+  // Thai-only fallback when there is no English name in parentheses.
+  const raw=String(colorText||"").toLowerCase();
+  const thai=[
+    ["ดำกราไฟต์","#41454a"],
+    ["ดำ","#0b0d10"],
+    ["เงิน","linear-gradient(135deg,#f5f6f7 0%,#cbd0d4 48%,#969ca2 100%)"],
+    ["ขาว","#f5f5f2"],
+    ["เหลือง","#e7c958"],
+    ["ทอง","#d9b45c"],
+    ["แดง","#d65353"],
+    ["ส้ม","#e9782e"],
+    ["เขียว","#6c9b72"],
+    ["น้ำเงิน","#668ab4"],
+    ["ฟ้า","#78b8df"],
+    ["ม่วง","#9b82cf"],
+    ["ชมพู","#e4a6b5"],
+    ["เทา","#777d83"]
   ];
-  for(const [keys,value] of rules){if(keys.some(k=>s.includes(k)))return value}
-  return "linear-gradient(135deg,#747b84,#c8cdd2)";
+  for(const [name,value] of thai){
+    if(raw.includes(name))return value;
+  }
+
+  return "linear-gradient(135deg,#858b92,#c5cad0)";
 }
 
 function renderVisualCatalog(rows,query=""){

@@ -122,3 +122,26 @@
 .setting-block{display:block;margin-top:16px}.setting-block b{display:block;font-size:13px;margin-bottom:6px}.setting-block small{display:block;color:#888;font-size:10px;margin-top:5px}
 .settings-save{display:flex;gap:10px;align-items:center;margin-top:14px}
 @media(max-width:800px){.settings-grid{grid-template-columns:1fr}.setting-row{grid-template-columns:1fr 44px}.setting-row input:not([type=checkbox]){grid-column:1/-1}}
+
+/* v1.1 Drag Sort */
+.cat-admin-row{transition:transform .15s ease,opacity .15s ease,background .15s ease}
+.cat-admin-row.dragging{opacity:.45;background:#fff7cc}
+.drag-handle{cursor:grab!important;font-size:22px!important;line-height:1;color:#777;user-select:none}
+.drag-handle:active{cursor:grabbing!important}
+/* v1.1 Promotion */
+.promo-admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.promo-admin-grid label span{display:block;font-size:11px;font-weight:800;margin-bottom:5px}
+.promo-toggle{grid-column:1/-1;display:flex!important;align-items:center;gap:8px}
+.promo-image-admin{display:flex;gap:16px;align-items:center;margin-top:14px}
+.promo-preview{width:160px;aspect-ratio:1/1;border:1px solid #ddd;border-radius:14px;background:#111;display:grid;place-items:center;overflow:hidden;color:#888;font-size:11px;flex:0 0 160px}
+.promo-preview img{width:100%;height:100%;object-fit:contain}
+.promo-image-actions{flex:1}.promo-image-actions input{width:100%;margin-bottom:9px}
+.promo-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99999;display:grid;place-items:center;padding:20px}
+.promo-picker-box{width:min(900px,96vw);max-height:86vh;overflow:auto;background:#fff;border-radius:18px;padding:16px}
+.promo-picker-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.promo-picker-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.promo-picker-item{border:1px solid #ddd;border-radius:12px;background:#fff;padding:7px;cursor:pointer;text-align:left}
+.promo-picker-item img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;display:block}
+.promo-picker-item span{display:block;font-size:10px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:800px){.promo-admin-grid{grid-template-columns:1fr 1fr}.promo-image-admin{align-items:flex-start}.promo-picker-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.promo-admin-grid{grid-template-columns:1fr}.promo-image-admin{flex-direction:column}.promo-preview{width:100%;max-width:260px}.promo-picker-grid{grid-template-columns:repeat(2,1fr)}}

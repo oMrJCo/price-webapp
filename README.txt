@@ -1,21 +1,42 @@
-LEEPLUS — MULTI PARENTHESIS TAG FIX
+LEEPLUS v1.1 — Promotion Popup + Drag Sort
 
-วางทับ GitHub 2 ไฟล์:
-1. /price_sheet.js
-2. /dealer/price_sheet.js
+งาน 1: Promotion Popup 1:1
+- ตั้งค่าที่ Backoffice > ตั้งค่าเว็บไซต์ > Promotion Popup
+- เปิด/ปิด
+- Artwork 1:1 แนะนำ 1080x1080
+- อัปโหลดใหม่ หรือเลือกจาก Media Library
+- วันเริ่ม / วันสิ้นสุด
+- Retail / Dealer / ทั้งคู่
+- ทุกครั้ง / วันละครั้ง / ครั้งเดียว
+- ไม่มี CTA
+- X หรือคลิกพื้นที่ด้านนอกเพื่อปิด
+- หมดวันสิ้นสุดแล้วหยุดแสดงอัตโนมัติ
 
-แก้ Logic:
-- เดิมอ่าน Auto Tag เฉพาะวงเล็บชุดสุดท้าย
-- ใหม่อ่านวงเล็บได้ทุกตำแหน่งในชื่อรุ่น
-- (NEW) = Badge NEW เหมือนเดิม
-- วงเล็บข้อมูลความจุแบบตัวเลข เช่น (3,349 mAh up to 3,640 mAh) = ข้อความปกติ
-- วงเล็บ Tag เช่น (เพิ่มความจุ 3,630 mAh), (ปรับราคาลง), (สินค้ามาใหม่) = Badge สีเหลือง
-- ข้อความนอกวงเล็บ เช่น ชิ้นส่วนแท้ = แสดงเป็นข้อความปกติ
-- แก้ทั้ง Retail และ Dealer
+งาน 2: Drag & Drop Category Sort
+- หน้า Backoffice > หมวดสินค้า
+- จับ ⠿ ด้านซ้ายแล้วลากขึ้น/ลง
+- ปล่อยแล้วบันทึก sort 1,2,3... ลง Google Sheet อัตโนมัติ
+- Retail / Dealer อ่าน sort ใหม่เหมือนเดิม
+- ไม่ต้องกรอกเลข sort เอง
 
-ตัวอย่าง:
-iPhone 15 : (3,349 mAh up to 3,640 mAh) (NEW)
-=> iPhone 15 : (3,349 mAh up to 3,640 mAh) + NEW badge
+ไฟล์ GitHub วางทับ:
+- /app.js
+- /dealer/app.js
+- /admin/admin.js
+- /admin/admin.css
 
-iPhone 13 (เพิ่มความจุ 3,630 mAh) ชิ้นส่วนแท้
-=> iPhone 13 + [เพิ่มความจุ 3,630 mAh] badge + ชิ้นส่วนแท้
+Apps Script:
+- ใช้ Code.gs ใน ZIP วางทับทั้งไฟล์
+- Save
+- Deploy > Manage deployments > Edit > New version > Deploy
+
+ลำดับติดตั้ง:
+1. Deploy Code.gs ก่อน
+2. วาง 4 ไฟล์ GitHub
+3. Ctrl+F5
+4. เทส Drag Sort
+5. ตั้ง Promotion Popup และเทส Retail/Dealer
+
+หมายเหตุ:
+- ชุดนี้สร้างต่อจาก Production v1.0 + Final Cleanup + Multi Parenthesis Tag Fix
+- ไม่คืน Legacy price.html / price.js

@@ -404,6 +404,12 @@ async function saveSiteSettings(){
     phoneEnabled:document.querySelector("#settingPhoneEnabled")?.checked?"TRUE":"FALSE",
     dealerCode:document.querySelector("#settingDealerCode")?.value.trim()||"",
     logoUrl:document.querySelector("#settingLogoUrl")?.value.trim()||"",
+    promoEnabled:document.querySelector("#promoEnabled")?.checked?"TRUE":"FALSE",
+    promoImage:document.querySelector("#promoImage")?.value.trim()||"",
+    promoStart:document.querySelector("#promoStart")?.value||"",
+    promoEnd:document.querySelector("#promoEnd")?.value||"",
+    promoAudience:document.querySelector("#promoAudience")?.value||"BOTH",
+    promoFrequency:document.querySelector("#promoFrequency")?.value||"DAILY",
     contacts:JSON.stringify(collectContactRows())
   });
 }
@@ -543,6 +549,26 @@ async function renderSettingsView(){
         </div>
         <div id="contactManagerRows"></div>
       </div>
+      <div class="panel settings-card promo-settings-card">
+        <h2>Promotion Popup</h2>
+        <div class="settings-note"><b>Artwork 1:1 แนะนำ 1080 × 1080 px</b> · ไม่มี CTA · แสดงกลางจอและปิดได้ด้วย X/คลิกพื้นที่ด้านนอก</div>
+        <div class="promo-admin-grid">
+          <label class="promo-toggle"><input id="promoEnabled" type="checkbox" ${String(s.promoEnabled||"FALSE").toUpperCase()==="TRUE"?"checked":""}> <b>เปิดใช้งาน Popup</b></label>
+          <label><span>แสดงที่</span><select id="promoAudience"><option value="BOTH" ${String(s.promoAudience||"BOTH")==="BOTH"?"selected":""}>Retail + Dealer</option><option value="RETAIL" ${String(s.promoAudience)==="RETAIL"?"selected":""}>Retail เท่านั้น</option><option value="DEALER" ${String(s.promoAudience)==="DEALER"?"selected":""}>Dealer เท่านั้น</option></select></label>
+          <label><span>ความถี่</span><select id="promoFrequency"><option value="ALWAYS" ${String(s.promoFrequency)==="ALWAYS"?"selected":""}>ทุกครั้งที่เข้าเว็บ</option><option value="DAILY" ${String(s.promoFrequency||"DAILY")==="DAILY"?"selected":""}>วันละครั้ง</option><option value="ONCE" ${String(s.promoFrequency)==="ONCE"?"selected":""}>ครั้งเดียว</option></select></label>
+          <label><span>วันเริ่ม</span><input id="promoStart" type="date" value="${esc(s.promoStart||"")}"></label>
+          <label><span>วันสิ้นสุด</span><input id="promoEnd" type="date" value="${esc(s.promoEnd||"")}"></label>
+        </div>
+        <div class="promo-image-admin">
+          <div id="promoPreview" class="promo-preview">${s.promoImage?`<img src="${esc(s.promoImage)}">`:'<span>ยังไม่มี Artwork</span>'}</div>
+          <div class="promo-image-actions">
+            <input id="promoImage" value="${esc(s.promoImage||"")}" placeholder="URL รูปโปรโมชั่น">
+            <div><button type="button" class="secondary" id="promoUploadBtn">อัปโหลดรูป</button> <button type="button" class="secondary" id="promoLibraryBtn">เลือกจาก Media Library</button></div>
+            <input id="promoFile" class="file-hidden" type="file" accept="image/png,image/jpeg,image/webp">
+            <span id="promoMsg" class="media-msg"></span>
+          </div>
+        </div>
+      </div>
       <div class="panel settings-card">
         <h2>ราคาตัวแทนจำหน่าย</h2>
         <div class="settings-note">ปุ่มราคาตัวแทนหน้าเว็บจะให้กรอกรหัสก่อนเข้าเหมือนระบบเดิม</div>
@@ -565,6 +591,41 @@ async function renderSettingsView(){
     catch(err){msg.className="media-msg error";msg.textContent="อัปโหลดไม่สำเร็จ: "+err.message}
     finally{btn.disabled=false;e.target.value=""}
   });
+
+  const updatePromoPreview=(url)=>{
+    const p=document.querySelector("#promoPreview");
+    if(p)p.innerHTML=url?`<img src="${esc(url)}">`:'<span>ยังไม่มี Artwork</span>';
+  };
+  document.querySelector("#promoImage")?.addEventListener("input",e=>updatePromoPreview(e.target.value.trim()));
+  document.querySelector("#promoUploadBtn")?.addEventListener("click",()=>document.querySelector("#promoFile")?.click());
+  document.querySelector("#promoFile")?.addEventListener("change",async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    const btn=document.querySelector("#promoUploadBtn"),msg=document.querySelector("#promoMsg");
+    btn.disabled=true;msg.textContent="กำลังอัปโหลด...";
+    try{
+      const r=await uploadFile(file,"image");
+      document.querySelector("#promoImage").value=r.url;updatePromoPreview(r.url);
+      msg.className="media-msg success";msg.textContent="อัปโหลดแล้ว — กดบันทึกการตั้งค่า";
+    }catch(err){msg.className="media-msg error";msg.textContent="อัปโหลดไม่สำเร็จ: "+err.message}
+    finally{btn.disabled=false;e.target.value=""}
+  });
+  document.querySelector("#promoLibraryBtn")?.addEventListener("click",async()=>{
+    const msg=document.querySelector("#promoMsg");msg.textContent="กำลังเปิด Media Library...";
+    try{
+      await loadMediaLibrary();
+      if(!mediaFiles.length){msg.textContent="ยังไม่มีรูปใน Media Library";return}
+      const overlay=document.createElement("div");overlay.className="promo-picker-overlay";
+      overlay.innerHTML=`<div class="promo-picker-box"><div class="promo-picker-head"><b>เลือก Artwork โปรโมชั่น</b><button type="button" class="secondary promo-picker-close">ปิด</button></div><div class="promo-picker-grid">${mediaFiles.map(f=>`<button type="button" class="promo-picker-item" data-url="${esc(f.url)}"><img src="${esc(f.url)}"><span>${esc(f.name||"รูป")}</span></button>`).join("")}</div></div>`;
+      document.body.appendChild(overlay);
+      const close=()=>overlay.remove();
+      overlay.querySelector(".promo-picker-close").onclick=close;
+      overlay.onclick=e=>{if(e.target===overlay)close()};
+      overlay.querySelectorAll(".promo-picker-item").forEach(b=>b.onclick=()=>{
+        document.querySelector("#promoImage").value=b.dataset.url;updatePromoPreview(b.dataset.url);msg.textContent="เลือกรูปแล้ว — กดบันทึกการตั้งค่า";close();
+      });
+    }catch(err){msg.className="media-msg error";msg.textContent="โหลด Media Library ไม่สำเร็จ: "+err.message}
+  });
+
   document.querySelector("#saveSettingsBtn").onclick=async()=>{
     const btn=document.querySelector("#saveSettingsBtn"),msg=document.querySelector("#settingsMsg");
     btn.disabled=true;msg.textContent="กำลังบันทึก...";
@@ -629,6 +690,9 @@ async function saveCategory(payload){
 }
 async function deleteCategoryRow(row){
   return await apiGet({action:"deleteCategory",row:String(row)});
+}
+async function saveCategoryOrder(rows){
+  return await apiGet({action:"saveCategoryOrder",rows:JSON.stringify(rows)});
 }
 
 
@@ -902,8 +966,7 @@ function sheetFromUrl(u=''){try{return new URL(u,location.href).searchParams.get
 function categoryAdminRows(){
   const arr=categoryApiData.length?categoryApiData:cats().map((x,i)=>({...x,__row:i+2}));
   if(!arr.length) return '<div class="empty">ยังไม่มีหมวดสินค้า</div>';
-  return arr.map((x,i)=>`<div class="cat-admin-row" data-i="${i}">
-    <div class="cat-order">${esc(x.sort||i+1)}</div>
+  return arr.map((x,i)=>`<div class="cat-admin-row" data-i="${i}" data-row="${esc(x.__row||"")}" draggable="true">\n    <div class="cat-order drag-handle" title="ลากเพื่อจัดลำดับ">⠿</div>
     ${x.image?`<img class="thumb" src="${esc(x.image)}">`:'<div class="thumb"></div>'}
     <div class="grow"><b>${esc(x.titleTH||x.titleEN||"-")}</b><div class="muted">${esc(x.titleEN||"")} · ${esc(x.sheetTab||sheetFromUrl(x.price_url)||"ยังไม่ผูก Sheet")}</div></div>
     ${activeText(x.status||"ACTIVE")?badge("เปิด","ok"):badge("ปิด","bad")} ${String(x.dealerEnabled??x.dealer_enabled??"TRUE").toUpperCase()==="FALSE"?badge("Dealer ปิด","bad"):badge("Dealer เปิด","ok")}
@@ -991,6 +1054,38 @@ function bindCategoryAdmin(){
   document.querySelector("#addCategory")?.addEventListener("click",()=>openCategoryModal());
   document.querySelector("#reloadCats")?.addEventListener("click",async()=>{await Promise.all([loadCategoryApi(),loadSheetTabs()]);views.categories()});
   document.querySelectorAll(".edit-cat").forEach(b=>b.addEventListener("click",()=>openCategoryModal(categoryApiData[Number(b.dataset.i)])));
+  bindCategoryDragSort();
+}
+function bindCategoryDragSort(){
+  const list=document.querySelector(".cat-admin-list");
+  const rows=[...document.querySelectorAll(".cat-admin-row")];
+  if(!rows.length)return;
+  let dragging=null;
+  rows.forEach(row=>{
+    row.addEventListener("dragstart",e=>{dragging=row;row.classList.add("dragging");e.dataTransfer.effectAllowed="move"});
+    row.addEventListener("dragend",()=>{row.classList.remove("dragging");dragging=null;saveCurrentCategoryOrder()});
+    row.addEventListener("dragover",e=>{
+      e.preventDefault();if(!dragging||dragging===row)return;
+      const rect=row.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
+      row.parentNode.insertBefore(dragging,after?row.nextSibling:row);
+    });
+    row.addEventListener("touchstart",()=>row.classList.add("touch-ready"),{passive:true});
+  });
+}
+let categoryOrderSaving=false;
+async function saveCurrentCategoryOrder(){
+  if(categoryOrderSaving)return;
+  const rows=[...document.querySelectorAll(".cat-admin-row")].map((el,i)=>({row:Number(el.dataset.row||0),sort:i+1})).filter(x=>x.row>=2);
+  if(!rows.length)return;
+  categoryOrderSaving=true;
+  const msg=document.querySelector("#categoryOrderMsg");if(msg)msg.textContent="กำลังบันทึกลำดับ...";
+  try{
+    await saveCategoryOrder(rows);
+    await loadCategoryApi();
+    if(msg){msg.className="media-msg success";msg.textContent="บันทึกลำดับแล้ว"}
+  }catch(err){
+    if(msg){msg.className="media-msg error";msg.textContent="บันทึกลำดับไม่สำเร็จ: "+err.message}
+  }finally{categoryOrderSaving=false}
 }
 async function openCategoryModal(x=null){
   const modal=document.querySelector("#categoryModal"), del=document.querySelector("#deleteCat");

@@ -104,6 +104,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     return await res.json();
   }
 
+
+function setupPromotionPopup(data, audience){
+  const enabled=String(data?.promoEnabled||"FALSE").toUpperCase()==="TRUE";
+  const image=String(data?.promoImage||"").trim();
+  const target=String(data?.promoAudience||"BOTH").toUpperCase();
+  const frequency=String(data?.promoFrequency||"DAILY").toUpperCase();
+  const start=String(data?.promoStart||"").trim();
+  const end=String(data?.promoEnd||"").trim();
+  const today=new Date();today.setHours(0,0,0,0);
+  const parseDate=s=>{if(!s)return null;const p=s.split("-").map(Number);return p.length===3?new Date(p[0],p[1]-1,p[2]):null};
+  const sd=parseDate(start),ed=parseDate(end);
+  if(!enabled||!image)return;
+  if(target!=="BOTH"&&target!==audience)return;
+  if(sd&&today<sd)return;
+  if(ed&&today>ed)return;
+
+  const campaign=[image,start,end,target].join("|");
+  let hash=0;for(let i=0;i<campaign.length;i++)hash=((hash<<5)-hash)+campaign.charCodeAt(i)|0;
+  const key="leeplus_promo_"+Math.abs(hash);
+  const dayKey=new Date().toISOString().slice(0,10);
+  try{
+    const seen=localStorage.getItem(key);
+    if(frequency==="ONCE"&&seen)return;
+    if(frequency==="DAILY"&&seen===dayKey)return;
+  }catch(_){}
+
+  const style=document.createElement("style");
+  style.textContent=`.lp-promo-overlay{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.76);display:grid;place-items:center;padding:18px;animation:lpPromoFade .18s ease}.lp-promo-box{position:relative;width:min(560px,92vw);aspect-ratio:1/1}.lp-promo-box img{width:100%;height:100%;object-fit:contain;display:block;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);background:#111}.lp-promo-close{position:absolute;right:-10px;top:-10px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:#111;font-size:24px;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)}@keyframes lpPromoFade{from{opacity:0}to{opacity:1}}@media(max-height:650px){.lp-promo-box{width:min(78vh,92vw)}}`;
+  document.head.appendChild(style);
+  const overlay=document.createElement("div");overlay.className="lp-promo-overlay";
+  overlay.innerHTML=`<div class="lp-promo-box"><img src="${image.replace(/"/g,"&quot;")}" alt="Promotion"><button class="lp-promo-close" type="button" aria-label="ปิด">×</button></div>`;
+  const close=()=>{overlay.remove();style.remove();try{localStorage.setItem(key,frequency==="DAILY"?dayKey:"1")}catch(_){}};
+  overlay.querySelector(".lp-promo-close").onclick=close;
+  overlay.onclick=e=>{if(e.target===overlay)close()};
+  overlay.querySelector("img").onerror=()=>{overlay.remove();style.remove()};
+  document.body.appendChild(overlay);
+}
+
+
   try {
     let data;
 
@@ -155,6 +194,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           }catch(_){return []}
         })(),
         logoUrl: siteMeta.logoUrl || "",
+        promoEnabled: siteMeta.promoEnabled || "FALSE",
+        promoImage: siteMeta.promoImage || "",
+        promoStart: siteMeta.promoStart || "",
+        promoEnd: siteMeta.promoEnd || "",
+        promoAudience: siteMeta.promoAudience || "BOTH",
+        promoFrequency: siteMeta.promoFrequency || "DAILY",
         categories,
       };
 
@@ -177,6 +222,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       if(logoUrl){siteLogo.src=logoUrl;siteLogo.style.display="block";siteLogo.onerror=()=>{siteLogo.style.display="none";siteLogo.removeAttribute("src")}}
       else{siteLogo.style.display="none";siteLogo.removeAttribute("src")}
     }
+
+    setupPromotionPopup(data,"RETAIL");
 
 
     const contactBar=document.getElementById("contactBar");

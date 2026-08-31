@@ -1,19 +1,27 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>LEEPLUS CMS</title>
-
-    <!-- สำคัญ: Netlify Identity Widget -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  </head>
-
-  <body>
-    <!-- สำคัญมาก: Decap จะ mount ลง div นี้ -->
-    <div id="nc-root"></div>
-
-    <!-- ใช้ตัว stable (อย่าใช้ beta) -->
-    <script src="https://unpkg.com/decap-cms@3.0.0/dist/decap-cms.js"></script>
-  </body>
-</html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LEEPLUS Backoffice</title><link rel="stylesheet" href="admin.css">  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260821">
+</head>
+<body>
+<div id="loginGate" class="login-gate">
+  <form id="loginForm" class="login-box" autocomplete="off">
+    <div class="login-brand"><b>LEEPLUS</b><span>BACKOFFICE</span></div>
+    <h2>เข้าสู่ระบบหลังบ้าน</h2>
+    <p>กรอกรหัสสำหรับผู้ดูแลระบบ</p>
+    <input id="adminCode" type="password" inputmode="numeric" placeholder="Admin Code" autocomplete="current-password">
+    <button type="submit">เข้าสู่ระบบ</button>
+    <div id="loginError" class="login-error"></div>
+  </form>
+</div>
+<div class="app">
+<aside><div class="brand"><b>LEEPLUS</b><span>BACKOFFICE</span></div><nav>
+<button class="nav active" data-view="dashboard">ภาพรวม</button>
+<button class="nav" data-view="categories">หมวดสินค้า</button>
+<button class="nav" data-view="media">รูปและสื่อ</button>
+<button class="nav" data-view="pdf">ไฟล์ PDF</button>
+<button class="nav" data-view="sheet">Google Sheet</button>
+<button class="nav" data-view="settings">ตั้งค่าเว็บไซต์</button>
+</nav><div class="foot">Price Web Admin</div></aside>
+<main><header><div><h1 id="title">ภาพรวม</h1><p id="subtitle">จัดการข้อมูลเว็บใบราคาในจุดเดียว</p></div><div class="header-actions"><button id="logoutBtn" class="logout">ออกจากระบบ</button><a href="/" class="site">เปิดหน้าเว็บ</a></div></header>
+<section id="content"></section></main></div>
+<script src="admin.js"></script></body></html>

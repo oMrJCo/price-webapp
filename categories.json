@@ -33,7 +33,12 @@
       "image": "assets/uploads/images/b1.jpg",
       "pdf": "",
       "pdf_file": "assets/uploads/pdfs/1.ราคาส่ง-battery-.pdf",
-      "price_url": "price_sheet.html?tab=Battery"
+      "price_url": "price_sheet.html?tab=Battery",
+      "dealer_pdf": "/assets/uploads/pdfs/1.ราคาตัวแทน-battery.pdf",
+      "id": "battery",
+      "enabled": true,
+      "sort": 1,
+      "sheetTab": "Battery"
     },
     {
       "titleEN": "Battery Power Up",
@@ -41,28 +46,44 @@
       "image": "assets/uploads/images/b2.jpg",
       "pdf": "pdf/battery-powerup.pdf",
       "price_url": "price_sheet.html?tab=Battery%20power%20up",
-      "pdf_file": "assets/uploads/pdfs/battery-powerup.pdf"
+      "pdf_file": "assets/uploads/pdfs/battery-powerup.pdf",
+      "id": "battery-power-up",
+      "enabled": true,
+      "sort": 2,
+      "sheetTab": "Battery power up"
     },
     {
       "titleEN": "Battery No BSM",
       "titleTH": "แบตเตอรี่ไม่มีขั้ว",
       "image": "assets/uploads/images/b3.jpg",
       "pdf": "pdf/battery-no-bsm.pdf",
-      "price_url": "price_sheet.html?tab=No%20BMS"
+      "price_url": "price_sheet.html?tab=No%20BMS",
+      "id": "battery-no-bsm",
+      "enabled": true,
+      "sort": 3,
+      "sheetTab": "No BMS"
     },
     {
       "titleEN": "Battery Diagnostics",
       "titleTH": "แบตเตอรี่แจ้งใช้แล้ว",
       "image": "assets/uploads/images/batt100-.jpg",
       "pdf": "pdf/battery-diagnostics.pdf",
-      "price_url": "price_sheet.html?tab=Batt%20Diagnostics"
+      "price_url": "price_sheet.html?tab=Batt%20Diagnostics",
+      "id": "battery-diagnostics",
+      "enabled": true,
+      "sort": 4,
+      "sheetTab": "Batt Diagnostics"
     },
     {
       "titleEN": "Battery Genuine",
       "titleTH": "แบตเตอรี่แจ้งของแท้",
       "image": "assets/uploads/images/batt100-1.jpg",
       "pdf": "pdf/battery-genuine.pdf",
-      "price_url": "price_sheet.html?tab=Batt%20Diagnostics%20Genuine"
+      "price_url": "price_sheet.html?tab=Batt%20Diagnostics%20Genuine",
+      "id": "battery-genuine",
+      "enabled": true,
+      "sort": 5,
+      "sheetTab": "Batt Diagnostics Genuine"
     },
     {
       "titleEN": "Adapter & USB",
@@ -70,36 +91,58 @@
       "image": "assets/uploads/images/b6.jpg",
       "pdf": "",
       "price_url": "price_sheet.html?tab=Adaptor%20USB",
-      "pdf_file": "assets/uploads/pdfs/adapter-usb.pdf"
+      "pdf_file": "assets/uploads/pdfs/adapter-usb.pdf",
+      "id": "adapter-and-usb",
+      "enabled": true,
+      "sort": 6,
+      "sheetTab": "Adaptor USB"
     },
     {
       "titleEN": "LCD Screen",
       "titleTH": "หน้าจอโทรศัพท์",
       "image": "assets/uploads/images/b8.jpg",
       "pdf": "assets/uploads/pdfs/6.ราคาส่ง-lcd-lp.pdf",
-      "price_url": "price_sheet.html?tab=LCD%20Leeplus"
+      "price_url": "price_sheet.html?tab=LCD%20Leeplus",
+      "id": "lcd-screen",
+      "enabled": true,
+      "sort": 7,
+      "sheetTab": "LCD Leeplus"
     },
     {
       "titleEN": "Film Protector",
       "titleTH": "ฟิล์มกระจกกันรอย",
       "image": "assets/uploads/images/b5.jpg",
-      "pdf": "pdf/film-protector.pdf"
+      "pdf": "pdf/film-protector.pdf",
+      "sheetTab": "Film Protector",
+      "id": "film-protector",
+      "enabled": true,
+      "sort": 8
     },
     {
       "titleEN": "Hydrogel Film",
       "titleTH": "ฟิล์มไฮโดรเจล",
       "image": "assets/uploads/images/hydrop.jpg",
-      "pdf": "pdf/hydrogel-film.pdf"
+      "pdf": "pdf/hydrogel-film.pdf",
+      "id": "hydrogel-film",
+      "enabled": true,
+      "sort": 9
     },
     {
       "titleEN": "LCD Screen AAA",
       "titleTH": "หน้าจอโทรศัพท์เกรดเทียบ",
       "image": "assets/uploads/images/lcd.jpg",
-      "pdf": "pdf/lcd-aaa.pdf"
+      "pdf": "pdf/lcd-aaa.pdf",
+      "id": "lcd-screen-aaa",
+      "enabled": true,
+      "sort": 10
     },
     {
       "titleEN": "test",
-      "titleTH": "test"
+      "titleTH": "test",
+      "image": "assets/uploads/images/CLLP27w.jpg",
+      "id": "test",
+      "enabled": true,
+      "sort": 11
     }
   ],
   "siteSubtitle": "เลือกหมวดสินค้าเพื่อดูราคาล่าสุด"

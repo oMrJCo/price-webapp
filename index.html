@@ -19,7 +19,7 @@
     })();
   </script>
 
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260821">
 
   <style>
     :root{
@@ -324,7 +324,7 @@
 
       .wrap{ padding:18px 14px 34px; }
       h1{ font-size:18px; }
-      .cover-box{ height: clamp(160px, 40vw, 220px); }
+      .cover-box{ height:auto; }
       .grid{ grid-template-columns:1fr; gap:14px; }
     }
   
@@ -362,8 +362,8 @@
     /* Mobile: full-width bar like native CTA */
     @media (max-width: 768px){
       @keyframes softPulseMobile {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.02); }
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50% { transform: translateX(-50%) scale(1.02); }
       }
       .line-sticky.pulse {
         animation: softPulseMobile 6s ease-in-out infinite;
@@ -373,6 +373,424 @@
       .line-sticky.pulse { animation: none; }
     }
 
+
+    /* ===== Top Right Dealer Nav ===== */
+    .topNav{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+    }
+
+    .dealerNavBtn{
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(234,179,8,.4);
+      background:rgba(234,179,8,.12);
+      color:var(--text);
+      font-weight:900;
+      text-decoration:none;
+      letter-spacing:.3px;
+      font-size:13px;
+      transition:all .2s ease;
+    }
+
+    .dealerNavBtn:hover{
+      transform:translateY(-2px);
+      filter:brightness(1.05);
+      border-color:rgba(234,179,8,.7);
+    }
+
+
+
+    /* ===== Phase 5A — Frontend UI Refresh ===== */
+    .wrap{
+      max-width:1280px;
+      padding:18px 24px 48px;
+    }
+
+    header{
+      min-height:58px;
+      margin-bottom:14px;
+      gap:12px;
+      padding:0 2px;
+    }
+    .logo-circle{
+      width:48px;
+      height:48px;
+      border-radius:12px;
+    }
+    h1{
+      font-size:21px;
+      font-weight:900;
+      letter-spacing:.25px;
+    }
+    #siteSubtitle{
+      margin-top:2px;
+      font-size:12px;
+      line-height:1.4;
+      color:rgba(255,255,255,.62);
+    }
+    .dealerNavBtn{
+      min-height:40px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 18px;
+      border-radius:999px;
+      border:1px solid rgba(234,179,8,.55);
+      background:rgba(234,179,8,.06);
+      color:#fff;
+      font-size:13px;
+      font-weight:850;
+      text-decoration:none;
+      transition:.18s ease;
+    }
+    .dealerNavBtn:hover{
+      background:#eab308;
+      color:#090b10;
+      border-color:#eab308;
+    }
+
+    /* Artwork spec = 1600x500 (16:5). Frontend now uses the exact same ratio. */
+    .cover-box{
+      width:100%;
+      height:auto;
+      aspect-ratio:16 / 5;
+      min-height:0;
+      max-height:none;
+      margin-bottom:24px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#07090d;
+      box-shadow:0 16px 48px rgba(0,0,0,.34);
+    }
+    .cover-slide img,
+    #coverImage{
+      object-fit:cover;
+      object-position:center;
+      filter:none;
+    }
+    .cover-box::after{
+      background:linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,.12));
+      pointer-events:none;
+    }
+    .cover-txt{
+      left:24px;
+      right:90px;
+      bottom:22px;
+      padding:12px 14px;
+      width:max-content;
+      max-width:min(680px,70%);
+      border-radius:12px;
+      background:rgba(5,7,11,.58);
+      backdrop-filter:blur(8px);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .cover-txt.is-empty{display:none}
+    #coverHeadline{font-size:18px;margin-bottom:3px}
+    #coverSubtext{font-size:12px}
+    .cover-nav{
+      width:38px;
+      height:38px;
+      font-size:22px;
+      background:rgba(5,7,11,.54);
+      border-color:rgba(255,255,255,.20);
+    }
+    .cover-nav.prev{left:14px}
+    .cover-nav.next{right:14px}
+    .cover-dots{
+      bottom:12px;
+      gap:6px;
+    }
+    .cover-dot{
+      width:22px;
+      height:4px;
+      border:0;
+      border-radius:999px;
+      background:rgba(255,255,255,.30);
+    }
+    .cover-dot.active{
+      width:34px;
+      transform:none;
+      background:#eab308;
+    }
+
+    .grid{
+      grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+      gap:16px;
+    }
+    .card{
+      border-radius:18px;
+      border-color:rgba(255,255,255,.09);
+      box-shadow:0 8px 28px rgba(0,0,0,.28);
+      background:#0d1119;
+    }
+    .card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 14px 36px rgba(0,0,0,.42),0 0 0 1px rgba(234,179,8,.35);
+    }
+    .thumb{
+      border-radius:0;
+      background:#111722;
+    }
+    .thumb::after{
+      background:linear-gradient(180deg, transparent 62%, rgba(0,0,0,.28));
+    }
+    .label{
+      min-height:74px;
+      padding:12px 14px 14px;
+      gap:3px;
+      background:#0d1119;
+      border-top-color:rgba(255,255,255,.07);
+    }
+    .title-en{
+      font-size:11px;
+      letter-spacing:.7px;
+      color:#eab308;
+    }
+    .title-th{
+      font-size:15px;
+      line-height:1.25;
+    }
+
+    @media(max-width:760px){
+      .wrap{padding:14px 12px 34px}
+      header{align-items:flex-start;flex-wrap:wrap}
+      .logo-circle{width:42px;height:42px}
+      .topNav{margin-left:auto}
+      .dealerNavBtn{min-height:36px;padding:0 12px;font-size:11px}
+      #siteSubtitle{max-width:70vw}
+      .cover-box{
+        aspect-ratio:16 / 7;
+        border-radius:16px;
+        margin-bottom:16px;
+      }
+      .cover-txt{
+        left:12px;right:12px;bottom:12px;
+        max-width:calc(100% - 24px);
+        padding:9px 10px;
+      }
+      #coverHeadline{font-size:15px}
+      #coverSubtext{font-size:11px}
+      .cover-dots{bottom:7px}
+      .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .label{min-height:68px;padding:10px 10px 12px}
+      .title-th{font-size:13px}
+      .title-en{font-size:10px}
+      .line-sticky{bottom:12px}
+    }
+
+
+.contact-bar{display:flex;gap:8px;flex-wrap:wrap;margin:-3px 0 14px 62px}.contact-pill{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:#fff;text-decoration:none;font-size:11px;font-weight:800;background:#111722}.contact-pill.line{border-color:rgba(6,199,85,.40)}.contact-pill.facebook{border-color:rgba(24,119,242,.45)}.contact-pill.phone{border-color:rgba(234,179,8,.40)}
+.dealerNavBtn{font-family:inherit;cursor:pointer}.dealer-access-modal{position:fixed;inset:0;background:rgba(0,0,0,.76);z-index:9999;display:none;place-items:center;padding:20px}.dealer-access-modal.show{display:grid}.dealer-access-card{position:relative;width:min(390px,100%);background:#0d1119;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.65)}.dealer-access-close{position:absolute;right:14px;top:12px;border:0;background:#171c26;color:#fff;width:34px;height:34px;border-radius:50%;font-size:22px;cursor:pointer}.dealer-access-brand{font-weight:950;font-size:18px}.dealer-access-brand span{color:#eab308;font-size:10px;letter-spacing:2px;display:block;margin-top:2px}.dealer-access-card h2{margin:24px 0 5px;font-size:21px}.dealer-access-card p{margin:0 0 16px;color:#9299a8;font-size:12px}.dealer-access-card input{width:100%;height:48px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:#090c12;color:#fff;padding:0 13px;font-size:16px;outline:none}.dealer-access-submit{width:100%;height:46px;border:0;border-radius:11px;background:#eab308;color:#090b10;font-weight:900;margin-top:10px;cursor:pointer}.dealer-access-error{min-height:18px;color:#ff7777;font-size:11px;margin-top:9px}@media(max-width:760px){.contact-bar{margin:0 0 12px 0}.contact-pill{flex:1;min-width:88px}}
+
+
+/* Phase 5B.2 — Header logo fallback + Contact bar polish */
+.logo-image-failed .logo-circle{display:none!important}
+.logo-image-failed header::before{
+  content:"LP";width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;
+  border-radius:12px;background:linear-gradient(145deg,#f2c300,#111 78%);
+  color:#fff;font-size:12px;font-weight:950;letter-spacing:.5px;border:1px solid rgba(242,195,0,.35);
+}
+.contact-bar{
+  margin:0 0 16px 0!important;padding:10px 12px;border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;background:rgba(13,17,25,.72);backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:8px;
+}
+.contact-bar::before{
+  content:"ติดต่อเรา";color:rgba(255,255,255,.48);font-size:10px;font-weight:800;
+  letter-spacing:.5px;margin-right:2px;
+}
+.contact-pill{
+  min-height:36px!important;padding:0 14px!important;border-radius:10px!important;
+  background:#0a0e15!important;font-size:11px!important;font-weight:900!important;transition:.18s ease;
+}
+.contact-pill:hover{transform:translateY(-1px);filter:brightness(1.12)}
+.contact-pill.line{border-color:rgba(6,199,85,.55)!important}
+.contact-pill.facebook{border-color:rgba(24,119,242,.60)!important}
+.contact-pill.phone{
+  border-color:rgba(234,179,8,.58)!important;color:#f3cf34!important;
+  font-variant-numeric:tabular-nums;letter-spacing:.15px;
+}
+@media(max-width:760px){
+  .contact-bar{padding:8px;gap:6px}.contact-bar::before{display:none}
+  .contact-pill{flex:1;padding:0 8px!important;min-width:0!important}
+}
+
+
+/* Phase 6D — Smart Contact Cards */
+.contact-bar{
+  margin:0 0 16px!important;
+  padding:12px!important;
+  display:grid!important;
+  grid-template-columns:minmax(180px,.85fr) repeat(3,minmax(190px,1fr));
+  gap:10px!important;
+  align-items:stretch!important;
+  border:1px solid rgba(255,255,255,.075)!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.018),transparent),#0f131a!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.20);
+}
+.contact-bar::before{display:none!important}
+
+.contact-intro,
+.contact-card{
+  min-height:72px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.075);
+  background:#111720;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:11px 13px;
+  min-width:0;
+}
+.contact-intro{
+  color:#fff;
+  background:linear-gradient(135deg,rgba(243,201,0,.055),transparent 58%),#111720;
+}
+.contact-intro b,.contact-copy b{
+  display:block;
+  color:#f4f6f8;
+  font-size:13px;
+  line-height:1.15;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.contact-intro small,.contact-copy small{
+  display:block;
+  margin-top:4px;
+  color:#7f8997;
+  font-size:9.5px;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.contact-card{
+  text-decoration:none;
+  color:#fff;
+  transition:.18s ease;
+  position:relative;
+  overflow:hidden;
+}
+.contact-card:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.contact-line{border-color:rgba(6,199,85,.34);background:linear-gradient(135deg,rgba(6,199,85,.11),transparent 58%),#101720}
+.contact-facebook{border-color:rgba(24,119,242,.38);background:linear-gradient(135deg,rgba(24,119,242,.12),transparent 58%),#101720}
+.contact-phone{border-color:rgba(243,201,0,.40);background:linear-gradient(135deg,rgba(243,201,0,.11),transparent 58%),#14150f}
+.contact-copy{min-width:0;flex:1}
+.contact-phone .contact-copy b{color:#f4cb24}
+
+.contact-icon{
+  width:44px;height:44px;flex:0 0 44px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+}
+.contact-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.support-icon{color:#f3c900;background:rgba(243,201,0,.08)}
+.line-logo{background:#08c755;color:#fff;border-radius:50%}
+.line-logo span{font-size:9px;font-weight:950;letter-spacing:-.3px}
+.facebook-logo{background:#1877f2;color:#fff;border-radius:50%;font-family:Arial,sans-serif;font-size:29px;font-weight:900;line-height:1;padding-top:5px}
+.phone-logo{color:#f3c900;background:rgba(243,201,0,.075);border:1px solid rgba(243,201,0,.24);border-radius:50%}
+.phone-logo svg{fill:currentColor;stroke:none;width:21px;height:21px}
+.contact-arrow{font-size:26px;color:#626c79;font-weight:300;margin-left:2px}
+.contact-line .contact-arrow{color:#22d66c}
+.contact-facebook .contact-arrow{color:#4794f2}
+.contact-phone .contact-arrow{color:#f0c400}
+
+@media(max-width:980px){
+  .contact-bar{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:600px){
+  .contact-bar{
+    grid-template-columns:1fr!important;
+    padding:9px!important;
+    gap:7px!important;
+    border-radius:15px!important;
+  }
+  .contact-intro,.contact-card{
+    min-height:60px;
+    padding:9px 11px;
+    border-radius:12px;
+  }
+  .contact-icon{width:38px;height:38px;flex-basis:38px;border-radius:10px}
+  .contact-intro b,.contact-copy b{font-size:12px}
+}
+
+
+/* Phase 7A — Price Section Heading */
+.price-section-heading{
+  display:grid;
+  grid-template-columns:minmax(40px,1fr) auto minmax(40px,1fr);
+  align-items:center;
+  gap:22px;
+  margin:18px 0 16px;
+  padding:16px 20px;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:18px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),transparent),
+    #0f131a;
+}
+.price-section-line{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(243,201,0,.72));
+}
+.price-section-line:last-child{
+  background:linear-gradient(90deg,rgba(243,201,0,.72),transparent);
+}
+.price-section-center{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.price-section-icon{
+  width:46px;height:46px;flex:0 0 46px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  color:#f3c900;
+  border:1px solid rgba(243,201,0,.55);
+  background:rgba(243,201,0,.06);
+}
+.price-section-icon svg{
+  width:22px;height:22px;
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.price-section-copy{text-align:center}
+.price-section-copy h2{
+  margin:0;
+  color:#f4f6f8;
+  font-size:22px;
+  line-height:1.05;
+  font-weight:950;
+}
+.price-section-copy h2 span{color:#f3c900}
+.price-section-copy p{
+  margin:6px 0 0;
+  color:#7f8895;
+  font-size:10px;
+  font-weight:700;
+}
+@media(max-width:720px){
+  .price-section-heading{
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:12px;
+    margin:12px 0 11px;
+  }
+  .price-section-line{display:none}
+  .price-section-center{justify-content:center}
+  .price-section-icon{width:38px;height:38px;flex-basis:38px}
+  .price-section-copy h2{font-size:18px}
+  .price-section-copy p{font-size:9px}
+}
+
 </style>
 </head>
 
@@ -380,14 +798,19 @@
   <div class="wrap">
     <header>
       <div class="logo-circle">
-        <img src="assets/uploads/leeplus-logo.png" alt="LEEPLUS" loading="eager" decoding="async">
+        <img id="siteLogo" src="" alt="" style="display:none" loading="eager" decoding="async">
       </div>
 
-      <div>
+      <div style="flex:1;">
         <h1 id="siteTitle">LEEPLUS</h1>
         <p id="siteSubtitle">กำลังโหลด...</p>
       </div>
+
+      <nav class="topNav">
+        <button type="button" class="dealerNavBtn" id="dealerAccessBtn">ราคาตัวแทนจำหน่าย</button>
+      </nav>
     </header>
+<div id="contactBar" class="contact-bar" style="display:none"></div>
 
     <div class="cover-box" aria-label="โปรโมชั่นและสินค้าแนะนำ">
       <div id="coverSlider" class="cover-slider" role="region" aria-roledescription="carousel" aria-label="Cover Slider">
@@ -405,7 +828,43 @@
       </div>
     </div>
 
-    <div id="categoriesGrid" class="grid"></div>
+    
+<section class="price-section-heading" aria-label="รายการราคาสินค้า">
+  <div class="price-section-line"></div>
+  <div class="price-section-center">
+    <div class="price-section-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M20 13 11 22 2 13V4h9l9 9Z"/><circle cx="7" cy="9" r="1.5"/></svg>
+    </div>
+    <div class="price-section-copy">
+      <h2>รายการ<span>ราคา</span>สินค้า</h2>
+      <p>เลือกหมวดสินค้าเพื่อดูรายการราคาและดาวน์โหลดใบราคา</p>
+    </div>
+  </div>
+  <div class="price-section-line"></div>
+</section>
+
+<div id="categoriesGrid" class="grid"></div>
+
+<div id="dealerAccessModal" class="dealer-access-modal" aria-hidden="true">
+  <div class="dealer-access-card">
+    <button class="dealer-access-close" id="dealerAccessClose" type="button">×</button>
+    <div class="dealer-access-brand">LEEPLUS <span>DEALER</span></div>
+    <h2>ราคาตัวแทนจำหน่าย</h2><p>กรอกรหัสเพื่อเข้าสู่รายการราคาตัวแทน</p>
+    <input id="dealerAccessCode" type="password" placeholder="รหัสตัวแทน">
+    <button id="dealerAccessSubmit" class="dealer-access-submit" type="button">เข้าสู่ระบบ</button>
+    <div id="dealerAccessError" class="dealer-access-error"></div>
+  </div>
+</div>
+<script>
+(function(){
+ const API="https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec",modal=document.getElementById("dealerAccessModal"),input=document.getElementById("dealerAccessCode"),err=document.getElementById("dealerAccessError");
+ function open(){modal.classList.add("show");setTimeout(()=>input.focus(),50)} function close(){modal.classList.remove("show");input.value="";err.textContent=""}
+ document.getElementById("dealerAccessBtn")?.addEventListener("click",open);document.getElementById("dealerAccessClose")?.addEventListener("click",close);modal?.addEventListener("click",e=>{if(e.target===modal)close()});
+ async function submit(){const code=input.value.trim();if(!code)return;err.textContent="กำลังตรวจสอบ...";try{const r=await fetch(`${API}?action=dealerLogin&code=${encodeURIComponent(code)}&t=${Date.now()}`,{cache:"no-store"});const j=await r.json();if(j.authorized){sessionStorage.setItem("leeplus_dealer_auth","1");location.href="/dealer/home.html"}else{err.textContent="รหัสไม่ถูกต้อง";input.select()}}catch(e){err.textContent="เชื่อมต่อระบบไม่สำเร็จ"}}
+ document.getElementById("dealerAccessSubmit")?.addEventListener("click",submit);input?.addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+})();
+</script>
+
 <script src="app.js" defer></script>
 
   <!-- Sticky LINE CTA (Mobile) -->

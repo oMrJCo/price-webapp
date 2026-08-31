@@ -1,637 +1,897 @@
 <!doctype html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LEEPLUS Price Sheet</title>
-  <meta name="robots" content="noindex, nofollow">
-
-  <style>
-    :root{
-      --bg:#070b12;
-      --line:rgba(255,255,255,.08);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.65);
-      --pill:rgba(255,255,255,.06);
-      --pillLine:rgba(255,255,255,.10);
-      --accent:#f6c845;
-      --price:#ffcc00;
-      --danger:#ff3b30;
-      --radius:22px;
-    }
-
-    *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Helvetica Neue", Arial;
-      background: #070b12;
-      color:var(--text);
-      overflow-x:hidden;
-      position: relative;
-    }
-
-    /* Hi-tech smooth background layers (no banding / no seams) */
-    body::before{
-      content:"";
-      position: fixed;
-      inset: 0;
-      z-index: -2;
-      background:
-        radial-gradient(1100px 700px at 18% 12%, rgba(85,135,255,.20), transparent 62%),
-        radial-gradient(900px 600px at 78% 18%, rgba(246,200,69,.16), transparent 60%),
-        radial-gradient(900px 700px at 55% 92%, rgba(120,255,214,.10), transparent 62%),
-        linear-gradient(180deg, #070b12 0%, #0a1120 45%, #0a0f1c 100%);
-      transform: translateZ(0);
-    }
-
-    /* Subtle grid overlay for a 'tech' feel */
-    body::after{
-      content:"";
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background:
-        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.030) 1px, transparent 1px),
-        radial-gradient(circle at 30% 20%, rgba(255,255,255,.05), transparent 55%);
-      background-size: 36px 36px, 36px 36px, auto;
-      opacity: .35;
-      pointer-events: none;
-      mix-blend-mode: overlay;
-      transform: translateZ(0);
-    }
-
-
-    .wrap{
-      max-width: 1080px;
-      margin: 28px auto 60px;
-      padding: 0 18px;
-    }
-
-    .card{
-      border:1px solid var(--line);
-      background: rgba(12,16,26,.72); backdrop-filter: blur(10px);
-      border-radius: var(--radius);
-      box-shadow: 0 18px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
-      overflow:hidden;
-    }
-
-    /* Allow list rows to render without being clipped */
-    .card.content{ overflow: visible; background: rgba(12,16,26,.72); backdrop-filter: blur(10px); }
-
-    /* ===== Header (clean) ===== */
-    .header{
-      position:relative;
-      padding: 18px 18px 16px;
-      background: transparent;
-    }
-
-    .headerInner{
-      display:flex;
-      gap:16px;
-      align-items:center;
-      justify-content:space-between;
-      min-height: 92px;
-    }
-
-    .leftGroup{
-      display:flex;
-      gap:14px;
-      align-items:center;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-
-    .backBtn{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      text-decoration:none;
-      white-space:nowrap;
-      flex: 0 0 auto;
-    }
-    .backBtn:hover{ background: rgba(255,255,255,.09); }
-
-    #catThumb{
-      display:none;
-      width: 56px;
-      height: 56px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.25);
-      overflow:hidden;
-      flex: 0 0 auto;
-      box-shadow: 0 12px 24px rgba(0,0,0,.35);
-    }
-    #catThumb img{
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      display:block;
-    }
-
-    .titleBlock{
-      min-width: 0;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      flex: 1 1 auto;
-    }
-    .crumb{
-      font-size: 12px;
-      color: rgba(255,255,255,.70);
-      letter-spacing:.2px;
-    }
-    .h1{
-      font-size: 26px;
-      line-height: 1.1;
-      font-weight: 900;
-      margin:0;
-      word-break: break-word;
-      white-space: normal;
-    }
-    .updated{
-      font-size: 12px;
-      color: rgba(255,255,255,.60);
-    }
-
-    .rightGroup{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      flex: 0 0 auto;
-    }
-
-    .hint{
-      display:none;
-      align-items:center;
-      gap:8px;
-      color: var(--danger);
-      font-weight: 900;
-      font-size: 13px;
-      white-space:nowrap;
-    }
-    .hint .arrow{ font-size: 16px; line-height: 1; }
-
-    .pdfBtn{
-      display:none; /* JS will show */
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      border:1px solid rgba(246,200,69,.45);
-      background: rgba(246,200,69,.10);
-      color: rgba(255,255,255,.92);
-      font-weight: 900;
-      text-decoration:none;
-      white-space:nowrap;
-    }
-    .pdfBtn:hover{ background: rgba(246,200,69,.16); }
-
-    /* ===== Content ===== */
-    .content{
-      margin-top: 12px;
-      padding: 14px 18px 16px;
-    }
-
-    .note{
-      color: rgba(255,255,255,.70);
-      font-size: 13px;
-      margin: 0 0 10px;
-    }
-
-    .searchWrap{
-      position:relative;
-      margin: 6px 0 10px;
-    }
-    .searchWrap .icon{
-      position:absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      width:18px;
-      height:18px;
-      opacity:.75;
-      pointer-events:none;
-    }
-    #search{
-      width: 100%;
-      padding: 13px 14px 13px 44px;
-      border-radius: 999px;
-      border:1px solid var(--line);
-      background: rgba(0,0,0,.22);
-      color: var(--text);
-      outline:none;
-      font-size: 14px;
-    }
-    #search:focus{
-      border-color: rgba(246,200,69,.45);
-      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
-    }
-
-    #tabs{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin: 8px 0 12px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border:1px solid var(--pillLine);
-      background: var(--pill);
-      color: rgba(255,255,255,.88);
-      cursor:pointer;
-      user-select:none;
-      font-weight: 800;
-      font-size: 13px;
-    }
-    .pill:hover{ background: rgba(255,255,255,.08); }
-    .pill.active{
-      border-color: rgba(246,200,69,.75);
-      background: rgba(246,200,69,.18);
-      color: rgba(255,255,255,.95);
-      box-shadow: 0 0 0 4px rgba(246,200,69,.08);
-    }
-
-    /* Tap/Focus polish (better on iOS) */
-    button, a{ -webkit-tap-highlight-color: transparent; }
-    .pill:focus-visible, .backBtn:focus-visible, .pdfBtn:focus-visible, .thumb:focus-visible{
-      outline: 2px solid rgba(246,200,69,.65);
-      outline-offset: 2px;
-    }
-
-    /* ✅ Icons + thumbs are styled by CSS (avoid inline styles; easier to tune on mobile) */
-    .tabIcon{
-      width:18px;height:18px;border-radius:999px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      flex:0 0 auto;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .tabIconImg{ width:100%;height:100%;object-fit:cover;display:block; }
-
-    .brandIcon{
-      width:20px;height:20px;border-radius:999px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.25);
-      flex:0 0 auto;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .brandIconImg{ width:100%;height:100%;object-fit:cover;display:block; }
-
-    .thumb{
-      width:54px;height:54px;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.03);
-      flex:0 0 auto;
-      cursor:pointer;
-    }
-    .thumb img{ width:100%;height:100%;object-fit:cover;display:block; }
-
-    table{
-      width:100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: transparent;
-      /* สำคัญ: อย่า overflow hidden บนมือถือ (จะตัด price) */
-      overflow: visible;
-    }
-
-    thead th{
-      text-align:left;
-      font-size: 13px;
-      color: rgba(255,255,255,.72);
-      padding: 14px 14px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-    }
-    thead th:last-child{ text-align:right; }
-
-    tbody tr td{
-      padding: 14px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-      vertical-align: middle;
-    }
-    tbody tr:last-child td{ border-bottom: none; }
-
-
-    /* Soft separators (continuous look) */
-    tbody tr td{
-      border-bottom-color: rgba(255,255,255,.05);
-    }
-    tbody tr{
-      background: transparent;
-    }
-
-    .model{
-      font-weight: 900;
-      letter-spacing:.2px;
-    }
-
-    /* ✅ NEW badge */
-    .badgeNew{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      margin-left: 8px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(255,59,48,.16);
-      border: 1px solid rgba(255,59,48,.55);
-      color: var(--danger);
-      font-weight: 900;
-      font-size: 12px;
-      line-height: 1;
-      vertical-align: middle;
-      white-space: nowrap;
-    }
-
-    .price{
-      text-align:right;
-      font-weight: 900;
-      color: var(--price);
-      white-space: nowrap;
-    }
-    .priceValue{ display:inline; }
-    .priceUnit{ display:inline; opacity:.85; font-weight: 800; }
-
-    .brandHeaderRow td{
-      padding: 12px 14px;
-      background: rgba(255,255,255,.03);
-    }
-
-    .brandHeader{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: transparent;
-      font-weight: 900;
-    }
-    .dot{
-      width: 10px;
-      height: 10px;
-      border-radius: 99px;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(246,200,69,.10);
-    }
-
-    #empty{
-      display:none;
-      margin-top: 12px;
-      color: rgba(255,255,255,.70);
-      font-size: 14px;
-      padding: 14px 12px;
-      border: 1px dashed rgba(255,255,255,.18);
-      border-radius: 16px;
-    }
-
-    /* ===== Modal ===== */
-    .modal{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.62);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 9999;
-    }
-    .modal.show{ display:flex; }
-    .modalCard{
-      width: min(860px, 95vw);
-      border-radius: 18px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(10,14,22,.92);
-      overflow:hidden;
-      box-shadow: 0 24px 70px rgba(0,0,0,.55);
-    }
-    .modalHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      color: rgba(255,255,255,.92);
-      font-weight: 900;
-    }
-    .modalClose{
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.90);
-      border-radius: 12px;
-      padding: 8px 10px;
-      cursor:pointer;
-      font-weight: 900;
-    }
-    .modalBody{
-      padding: 14px;
-      background: rgba(0,0,0,.25);
-    }
-    .modalBody img{
-      width:100%;
-      height:auto;
-      display:block;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-    }
-
-    /* ===== Responsive (แก้ 2 ปัญหา: title โดนบีบ + ราคาไม่ขึ้น) ===== */
-    @media (max-width: 720px){
-      .wrap{ margin-top: 16px; }
-      .header{ padding: 14px 14px 12px; }
-      #catThumb{ width: 48px; height: 48px; }
-      .h1{ font-size: 22px; }
-      .hint{ display:flex; }
-      .backBtn{ padding: 9px 12px; }
-      .pdfBtn{ padding: 9px 12px; }
-      .content{ padding: 12px 14px 14px; }
-    }
-
-    /* ⭐ มือถือเล็ก: เปลี่ยนตารางเป็น list layout เพื่อให้ "ราคา" ไม่หาย */
-    @media (max-width: 520px){
-      .headerInner{
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-        min-height: unset;
-      }
-      .leftGroup{
-        width: 100%;
-      }
-      .rightGroup{
-        width: 100%;
-        justify-content: flex-end;
-      }
-      .crumb{ display:none; }
-
-      thead{ display:none; }
-      tbody tr{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-      }
-      tbody tr td{
-        border-bottom:none;
-        padding: 14px 12px;
-      }
-      tbody tr{
-        border-bottom: 1px solid rgba(255,255,255,.06);
-      }
-      tbody tr:last-child{
-        border-bottom: none;
-      }
-      tbody tr td:first-child{
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      tbody tr td:last-child{
-        flex: 0 0 auto;
-        text-align:right;
-        white-space: nowrap;
-      }
-
-      /* brand header row ให้ไม่เพี้ยน */
-      .brandHeaderRow{
-        display:block !important;
-      }
-      .brandHeaderRow td{
-        display:block !important;
-        padding: 12px 12px;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-      }
-
-      /* Mobile polish */
-      #tabs{ gap:8px; }
-      .pill{ padding: 7px 10px; font-size: 12.5px; }
-      .thumb{ width:46px; height:46px; border-radius:14px; }
-      tbody tr{ gap:10px; }
-      tbody tr td{ padding: 12px 12px; }
-      .price{ font-size: 14px; }
-
-
-      /* Price fit fix: prevent overflow on small phones */
-      tbody tr td:last-child{ padding-left: 6px; }
-      .price{ font-size: 13px; }
-      .priceUnit{ font-size: 12px; opacity:.8; }
-      /* If still tight, allow unit to wrap under number */
-      @supports (text-wrap: balance){ }
-      .priceUnit{ display:inline; }
-      @media (max-width: 360px){
-        .priceUnit{ display:block; margin-top:2px; }
-        .price{ text-align:right; }
-      }
-
-
-      /* Universal mobile list layout (better cross-device, incl. iOS Safari) */
-      table{ display:block; width:100%; }
-      tbody{ display:block; width:100%; }
-      tbody tr{ display:flex; width:100%; }
-      tbody tr td{ display:block; }
-      tbody tr td:first-child{ flex: 1 1 58%; min-width: 0; }
-      tbody tr td:last-child{ flex: 0 0 auto; max-width: 42%; }
-
-      /* Ensure long model names wrap and don't push price out */
-      .model{ overflow-wrap:anywhere; }
-
-    }
-  
-
-    /* Hi-tech ambient animation (very subtle) */
-    @keyframes floatGlow{
-      0%{ filter: hue-rotate(0deg); opacity:.34; }
-      50%{ filter: hue-rotate(10deg); opacity:.42; }
-      100%{ filter: hue-rotate(0deg); opacity:.34; }
-    }
-    body::before{ animation: floatGlow 10s ease-in-out infinite; }
-    @media (prefers-reduced-motion: reduce){
-      body::before{ animation: none; }
-    }
-</style>
-
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
-  <script>checkAuth();</script>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0f">
+<title>LEEPLUS Dealer Price</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260821">
 <style>
-  .dealerLogoutPill{
-    position: fixed;
-    right: 14px;
-    bottom: 14px;
-    z-index: 9999;
-    padding: 10px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.16);
-    background: rgba(0,0,0,.35);
-    color: var(--text, #fff);
-    backdrop-filter: blur(10px);
-    cursor: pointer;
-    font-weight: 800;
+:root{
+  --bg:#080a0f;
+  --panel:#10131a;
+  --panel2:#0c0f15;
+  --line:rgba(255,255,255,.09);
+  --line2:rgba(255,255,255,.06);
+  --text:#f7f8fb;
+  --muted:#8f96a3;
+  --accent:#f2c300;
+  --accent2:#ffda28;
+  --danger:#ff5a52;
+  --shadow:0 18px 50px rgba(0,0,0,.30);
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(900px 460px at 12% -8%,rgba(242,195,0,.08),transparent 58%),
+    radial-gradient(720px 480px at 98% 0%,rgba(79,108,255,.08),transparent 62%),
+    var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+button,input,a{font:inherit}
+a{-webkit-tap-highlight-color:transparent}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 22px 64px}
+.card{border:1px solid var(--line);background:rgba(16,19,26,.92);box-shadow:var(--shadow)}
+.header{border-radius:20px;padding:15px 16px;margin-bottom:14px;position:relative;overflow:hidden}
+.header::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.headerInner{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:76px}
+.leftGroup{display:flex;align-items:center;gap:13px;min-width:0;flex:1}
+.backBtn{
+  width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:12px;
+  border:1px solid var(--line);background:#171b23;color:#fff;text-decoration:none;font-weight:900;
+}
+.backBtn span:last-child{display:none}.backBtn span:first-child{font-size:28px;line-height:1;margin-top:-2px}
+.backBtn:hover{border-color:rgba(242,195,0,.45);background:#1c2029}
+#catThumb{display:none;width:54px;height:54px;flex:0 0 54px;border-radius:14px;background:#f6f6f6;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+#catThumb img{width:100%;height:100%;object-fit:contain;display:block}
+.titleBlock{min-width:0;display:flex;flex-direction:column;gap:3px}.crumb{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--accent)}
+.h1{font-size:25px;line-height:1.15;font-weight:900;margin:0;overflow-wrap:anywhere}.updated{font-size:11px;color:var(--muted)}
+.rightGroup{display:flex;align-items:center;gap:8px;flex:0 0 auto}.hint{display:none}.pdfBtn{
+  display:none;align-items:center;justify-content:center;min-height:42px;padding:0 15px;border-radius:12px;
+  border:1px solid rgba(242,195,0,.45);background:rgba(242,195,0,.10);color:#fff;text-decoration:none;font-size:12px;font-weight:900
+}
+.pdfBtn::before{content:"PDF";font-size:9px;letter-spacing:.7px;color:#101216;background:var(--accent);padding:3px 5px;border-radius:5px}.pdfBtn:hover{background:rgba(242,195,0,.17)}
+.content{border-radius:20px;padding:16px 16px 18px;overflow:visible}
+.searchWrap{position:relative;margin:0 0 13px}.searchWrap .icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:18px;height:18px;opacity:.60;pointer-events:none}
+#search{
+  width:100%;height:48px;padding:0 16px 0 44px;border:1px solid var(--line);border-radius:13px;
+  background:#090c12;color:#fff;outline:none;font-size:13px;transition:.18s ease
+}
+#search::placeholder{color:#69717d}#search:focus{border-color:rgba(242,195,0,.55);box-shadow:0 0 0 3px rgba(242,195,0,.08);background:#0b0e14}
+#tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:1px 0 13px;margin:0 0 2px;flex-wrap:nowrap}#tabs::-webkit-scrollbar{display:none}
+.pill{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px;border-radius:10px;
+  border:1px solid var(--line);background:#151922;color:#b9c0cb;font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap;transition:.16s ease
+}
+.pill:hover{border-color:rgba(255,255,255,.18);color:#fff}.pill.active{background:var(--accent);border-color:var(--accent);color:#111318;box-shadow:0 7px 18px rgba(242,195,0,.14)}
+.tabIcon,.brandIcon{width:20px;height:20px;border-radius:7px;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(255,255,255,.12);flex:0 0 auto}
+.tabIconImg,.brandIconImg{width:100%;height:100%;object-fit:contain;display:block}
+table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0b0e14}
+thead th{height:42px;padding:0 14px;text-align:left;background:#141820;color:#6f7784;font-size:10px;font-weight:900;letter-spacing:.65px;text-transform:uppercase;border-bottom:1px solid var(--line)}thead th:last-child{text-align:right}
+tbody tr{transition:.13s ease}tbody tr:not(.brandHeaderRow):hover{background:rgba(255,255,255,.025)}tbody tr td{padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:middle}tbody tr:last-child td{border-bottom:0}
+.brandHeaderRow td{padding:9px 12px;background:#11151d;border-bottom:1px solid var(--line)}.brandHeader{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:900;color:#d9dde4}.dot{width:5px;height:15px;border-radius:5px;background:var(--accent)}
+.model{font-size:13px;font-weight:800;line-height:1.35;color:#edf0f4}.badgeNew{display:inline-flex;align-items:center;margin-left:7px;padding:3px 6px;border-radius:5px;background:rgba(255,90,82,.12);border:1px solid rgba(255,90,82,.32);color:#ff756d;font-size:9px;font-weight:900;vertical-align:1px}
+.price{text-align:right;white-space:nowrap;font-size:14px;font-weight:950;color:var(--accent2);font-variant-numeric:tabular-nums}.priceUnit{font-size:10px;color:#8f96a3;font-weight:700;margin-left:2px}
+.thumb{width:48px;height:48px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#fff;flex:0 0 auto;cursor:pointer}.thumb img{width:100%;height:100%;object-fit:contain;display:block}
+#empty{display:none;margin-top:12px;padding:18px;border:1px dashed rgba(255,255,255,.13);border-radius:13px;color:var(--muted);font-size:12px;text-align:center}
+.modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px)}.modal.show{display:flex}.modalCard{width:min(820px,96vw);max-height:92vh;overflow:auto;border-radius:18px;border:1px solid var(--line);background:#10131a;box-shadow:0 30px 90px rgba(0,0,0,.60)}.modalHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:12px;font-weight:900}.modalClose{border:1px solid var(--line);background:#181c24;color:#fff;border-radius:9px;padding:7px 10px;cursor:pointer}.modalBody{padding:12px;background:#080a0f}.modalBody img{width:100%;height:auto;display:block;border-radius:12px;background:#fff;object-fit:contain}
+.pill:focus-visible,.backBtn:focus-visible,.pdfBtn:focus-visible,.thumb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:720px){
+  .wrap{padding:12px 10px 42px}.header{border-radius:16px;padding:11px 11px}.headerInner{min-height:64px;gap:10px}.leftGroup{gap:9px}.backBtn{width:38px;height:38px;flex-basis:38px;border-radius:10px}#catThumb{width:44px;height:44px;flex-basis:44px;border-radius:11px}.crumb{display:none}.h1{font-size:19px}.updated{font-size:10px}.rightGroup{gap:5px}.pdfBtn{min-height:38px;padding:0 10px;font-size:10px}.pdfBtn::before{font-size:8px}.content{border-radius:16px;padding:11px}.searchWrap{margin-bottom:10px}#search{height:44px;border-radius:11px;font-size:12px}#tabs{gap:6px;padding-bottom:10px}.pill{min-height:34px;padding:0 10px;border-radius:9px;font-size:10.5px}
+  thead{display:none}table{border:0;background:transparent;overflow:visible}tbody{display:block}tbody tr{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:#0b0e14;border:1px solid var(--line);border-radius:12px;margin-bottom:7px;overflow:hidden}tbody tr td{display:block;border:0;padding:10px 11px}tbody tr td:first-child{flex:1;min-width:0}tbody tr td:last-child{flex:0 0 auto;text-align:right;max-width:42%}.brandHeaderRow{display:block!important;border:0!important;background:transparent!important;margin:13px 0 6px!important}.brandHeaderRow td{display:block!important;padding:0 2px!important;background:transparent!important;border:0!important}.brandHeader{font-size:10.5px}.model{font-size:12px;overflow-wrap:anywhere}.price{font-size:13px}.priceUnit{font-size:9px}.thumb{width:42px;height:42px;border-radius:9px}
+}
+@media(max-width:360px){.h1{font-size:17px}.pdfBtn{padding:0 8px}.priceUnit{display:block;margin-top:1px}.rightGroup{align-self:flex-start}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* ===== Phase 6B — Smart Dark Premium + Responsive Header ===== */
+:root{
+  --bg:#090b0f;
+  --panel:#11151c;
+  --panel2:#0d1117;
+  --line:rgba(255,255,255,.075);
+  --line2:rgba(255,255,255,.045);
+  --text:#f4f6f8;
+  --muted:#8d95a1;
+  --accent:#f0c400;
+  --accent2:#ffd31a;
+  --soft-yellow:rgba(240,196,0,.10);
+  --soft-blue:rgba(79,108,255,.06);
+  --shadow:0 18px 50px rgba(0,0,0,.26);
+}
+
+body{
+  background:
+    radial-gradient(900px 520px at 8% -10%,rgba(240,196,0,.065),transparent 60%),
+    radial-gradient(900px 520px at 96% 0%,rgba(67,97,238,.05),transparent 62%),
+    linear-gradient(180deg,#090b0f 0%,#080a0d 100%);
+}
+
+.wrap{
+  max-width:1180px;
+  padding:22px 22px 56px;
+}
+
+/* Header */
+.header{
+  padding:14px 16px;
+  border-radius:20px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.006)),
+    #10141b;
+  border-color:rgba(255,255,255,.075);
+  box-shadow:0 12px 36px rgba(0,0,0,.22);
+}
+.header::before{
+  width:3px;
+  background:linear-gradient(180deg,#ffd31a,#d8aa00);
+}
+.headerInner{
+  min-height:74px;
+  gap:14px;
+}
+.leftGroup{
+  min-width:0;
+}
+.titleBlock{
+  min-width:0;
+  flex:1;
+}
+.h1{
+  font-size:24px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.updated{
+  margin-top:2px;
+}
+.backBtn{
+  background:#171b22;
+  border-color:rgba(255,255,255,.08);
+}
+#catThumb{
+  background:#f4f4f4;
+  border-color:rgba(255,255,255,.08);
+}
+.pdfBtn{
+  background:rgba(240,196,0,.075);
+  border-color:rgba(240,196,0,.34);
+  color:#f7f7f7;
+}
+.pdfBtn:hover{
+  background:rgba(240,196,0,.13);
+  border-color:rgba(240,196,0,.55);
+}
+.pdfBtn::before{
+  background:#f0c400;
+  color:#111;
+}
+
+/* Main panel */
+.content{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.012),transparent 28%),
+    #10141b;
+  border-color:rgba(255,255,255,.07);
+  box-shadow:0 14px 42px rgba(0,0,0,.20);
+}
+#search{
+  background:#0a0d12;
+  border-color:rgba(255,255,255,.08);
+}
+#search:focus{
+  border-color:rgba(240,196,0,.45);
+  box-shadow:0 0 0 3px rgba(240,196,0,.055);
+}
+
+/* Brand filter */
+.pill{
+  background:#151922;
+  border-color:rgba(255,255,255,.075);
+  color:#b6bdc7;
+  box-shadow:none;
+}
+.pill:hover{
+  background:#191e28;
+  border-color:rgba(255,255,255,.14);
+}
+.pill.active{
+  background:linear-gradient(180deg,#ffd21a,#e5b700);
+  border-color:#efc300;
+  color:#111318;
+  box-shadow:0 8px 18px rgba(240,196,0,.13);
+}
+.tabIcon,.brandIcon{
+  background:#f7f7f7;
+}
+
+/* Table / rows */
+table{
+  background:#0b0e13;
+  border-color:rgba(255,255,255,.065);
+}
+thead th{
+  background:#13171e;
+  color:#747d8a;
+  border-bottom-color:rgba(255,255,255,.065);
+}
+tbody tr:not(.brandHeaderRow):hover{
+  background:rgba(255,255,255,.018);
+}
+tbody tr td{
+  border-bottom-color:rgba(255,255,255,.042);
+}
+.brandHeaderRow td{
+  background:#11151b;
+  border-bottom-color:rgba(255,255,255,.055);
+}
+.brandHeader{
+  color:#d5d9df;
+}
+.dot{
+  background:#e7bd00;
+}
+.model{
+  color:#eef1f4;
+}
+.price{
+  color:#ffd31a;
+  text-shadow:0 0 18px rgba(255,211,26,.06);
+}
+.priceUnit{
+  color:#858d99;
+}
+
+/* Break before the layout starts squeezing */
+@media(max-width:900px){
+  .headerInner{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:11px;
   }
-  .dealerLogoutPill:hover{ filter: brightness(1.08); }
-</style>
-
-
-<style>
-  .dealerBadgeWrap{ display:flex; justify-content:flex-start; margin: 2px 0 10px; }
-  .dealerBadge{
-    display:inline-flex;
+  .leftGroup{
+    width:100%;
+    display:grid;
+    grid-template-columns:auto auto minmax(0,1fr);
     align-items:center;
     gap:10px;
-    padding: 10px 14px;
-    border-radius: 16px;
-    border: 1px solid rgba(234,179,8,.38);
-    background: linear-gradient(180deg, rgba(234,179,8,.14), rgba(234,179,8,.08));
-    box-shadow: 0 0 0 1px rgba(234,179,8,.08) inset, 0 10px 30px rgba(0,0,0,.22);
-    color: var(--text);
-    font-weight: 950;
-    letter-spacing: .2px;
   }
-  .dealerBadgeDot{
-    width:10px; height:10px; border-radius:999px;
-    background: rgba(234,179,8,.95);
-    box-shadow: 0 0 0 4px rgba(234,179,8,.18);
+  .rightGroup{
+    width:100%;
+    display:flex;
+    justify-content:flex-end;
   }
-  .dealerBadgeSub{
-    margin-left: 8px;
-    font-weight: 700;
-    color: var(--muted);
-    font-size: 12.5px;
+  .pdfBtn{
+    min-height:40px;
   }
+}
+
+/* Mobile / browser zoom */
+@media(max-width:720px){
+  .wrap{
+    padding:11px 10px 38px;
+  }
+
+  .header{
+    padding:10px;
+    border-radius:16px;
+  }
+  .headerInner{
+    display:grid;
+    grid-template-columns:1fr;
+    min-height:0;
+    gap:10px;
+  }
+  .leftGroup{
+    display:grid;
+    grid-template-columns:38px 44px minmax(0,1fr);
+    gap:8px;
+    width:100%;
+    align-items:center;
+  }
+  .backBtn{
+    width:38px;
+    height:38px;
+    flex-basis:auto;
+    border-radius:10px;
+  }
+  #catThumb{
+    width:44px;
+    height:44px;
+    flex-basis:auto;
+    border-radius:10px;
+  }
+  .titleBlock{
+    min-width:0;
+    width:100%;
+  }
+  .h1{
+    font-size:18px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+  }
+  .updated{
+    font-size:10px;
+    white-space:nowrap;
+  }
+
+  .rightGroup{
+    width:100%;
+    justify-content:stretch;
+  }
+  .pdfBtn{
+    width:100%;
+    min-height:40px;
+    border-radius:10px;
+    gap:7px;
+    padding:0 12px;
+  }
+
+  .content{
+    padding:10px;
+    border-radius:16px;
+  }
+
+  #tabs{
+    padding-bottom:9px;
+  }
+
+  .pill{
+    min-height:34px;
+    padding:0 10px;
+    font-size:10.5px;
+    border-radius:9px;
+  }
+
+  tbody tr{
+    background:#0d1117;
+    border-color:rgba(255,255,255,.065);
+    box-shadow:none;
+  }
+  tbody tr td{
+    padding:10px 11px;
+  }
+  .brandHeaderRow{
+    background:transparent!important;
+  }
+}
+
+/* Extremely narrow widths / very high browser zoom */
+@media(max-width:430px){
+  .leftGroup{
+    grid-template-columns:36px 40px minmax(0,1fr);
+    gap:7px;
+  }
+  .backBtn{
+    width:36px;
+    height:36px;
+  }
+  #catThumb{
+    width:40px;
+    height:40px;
+  }
+  .h1{
+    font-size:17px;
+  }
+  .pdfBtn{
+    min-height:38px;
+    font-size:10px;
+  }
+}
+
+@media(max-width:360px){
+  .leftGroup{
+    grid-template-columns:34px minmax(0,1fr);
+  }
+  #catThumb{
+    display:none!important;
+  }
+  .backBtn{
+    width:34px;
+    height:34px;
+  }
+  .h1{
+    font-size:16px;
+  }
+}
+
+
+/* ===== Phase 6C — FULL VISUAL REDESIGN ===== */
+:root{
+  --bg:#07090d;
+  --surface:#0d1118;
+  --surface-2:#111722;
+  --surface-3:#171e2b;
+  --stroke:rgba(255,255,255,.075);
+  --stroke-strong:rgba(255,255,255,.12);
+  --text:#f5f7fa;
+  --sub:#9ba4b2;
+  --muted:#6f7886;
+  --yellow:#f3c900;
+  --yellow-2:#ffd927;
+  --yellow-soft:rgba(243,201,0,.10);
+  --shadow:0 20px 70px rgba(0,0,0,.34);
+}
+
+body{
+  background:
+    radial-gradient(900px 520px at 0% 0%,rgba(243,201,0,.08),transparent 58%),
+    radial-gradient(760px 460px at 100% 4%,rgba(67,97,238,.05),transparent 62%),
+    #07090d;
+}
+
+.wrap{
+  max-width:1240px!important;
+  padding:18px 20px 58px!important;
+}
+
+/* top mini rail */
+.smart-rail{
+  height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:0 2px 10px;
+  color:#7e8795;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.1px;
+}
+.smart-rail-left,.smart-rail-right{display:flex;align-items:center;gap:8px}
+.smart-kicker{color:var(--yellow)}
+.smart-dot-live{
+  width:6px;height:6px;border-radius:50%;
+  background:#41d17d;
+  box-shadow:0 0 0 4px rgba(65,209,125,.08);
+}
+.retail-mode .smart-mode-label::after{content:"RETAIL PRICE";}
+.dealer-mode .smart-mode-label::after{content:"DEALER PRICE";color:var(--yellow)}
+
+/* HERO HEADER — completely different composition */
+.header{
+  position:relative!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  margin-bottom:14px!important;
+  overflow:visible!important;
+}
+.header::before{display:none!important}
+
+.headerInner{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:12px!important;
+  min-height:0!important;
+  align-items:stretch!important;
+}
+
+.leftGroup{
+  min-width:0!important;
+  padding:16px!important;
+  border:1px solid var(--stroke)!important;
+  border-radius:20px!important;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.025),transparent 42%),
+    var(--surface)!important;
+  box-shadow:var(--shadow)!important;
+  display:grid!important;
+  grid-template-columns:44px 58px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.backBtn{
+  width:44px!important;height:44px!important;
+  border-radius:13px!important;
+  background:#151b25!important;
+  border:1px solid var(--stroke-strong)!important;
+}
+.backBtn:hover{background:#1b2230!important;border-color:rgba(243,201,0,.4)!important}
+#catThumb{
+  width:58px!important;height:58px!important;
+  display:block!important;
+  border-radius:16px!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  background:#f5f5f5!important;
+}
+.titleBlock{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:4px!important;
+}
+.crumb{
+  display:block!important;
+  color:var(--yellow)!important;
+  font-size:9px!important;
+  letter-spacing:1.25px!important;
+  font-weight:950!important;
+}
+.h1{
+  font-size:26px!important;
+  line-height:1.06!important;
+  font-weight:950!important;
+  color:#fff!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.updated{
+  font-size:10px!important;
+  color:#788290!important;
+}
+
+/* PDF becomes its own action panel */
+.rightGroup{
+  display:flex!important;
+  align-items:stretch!important;
+  min-width:190px!important;
+}
+.hint{display:none!important}
+.pdfBtn{
+  width:100%!important;
+  min-height:100%!important;
+  border-radius:20px!important;
+  border:1px solid rgba(243,201,0,.28)!important;
+  background:
+    linear-gradient(180deg,rgba(243,201,0,.10),rgba(243,201,0,.035)),
+    #12150f!important;
+  color:#fff!important;
+  flex-direction:column!important;
+  gap:7px!important;
+  padding:16px 18px!important;
+  font-size:12px!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.22)!important;
+}
+.pdfBtn::before{
+  content:"PDF"!important;
+  font-size:11px!important;
+  letter-spacing:1px!important;
+  background:var(--yellow)!important;
+  color:#111!important;
+  padding:7px 11px!important;
+  border-radius:8px!important;
+}
+.pdfBtn::after{
+  content:"เปิดเอกสารราคา";
+  color:#8c927d;
+  font-size:9px;
+  font-weight:700;
+}
+.pdfBtn:hover{
+  border-color:rgba(243,201,0,.52)!important;
+  transform:translateY(-1px);
+}
+
+/* COMMAND CENTER */
+.content{
+  border:0!important;
+  border-radius:22px!important;
+  padding:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+
+/* Search becomes command bar */
+.searchWrap{
+  margin:0 0 10px!important;
+  padding:10px!important;
+  border-radius:18px!important;
+  border:1px solid var(--stroke)!important;
+  background:var(--surface)!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.18)!important;
+}
+.searchWrap .icon{left:26px!important}
+#search{
+  height:50px!important;
+  padding-left:48px!important;
+  border-radius:13px!important;
+  border:1px solid rgba(255,255,255,.065)!important;
+  background:#090c11!important;
+  font-size:13px!important;
+}
+
+/* brand nav turns into a floating control dock */
+#tabs{
+  margin:0 0 12px!important;
+  padding:10px!important;
+  border:1px solid var(--stroke)!important;
+  border-radius:18px!important;
+  background:var(--surface)!important;
+  gap:7px!important;
+}
+.pill{
+  min-height:38px!important;
+  padding:0 12px!important;
+  border-radius:12px!important;
+  background:#151b25!important;
+  border-color:rgba(255,255,255,.07)!important;
+  color:#aeb6c1!important;
+}
+.pill.active{
+  color:#111!important;
+  background:linear-gradient(180deg,#ffda25,#e6b900)!important;
+  border-color:#efc400!important;
+  box-shadow:0 8px 22px rgba(243,201,0,.15)!important;
+}
+
+/* PRICE LIST — turns table into a dashboard list visually */
+table{
+  display:block!important;
+  width:100%!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:visible!important;
+}
+thead{
+  display:none!important;
+}
+tbody{
+  display:grid!important;
+  gap:8px!important;
+}
+tbody tr{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:100%!important;
+  margin:0!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.016),transparent),
+    var(--surface)!important;
+  border:1px solid var(--stroke)!important;
+  border-radius:15px!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.12)!important;
+  overflow:hidden!important;
+  transition:.16s ease!important;
+}
+tbody tr:not(.brandHeaderRow):hover{
+  transform:translateY(-1px)!important;
+  border-color:rgba(243,201,0,.20)!important;
+  background:
+    linear-gradient(180deg,rgba(243,201,0,.025),transparent),
+    #11161e!important;
+}
+tbody tr td{
+  display:block!important;
+  border:0!important;
+  padding:13px 15px!important;
+}
+tbody tr td:first-child{min-width:0!important}
+tbody tr td:last-child{text-align:right!important}
+
+.brandHeaderRow{
+  display:block!important;
+  margin:10px 0 0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+}
+.brandHeaderRow td{
+  padding:4px 4px 5px!important;
+  background:transparent!important;
+}
+.brandHeader{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  color:#dde2e8!important;
+  font-size:11px!important;
+  letter-spacing:.2px!important;
+}
+.dot{
+  width:16px!important;height:4px!important;
+  border-radius:999px!important;
+  background:var(--yellow)!important;
+}
+.model{
+  font-size:13px!important;
+  font-weight:850!important;
+  color:#eef2f6!important;
+}
+.price{
+  font-size:16px!important;
+  font-weight:950!important;
+  color:var(--yellow-2)!important;
+  letter-spacing:-.1px!important;
+}
+.priceUnit{
+  font-size:9px!important;
+  color:#78818e!important;
+  margin-left:3px!important;
+}
+.badgeNew{
+  border-radius:999px!important;
+  padding:3px 7px!important;
+}
+
+/* desktop card/list width */
+#empty{
+  background:var(--surface)!important;
+  border-color:var(--stroke)!important;
+}
+
+/* tablet */
+@media(max-width:900px){
+  .headerInner{
+    grid-template-columns:1fr!important;
+  }
+  .rightGroup{
+    min-width:0!important;
+  }
+  .pdfBtn{
+    min-height:70px!important;
+    flex-direction:row!important;
+    justify-content:center!important;
+  }
+  .pdfBtn::after{display:none}
+}
+
+/* mobile redesign */
+@media(max-width:720px){
+  .wrap{padding:10px 9px 34px!important}
+  .smart-rail{margin:0 2px 7px;height:24px}
+
+  .leftGroup{
+    grid-template-columns:38px 46px minmax(0,1fr)!important;
+    padding:10px!important;
+    border-radius:16px!important;
+    gap:8px!important;
+  }
+  .backBtn{width:38px!important;height:38px!important;border-radius:10px!important}
+  #catThumb{width:46px!important;height:46px!important;border-radius:12px!important}
+  .h1{font-size:18px!important}
+  .crumb{font-size:8px!important}
+  .updated{font-size:9px!important}
+
+  .pdfBtn{
+    min-height:52px!important;
+    border-radius:15px!important;
+    padding:8px 12px!important;
+    flex-direction:row!important;
+    gap:8px!important;
+    font-size:11px!important;
+  }
+  .pdfBtn::before{
+    padding:5px 8px!important;
+    font-size:9px!important;
+  }
+
+  .searchWrap{
+    padding:8px!important;
+    border-radius:15px!important;
+  }
+  #search{
+    height:44px!important;
+    border-radius:11px!important;
+    font-size:12px!important;
+  }
+  #tabs{
+    padding:8px!important;
+    border-radius:15px!important;
+  }
+  .pill{
+    min-height:34px!important;
+    padding:0 10px!important;
+    border-radius:10px!important;
+    font-size:10px!important;
+  }
+
+  tbody{gap:7px!important}
+  tbody tr{
+    border-radius:13px!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+  }
+  tbody tr td{padding:11px 12px!important}
+  .model{font-size:12px!important}
+  .price{font-size:15px!important}
+  .brandHeaderRow{margin-top:8px!important}
+}
+
+/* very narrow / zoomed */
+@media(max-width:420px){
+  .leftGroup{
+    grid-template-columns:36px 42px minmax(0,1fr)!important;
+  }
+  .backBtn{width:36px!important;height:36px!important}
+  #catThumb{width:42px!important;height:42px!important}
+  .h1{font-size:17px!important}
+}
+@media(max-width:360px){
+  #catThumb{display:none!important}
+  .leftGroup{grid-template-columns:34px minmax(0,1fr)!important}
+  .h1{font-size:16px!important}
+}
+
+/* dealer differentiation: subtle, not a second design */
+.dealer-mode .smart-mode-label::after{color:var(--yellow)!important}
+.dealer-mode .header .leftGroup{
+  box-shadow:0 20px 60px rgba(243,201,0,.035),var(--shadow)!important;
+}
+
+
+/* ===== Phase 6C.1 — Brand Bar Wrap Fix ===== */
+/* Desktop: brands wrap to the next line instead of overflowing horizontally */
+#tabs{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  align-items:center!important;
+  align-content:flex-start!important;
+  gap:7px!important;
+}
+#tabs .pill{
+  flex:0 0 auto!important;
+}
+
+/* Mobile: wrap as well, with slightly tighter chips */
+@media(max-width:720px){
+  #tabs{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    overflow:visible!important;
+    white-space:normal!important;
+    gap:6px!important;
+  }
+  #tabs .pill{
+    flex:0 0 auto!important;
+    min-height:32px!important;
+    padding:0 9px!important;
+  }
+}
+
+
+/* Phase 6D — Brand Header Alignment */
+.brandHeaderRow{
+  text-align:left!important;
+}
+.brandHeaderRow td,
+.brandHeaderRow td:first-child,
+.brandHeaderRow td:last-child{
+  text-align:left!important;
+  justify-self:stretch!important;
+  width:100%!important;
+}
+.brandHeader{
+  justify-content:flex-start!important;
+  text-align:left!important;
+}
+
 </style>
-
+<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}</script>
 </head>
-
-<body>
+<body class="dealer-mode">
   <div class="wrap">
+<div class="smart-rail" aria-hidden="true">
+  <div class="smart-rail-left">
+    <span class="smart-kicker">LEEPLUS</span>
+    <span class="smart-mode-label"></span>
+  </div>
+  <div class="smart-rail-right">
+    <span class="smart-dot-live"></span>
+    <span>PRICE SYSTEM</span>
+  </div>
+</div>
+
     <div class="card header">
       <div class="headerInner">
         <div class="leftGroup">
-          <a class="backBtn" href="./index.html">
+          <a class="backBtn" href="./home.html">
             <span aria-hidden="true">‹</span>
             <span>กลับหน้าหมวด</span>
           </a>
@@ -640,9 +900,8 @@
             <img id="catThumbImg" alt="category" />
           </div>
 
-          <div class="titleBlock">
-            <div class="dealerBadgeWrap"><div class="dealerBadge"><span class="dealerBadgeDot"></span>ราคาตัวแทนจำหน่าย<span class="dealerBadgeSub">เฉพาะโซน Dealer</span></div></div>
-            <div class="crumb" id="crumb">Sheet › ...</div>
+          <div class="titleBlock"><div class="crumb">LEEPLUS · DEALER PRICE</div>
+            
             <h1 class="h1" id="pageTitle">...</h1>
             <div class="updated" id="updateText">อัปเดต: -</div>
           </div>
@@ -698,6 +957,5 @@
   </div>
 
   <script src="./price_sheet.js"></script>
-<button class="dealerLogoutPill" onclick="logout()">ออกจากระบบ</button>
 </body>
 </html>

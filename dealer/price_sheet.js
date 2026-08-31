@@ -494,10 +494,19 @@ async function loadCompatibilitySheet(tab) {
     };
   }).filter(r => {
     if (!(r.code || r.brand || r.models)) return false;
-    const isHeader = String(r.type).trim().toLowerCase()==="type" &&
-      String(r.code).trim().toLowerCase()==="code" &&
-      String(r.brand).trim().toLowerCase()==="brand" &&
-      ["models","model"].includes(String(r.models).trim().toLowerCase());
+    // Google GViz may expose the first visible header row with an empty `type`
+    // cell. Treat code/brand/models as a header regardless of the type value.
+    const code = String(r.code).trim().toLowerCase();
+    const brand = String(r.brand).trim().toLowerCase();
+    const models = String(r.models).trim().toLowerCase();
+    const type = String(r.type).trim().toLowerCase();
+
+    const isHeader =
+      code === "code" &&
+      brand === "brand" &&
+      ["models","model"].includes(models) &&
+      (type === "" || type === "type");
+
     return !isHeader;
   });
 }

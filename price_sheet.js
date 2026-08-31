@@ -275,7 +275,17 @@ function pickBrandNameFromRow(values) {
 /* ===== GViz ===== */
 function gvizJsonUrl(sheetName) {
   const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
-  const params = new URLSearchParams({ tqx: "out:json", sheet: sheetName });
+
+  // IMPORTANT:
+  // Force Google GViz to treat exactly the first row as the header.
+  // Without headers=1, GViz guesses the header count and can incorrectly
+  // consume the first many Compatibility rows (e.g. MATTE/PRIVACY).
+  const params = new URLSearchParams({
+    tqx: "out:json",
+    sheet: sheetName,
+    headers: "1"
+  });
+
   return `${base}?${params.toString()}`;
 }
 function parseGvizResponse(text) {

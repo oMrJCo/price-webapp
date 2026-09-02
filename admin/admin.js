@@ -520,6 +520,40 @@ function bindContactManager(){
   `;document.head.appendChild(st);
 })();
 
+
+(function ensureAnalyticsAdminStyles(){
+  if(document.getElementById("analyticsAdminStyle"))return;
+  const st=document.createElement("style");
+  st.id="analyticsAdminStyle";
+  st.textContent=`
+    .analytics-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .analytics-toolbar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .analytics-toolbar select{min-width:120px}
+    .analytics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+    .analytics-stat{background:#fff;border:1px solid #e9e9e9;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;min-height:112px}
+    .analytics-stat span{font-size:11px;color:#777;font-weight:800}
+    .analytics-stat strong{font-size:28px;line-height:1;color:#111}
+    .analytics-stat small{font-size:11px;color:#888}
+    .analytics-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,.8fr);gap:14px}
+    .analytics-list{display:grid;gap:8px}
+    .analytics-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #eee}
+    .analytics-row:last-child{border-bottom:0}
+    .analytics-row b{font-size:13px}
+    .analytics-row span{font-size:12px;color:#666;font-weight:800}
+    .analytics-bars{display:grid;gap:9px}
+    .analytics-bar-row{display:grid;grid-template-columns:88px minmax(0,1fr) 44px;gap:9px;align-items:center}
+    .analytics-bar-label{font-size:11px;color:#666;white-space:nowrap}
+    .analytics-bar-track{height:9px;background:#eee;border-radius:999px;overflow:hidden}
+    .analytics-bar-fill{height:100%;background:#111;border-radius:999px}
+    .analytics-bar-value{text-align:right;font-size:11px;font-weight:900}
+    .analytics-empty{padding:18px;text-align:center;color:#888;border:1px dashed #ddd;border-radius:12px}
+    .analytics-note{font-size:11px;color:#888}
+    @media(max-width:1100px){.analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-layout{grid-template-columns:1fr}}
+    @media(max-width:650px){.analytics-grid{grid-template-columns:1fr}.analytics-stat strong{font-size:24px}}
+  `;
+  document.head.appendChild(st);
+})();
+
 async function renderSettingsView(){
   title.textContent='ตั้งค่าเว็บไซต์';
   subtitle.textContent='ช่องทางติดต่อและการเข้าถึงราคาตัวแทนจำหน่าย';
@@ -905,7 +939,145 @@ async function refreshDashboardHeavy(){
   }finally{if(btn){btn.disabled=false;btn.textContent="รีเฟรชข้อมูล Dashboard"}}
 }
 
-const views={dashboard(){renderLiveDashboard()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
+
+function ensureAnalyticsNav(){
+  const nav=document.querySelector("aside nav");
+  if(!nav||nav.querySelector('[data-view="analytics"]'))return;
+  const btn=document.createElement("button");
+  btn.className="nav";
+  btn.dataset.view="analytics";
+  btn.textContent="Analytics";
+  const settingsBtn=nav.querySelector('[data-view="settings"]');
+  if(settingsBtn)nav.insertBefore(btn,settingsBtn);
+  else nav.appendChild(btn);
+  btn.onclick=()=>render("analytics");
+}
+
+function formatAnalyticsNumber(v){
+  const n=Number(v||0);
+  return Number.isFinite(n)?new Intl.NumberFormat("th-TH").format(n):"0";
+}
+
+function formatAnalyticsSeconds(v){
+  const s=Math.max(0,Number(v||0));
+  if(s<60)return `${Math.round(s)} วิ`;
+  const m=Math.floor(s/60),sec=Math.round(s%60);
+  return `${m} นาที ${sec} วิ`;
+}
+
+function analyticsDateLabel(s){
+  const d=new Date(String(s||"")+"T00:00:00");
+  if(Number.isNaN(d.getTime()))return String(s||"");
+  return new Intl.DateTimeFormat("th-TH",{day:"2-digit",month:"2-digit"}).format(d);
+}
+
+function analyticsListHtml(items,emptyText){
+  if(!Array.isArray(items)||!items.length)return `<div class="analytics-empty">${emptyText}</div>`;
+  return `<div class="analytics-list">${items.map(x=>`
+    <div class="analytics-row">
+      <b>${esc(x.name||"-")}</b>
+      <span>${formatAnalyticsNumber(x.count)}</span>
+    </div>`).join("")}</div>`;
+}
+
+function analyticsDailyBarsHtml(items){
+  if(!Array.isArray(items)||!items.length)return '<div class="analytics-empty">ยังไม่มีข้อมูลรายวัน</div>';
+  const max=Math.max(1,...items.map(x=>Number(x.views||0)));
+  return `<div class="analytics-bars">${items.map(x=>{
+    const w=Math.max(2,Math.round((Number(x.views||0)/max)*100));
+    return `<div class="analytics-bar-row">
+      <div class="analytics-bar-label">${esc(analyticsDateLabel(x.date))}</div>
+      <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${w}%"></div></div>
+      <div class="analytics-bar-value">${formatAnalyticsNumber(x.views)}</div>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+async function loadAnalyticsSummary(days=30){
+  const j=await apiGet({action:"analyticsSummary",days:String(days)});
+  if(!j||j.success===false)throw new Error(j?.message||"Analytics API failed");
+  return j.data||{};
+}
+
+function renderAnalyticsData(d,days){
+  const totalViews=Number(d.views||0);
+  const retail=Number(d.retailViews||0);
+  const dealer=Number(d.dealerViews||0);
+  const retailPct=totalViews?Math.round(retail/totalViews*100):0;
+  const dealerPct=totalViews?Math.round(dealer/totalViews*100):0;
+  const peak=d.peakHour===null||d.peakHour===undefined?"—":`${String(d.peakHour).padStart(2,"0")}:00–${String((Number(d.peakHour)+1)%24).padStart(2,"0")}:00`;
+
+  content.innerHTML=`
+    <div class="analytics-toolbar">
+      <div class="left">
+        <label><b>ช่วงข้อมูล</b> 
+          <select id="analyticsDays">
+            <option value="7" ${Number(days)===7?"selected":""}>7 วัน</option>
+            <option value="30" ${Number(days)===30?"selected":""}>30 วัน</option>
+            <option value="90" ${Number(days)===90?"selected":""}>90 วัน</option>
+          </select>
+        </label>
+        <span class="analytics-note">อัปเดตจาก Analytics Sheet โดยตรง</span>
+      </div>
+      <button class="primary" id="refreshAnalyticsBtn">รีเฟรช</button>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="analytics-stat"><span>ผู้ใช้วันนี้</span><strong>${formatAnalyticsNumber(d.todayVisitors)}</strong><small>Unique Visitors</small></div>
+      <div class="analytics-stat"><span>Views วันนี้</span><strong>${formatAnalyticsNumber(d.todayViews)}</strong><small>Page views</small></div>
+      <div class="analytics-stat"><span>Sessions วันนี้</span><strong>${formatAnalyticsNumber(d.todaySessions)}</strong><small>Session 30 นาที</small></div>
+      <div class="analytics-stat"><span>ผู้ใช้ ${days} วัน</span><strong>${formatAnalyticsNumber(d.uniqueVisitors)}</strong><small>${formatAnalyticsNumber(d.views)} views ทั้งหมด</small></div>
+      <div class="analytics-stat"><span>Retail</span><strong>${formatAnalyticsNumber(retail)}</strong><small>${retailPct}% ของ Views</small></div>
+      <div class="analytics-stat"><span>Dealer</span><strong>${formatAnalyticsNumber(dealer)}</strong><small>${dealerPct}% ของ Views</small></div>
+      <div class="analytics-stat"><span>เวลาใช้งานเฉลี่ย</span><strong>${formatAnalyticsSeconds(d.avgEngagementSec)}</strong><small>จาก engagement event</small></div>
+      <div class="analytics-stat"><span>ช่วงเวลาคนเข้าเยอะสุด</span><strong style="font-size:22px">${esc(peak)}</strong><small>อิงจาก Views</small></div>
+    </div>
+
+    <div class="analytics-layout">
+      <div>
+        <div class="panel" style="margin-bottom:14px">
+          <h2>Views รายวัน</h2>
+          ${analyticsDailyBarsHtml(d.daily)}
+        </div>
+        <div class="panel">
+          <h2>หมวดที่เปิดดูมากที่สุด</h2>
+          ${analyticsListHtml(d.topCategories,"ยังไม่มีข้อมูลหมวด")}
+        </div>
+      </div>
+      <div>
+        <div class="panel" style="margin-bottom:14px">
+          <h2>Event ที่เกิดมากที่สุด</h2>
+          ${analyticsListHtml(d.topEvents,"ยังไม่มี Event")}
+        </div>
+        <div class="panel">
+          <h2>สรุปช่วง ${days} วัน</h2>
+          <div class="health-row"><span>Total Events</span><b>${formatAnalyticsNumber(d.totalEvents)}</b></div>
+          <div class="health-row"><span>Total Views</span><b>${formatAnalyticsNumber(d.views)}</b></div>
+          <div class="health-row"><span>Unique Visitors</span><b>${formatAnalyticsNumber(d.uniqueVisitors)}</b></div>
+          <div class="health-row"><span>Sessions</span><b>${formatAnalyticsNumber(d.sessions)}</b></div>
+        </div>
+      </div>
+    </div>`;
+
+  document.querySelector("#analyticsDays")?.addEventListener("change",e=>renderAnalyticsView(Number(e.target.value)||30));
+  document.querySelector("#refreshAnalyticsBtn")?.addEventListener("click",()=>renderAnalyticsView(days,true));
+}
+
+async function renderAnalyticsView(days=30,force=false){
+  title.textContent="Analytics";
+  subtitle.textContent="ดูจำนวนผู้ใช้งานและพฤติกรรมการเข้าเว็บ LEEPLUS";
+  content.innerHTML='<div class="panel"><div class="empty">กำลังโหลด Analytics...</div></div>';
+  try{
+    const d=await loadAnalyticsSummary(days);
+    renderAnalyticsData(d,days);
+  }catch(err){
+    console.warn("Analytics load failed:",err);
+    content.innerHTML=`<div class="panel"><div class="empty">โหลด Analytics ไม่สำเร็จ<br><small>${esc(err?.message||String(err))}</small></div></div>`;
+  }
+}
+
+
+const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(30)},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
 <div class="cat-toolbar"><button class="primary" id="addCategory">+ เพิ่มหมวดสินค้า</button><button class="secondary" id="reloadCats">รีเฟรช</button></div>
 <div class="panel"><h2>รายการหมวดสินค้า</h2><div id="catAdminRows">${categoryAdminRows()}</div></div>
 <div id="categoryModal" class="modal hidden"><div class="modal-card">
@@ -1168,4 +1340,4 @@ async function openCategoryModal(x=null){
   };
 }
 
-function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();
+function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};ensureAnalyticsNav();document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();

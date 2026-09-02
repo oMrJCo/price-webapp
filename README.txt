@@ -1,15 +1,9 @@
-LEEPLUS v1.2.3 — Mobile Model List Fullwidth Fix
+LEEPLUS PRICE WEB — USAGE ANALYTICS 01
+Baseline: v1.2.3
 
-แก้ปัญหา HD / MATTE / PRIVACY / Visual Catalog บนมือถือ
-ที่ Card ถูกบีบเหลือประมาณ 42% และข้อความแตกทีละตัว
+ไฟล์ในชุดนี้
+- analytics.js
 
-สาเหตุ:
-Mobile CSS เดิมมี tbody tr td:last-child { max-width:42% }
-แต่ Compatibility / Visual Catalog มี td เดียว จึงถูกบีบ
-
-วางทับ GitHub:
-- /price_sheet.js
-- /dealer/price_sheet.js
-
-ไม่ต้อง Deploy Code.gs
-หลังวางให้ปิด Safari tab เดิม เปิดใหม่ แล้วทดสอบอีกครั้ง
+สถานะ
+- Analytics ฝั่งหน้าเว็บไฟล์แรก
+- ยังไม่ต้องนำขึ้น Production จนกว่าจะเชื่อม Apps Script ฝั่งรับข้อมูลครบ

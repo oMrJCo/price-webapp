@@ -1,23 +1,22 @@
-LEEPLUS PRICE WEB — SPEED FIX 02 (RETAIL)
-Baseline: v1.2.3 + Speed Fix 01
+LEEPLUS PRICE WEB — SPEED FIX DEALER 02
+Baseline: Dealer current
 
-เปลี่ยนเฉพาะความเร็ว
-- เริ่ม GViz พร้อมกับ meta/categories ทันที ไม่รอกันเป็นทอด
-- GViz cache 5 นาที
-- meta cache 5 นาที
-- ถ้ามี cache ใช้ข้อมูลเดิมทันที แล้ว refresh เบื้องหลัง
-- request เดียวกันในรอบเดียวใช้ promise ร่วมกัน ไม่ยิงซ้ำ
+แก้จริงรอบนี้
+- เพิ่ม cache 5 นาทีสำหรับ meta / categories / GViz
+- ตัด Date.now() + cache:no-store ออกจาก request หลัก
+- categories โหลดครั้งเดียว ใช้ร่วมกับ category + Dealer PDF
+- meta + categories โหลดพร้อมกัน
+- เริ่ม GViz ตั้งแต่ต้นหน้า ไม่รอ meta/categories
+- request เดียวกันใช้ in-flight promise ร่วมกัน
+- มี cache แล้วแสดงของเดิมทันที และ refresh เบื้องหลัง
 
-ไม่ได้แตะ
-- UI
-- Search
-- ราคา / logic ราคา
-- Compatibility
-- Visual Catalog
-- Dealer
+คงของเดิม
+- dealer_price มาก่อน และ fallback ไป price
+- Dealer PDF: dealer_pdf_url / dealer_pdf / dealerPdf
+- UI / Search / Compatibility / Visual Catalog ไม่เปลี่ยน
 
 วิธีใช้
-1) แทนที่ไฟล์ price_sheet.js ฝั่ง Retail ด้วยไฟล์ในชุดนี้
-2) Commit
-3) ทดสอบเวลาเข้าหมวดครั้งแรก
-4) ออกจากหมวดแล้วกลับเข้าหมวดเดิมอีกครั้งภายใน 5 นาที เพื่อดูผล cache
+1) เอา price_sheet.js ไปแทน dealer/price_sheet.js
+2) ใน GitHub Desktop ต้องเห็น diff จริง ไม่ควรขึ้น No content changes found
+3) Commit
+4) ทดสอบเวลาเข้าหมวดครั้งแรก และกลับเข้าหมวดเดิมภายใน 5 นาที

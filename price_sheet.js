@@ -64,6 +64,46 @@ function el(id) { return document.getElementById(id); }
 function getParam(name) { return new URL(window.location.href).searchParams.get(name) || ""; }
 const DEBUG = getParam("debug") === "1";
 
+
+/* ===== SPEED CACHE v2 =====
+   Keep the critical data path fast without changing UI/business logic.
+   Valid cache window: 5 minutes. Cached data is shown immediately and
+   refreshed in the background for the next navigation.
+*/
+const SPEED_CACHE_TTL = 5 * 60 * 1000;
+const speedMemoryCache = new Map();
+const speedRequestCache = new Map();
+
+function speedCacheRead(key) {
+  const mem = speedMemoryCache.get(key);
+  if (mem && Date.now() - mem.ts <= SPEED_CACHE_TTL) return mem.value;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const item = JSON.parse(raw);
+    if (!item || Date.now() - Number(item.ts || 0) > SPEED_CACHE_TTL) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    speedMemoryCache.set(key, item);
+    return item.value;
+  } catch (_) {
+    return null;
+  }
+}
+
+function speedCacheWrite(key, value) {
+  const item = { ts: Date.now(), value };
+  speedMemoryCache.set(key, item);
+  try { localStorage.setItem(key, JSON.stringify(item)); } catch (_) {}
+}
+
+function speedBackground(task) {
+  const run = () => Promise.resolve().then(task).catch(() => {});
+  if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 1200 });
+  else setTimeout(run, 0);
+}
+
 function escapeHTML(s) {
   return String(s ?? "")
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
@@ -248,24 +288,36 @@ function setupImageModal() {
 }
 
 /* ===== META API ===== */
+async function fetchMetaConfigFresh() {
+  const res = await fetch(`${API_URL}?action=meta`);
+  if (!res.ok) throw new Error("Meta API failed");
+  const json = await res.json();
+  if (!json.success) throw new Error("Meta API success false");
+  return json.data || {};
+}
+
 async function loadMetaConfig() {
+  const cacheKey = "leeplus_meta_cache_v2";
+  const cached = speedCacheRead(cacheKey);
+
+  if (cached) {
+    speedBackground(async () => {
+      const fresh = await fetchMetaConfigFresh();
+      speedCacheWrite(cacheKey, fresh);
+    });
+    return cached;
+  }
+
   try {
-    const res = await fetch(`${API_URL}?action=meta`);
-
-    if (!res.ok) throw new Error("Meta API failed");
-
-    const json = await res.json();
-
-    if (!json.success) throw new Error("Meta API success false");
-
-    return json.data || {};
+    if (!speedRequestCache.has(cacheKey)) {
+      speedRequestCache.set(cacheKey, fetchMetaConfigFresh().finally(() => speedRequestCache.delete(cacheKey)));
+    }
+    const fresh = await speedRequestCache.get(cacheKey);
+    speedCacheWrite(cacheKey, fresh);
+    return fresh;
   } catch (e) {
     console.warn("loadMetaConfig failed:", e);
-    return {
-      site: {},
-      category: {},
-      brand: {}
-    };
+    return { site: {}, category: {}, brand: {} };
   }
 }
 
@@ -322,6 +374,37 @@ function gvizJsonUrl(sheetName) {
 
   return `${base}?${params.toString()}`;
 }
+
+async function fetchGvizTextFresh(tab) {
+  const res = await fetch(gvizJsonUrl(tab));
+  if (!res.ok) throw new Error("Failed to fetch GViz JSON");
+  return await res.text();
+}
+
+function gvizCacheKey(tab) {
+  return `leeplus_gviz_cache_v2:${String(tab || "").trim().toLowerCase()}`;
+}
+
+async function loadGvizTextCached(tab) {
+  const key = gvizCacheKey(tab);
+  const cached = speedCacheRead(key);
+
+  if (cached) {
+    speedBackground(async () => {
+      const fresh = await fetchGvizTextFresh(tab);
+      speedCacheWrite(key, fresh);
+    });
+    return cached;
+  }
+
+  if (!speedRequestCache.has(key)) {
+    speedRequestCache.set(key, fetchGvizTextFresh(tab).finally(() => speedRequestCache.delete(key)));
+  }
+  const fresh = await speedRequestCache.get(key);
+  speedCacheWrite(key, fresh);
+  return fresh;
+}
+
 function parseGvizResponse(text) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -352,10 +435,7 @@ function pickIndex(cols, candidates) {
 }
 
 async function loadSheetWithMeta(tab) {
-  const url = gvizJsonUrl(tab);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch GViz JSON");
-  const text = await res.text();
+  const text = await loadGvizTextCached(tab);
 
   const json = parseGvizResponse(text);
   const table = json?.table;
@@ -424,10 +504,7 @@ async function loadSheetWithMeta(tab) {
 
 
 async function loadCompatibilitySheet(tab) {
-  const url = gvizJsonUrl(tab);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch Compatibility GViz JSON");
-  const text = await res.text();
+  const text = await loadGvizTextCached(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
   const cols = Array.isArray(table?.cols) ? table.cols : [];
@@ -635,10 +712,7 @@ function filterCompatibilityRows(all, query) {
 
 
 async function loadVisualCatalogSheet(tab) {
-  const url = gvizJsonUrl(tab);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch Visual Catalog GViz JSON");
-  const json = parseGvizResponse(await res.text());
+  const json = parseGvizResponse(await loadGvizTextCached(tab));
   const table=json?.table||{}, cols=Array.isArray(table.cols)?table.cols:[], rows=Array.isArray(table.rows)?table.rows:[];
 
   const findCol=(names,fallback)=>{
@@ -1134,6 +1208,10 @@ function applyCategoryThumb(categoryImageUrl) {
   const tab = getParam("tab") || "Battery";
   el("crumb") && (el("crumb").textContent = `Sheet › ${tab}`);
   el("pageTitle") && (el("pageTitle").textContent = tab);
+
+  // Start the heaviest request immediately; category type is resolved in parallel.
+  // All sheet loaders reuse this same in-flight promise/cache.
+  loadGvizTextCached(tab).catch(() => {});
 
   const [meta, categories] = await Promise.all([
     loadMetaConfig(),

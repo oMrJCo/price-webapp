@@ -1,26 +1,15 @@
-LEEPLUS PRICE WEB — ANALYTICS 03 / RETAIL WEB INCLUDE
+LEEPLUS v1.2.3 — Mobile Model List Fullwidth Fix
 
-สาเหตุที่ไม่มีข้อมูล
-- หน้าเว็บยังไม่ได้ include analytics.js
+แก้ปัญหา HD / MATTE / PRIVACY / Visual Catalog บนมือถือ
+ที่ Card ถูกบีบเหลือประมาณ 42% และข้อความแตกทีละตัว
 
-ไฟล์ในชุดนี้
-- index.html
-- price_sheet.html
-- analytics.js
+สาเหตุ:
+Mobile CSS เดิมมี tbody tr td:last-child { max-width:42% }
+แต่ Compatibility / Visual Catalog มี td เดียว จึงถูกบีบ
 
-สิ่งที่แก้
-- หน้าแรกเพิ่ม <script src="/analytics.js" defer></script>
-- หน้าราคาเพิ่ม <script src="/analytics.js" defer></script>
-- ใช้ path /analytics.js เพื่อให้เรียกไฟล์จาก root ตรงกัน
+วางทับ GitHub:
+- /price_sheet.js
+- /dealer/price_sheet.js
 
-วิธีลง
-1) วาง index.html ที่ root
-2) วาง price_sheet.html ที่ root
-3) วาง analytics.js ที่ root
-4) Commit / Push
-5) รอ GitHub Pages deploy
-6) เปิดหน้าแรก และเข้าหมวดราคา 1 หมวด
-7) รอประมาณ 10-20 วินาที
-8) ดู Google Sheet จะต้องมีแท็บ Analytics
-
-รอบนี้เป็น Retail ก่อน เพื่อยืนยัน data pipeline ให้ผ่าน
+ไม่ต้อง Deploy Code.gs
+หลังวางให้ปิด Safari tab เดิม เปิดใหม่ แล้วทดสอบอีกครั้ง

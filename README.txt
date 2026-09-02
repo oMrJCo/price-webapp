@@ -1,22 +1,26 @@
-LEEPLUS PRICE WEB — SPEED FIX DEALER 02
-Baseline: Dealer current
+LEEPLUS PRICE WEB — ANALYTICS 03 / RETAIL WEB INCLUDE
 
-แก้จริงรอบนี้
-- เพิ่ม cache 5 นาทีสำหรับ meta / categories / GViz
-- ตัด Date.now() + cache:no-store ออกจาก request หลัก
-- categories โหลดครั้งเดียว ใช้ร่วมกับ category + Dealer PDF
-- meta + categories โหลดพร้อมกัน
-- เริ่ม GViz ตั้งแต่ต้นหน้า ไม่รอ meta/categories
-- request เดียวกันใช้ in-flight promise ร่วมกัน
-- มี cache แล้วแสดงของเดิมทันที และ refresh เบื้องหลัง
+สาเหตุที่ไม่มีข้อมูล
+- หน้าเว็บยังไม่ได้ include analytics.js
 
-คงของเดิม
-- dealer_price มาก่อน และ fallback ไป price
-- Dealer PDF: dealer_pdf_url / dealer_pdf / dealerPdf
-- UI / Search / Compatibility / Visual Catalog ไม่เปลี่ยน
+ไฟล์ในชุดนี้
+- index.html
+- price_sheet.html
+- analytics.js
 
-วิธีใช้
-1) เอา price_sheet.js ไปแทน dealer/price_sheet.js
-2) ใน GitHub Desktop ต้องเห็น diff จริง ไม่ควรขึ้น No content changes found
-3) Commit
-4) ทดสอบเวลาเข้าหมวดครั้งแรก และกลับเข้าหมวดเดิมภายใน 5 นาที
+สิ่งที่แก้
+- หน้าแรกเพิ่ม <script src="/analytics.js" defer></script>
+- หน้าราคาเพิ่ม <script src="/analytics.js" defer></script>
+- ใช้ path /analytics.js เพื่อให้เรียกไฟล์จาก root ตรงกัน
+
+วิธีลง
+1) วาง index.html ที่ root
+2) วาง price_sheet.html ที่ root
+3) วาง analytics.js ที่ root
+4) Commit / Push
+5) รอ GitHub Pages deploy
+6) เปิดหน้าแรก และเข้าหมวดราคา 1 หมวด
+7) รอประมาณ 10-20 วินาที
+8) ดู Google Sheet จะต้องมีแท็บ Analytics
+
+รอบนี้เป็น Retail ก่อน เพื่อยืนยัน data pipeline ให้ผ่าน

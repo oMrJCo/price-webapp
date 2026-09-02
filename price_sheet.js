@@ -98,7 +98,7 @@ function tryGetTabFromPriceUrl(priceUrl) {
   }
 }
 
-async function setupPdfDownloadButton(tabName) {
+function setupPdfDownloadButton(tabName, cats = []) {
   const btn = el("openPdfBtn");
   const hint = el("pdfHint");
   if (!btn) return;
@@ -107,24 +107,12 @@ async function setupPdfDownloadButton(tabName) {
   if (hint) hint.style.display = "none";
 
   try {
-    const res = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, {
-      cache: "no-store"
-    });
-
-    if (!res.ok) throw new Error("Categories API failed");
-
-    const json = await res.json();
-    if (!json.success) throw new Error("Categories API success false");
-
-    const cats = Array.isArray(json.data) ? json.data : [];
-
     const tab = String(tabName || "").trim();
     if (!tab) return;
 
     const tabLower = tab.toLowerCase();
-
-    const match = cats.find((c) => {
-      const st = String(c.sheetTab || "").trim();
+    const match = (Array.isArray(cats) ? cats : []).find((c) => {
+      const st = String(c.sheetTab || c.sheet_tab || "").trim();
       if (st && st.toLowerCase() === tabLower) return true;
 
       const purl = String(c.price_url || "").trim();
@@ -157,7 +145,7 @@ async function setupPdfDownloadButton(tabName) {
 
     if (hint) hint.style.display = "inline-flex";
   } catch (e) {
-    console.warn("setupPdfDownloadButton from API failed:", e);
+    console.warn("setupPdfDownloadButton failed:", e);
   }
 }
 
@@ -262,9 +250,7 @@ function setupImageModal() {
 /* ===== META API ===== */
 async function loadMetaConfig() {
   try {
-    const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
-      cache: "no-store"
-    });
+    const res = await fetch(`${API_URL}?action=meta`);
 
     if (!res.ok) throw new Error("Meta API failed");
 
@@ -367,7 +353,7 @@ function pickIndex(cols, candidates) {
 
 async function loadSheetWithMeta(tab) {
   const url = gvizJsonUrl(tab);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch GViz JSON");
   const text = await res.text();
 
@@ -439,7 +425,7 @@ async function loadSheetWithMeta(tab) {
 
 async function loadCompatibilitySheet(tab) {
   const url = gvizJsonUrl(tab);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch Compatibility GViz JSON");
   const text = await res.text();
   const json = parseGvizResponse(text);
@@ -650,7 +636,7 @@ function filterCompatibilityRows(all, query) {
 
 async function loadVisualCatalogSheet(tab) {
   const url = gvizJsonUrl(tab);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache:"no-store" });
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch Visual Catalog GViz JSON");
   const json = parseGvizResponse(await res.text());
   const table=json?.table||{}, cols=Array.isArray(table.cols)?table.cols:[], rows=Array.isArray(table.rows)?table.rows:[];
@@ -1061,21 +1047,68 @@ function renderTable(rows, brandImageMap) {
 }
 
 
-async function loadCategoryByTab(tab) {
-  try {
-    const r = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, { cache: "no-store" });
-    if (!r.ok) throw new Error(`categories api ${r.status}`);
-    const j = await r.json();
-    const items = Array.isArray(j.data) ? j.data : [];
-    const target = String(tab || "").trim().toLowerCase();
+const CATEGORY_CACHE_KEY = "leeplus_categories_cache_v1";
+const CATEGORY_CACHE_TTL = 5 * 60 * 1000;
+let categoriesMemoryCache = null;
+let categoriesRequestPromise = null;
 
-    return items.find(item =>
-      String(item.sheetTab || item.sheet_tab || "").trim().toLowerCase() === target
-    ) || null;
-  } catch (err) {
-    if (DEBUG) console.warn("loadCategoryByTab failed", err);
+function readCategoriesCache() {
+  if (categoriesMemoryCache) return categoriesMemoryCache;
+  try {
+    const raw = localStorage.getItem(CATEGORY_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (!cached || !Array.isArray(cached.data) || Date.now() - Number(cached.ts || 0) > CATEGORY_CACHE_TTL) {
+      localStorage.removeItem(CATEGORY_CACHE_KEY);
+      return null;
+    }
+    categoriesMemoryCache = cached.data;
+    return categoriesMemoryCache;
+  } catch (_) {
     return null;
   }
+}
+
+function writeCategoriesCache(items) {
+  categoriesMemoryCache = Array.isArray(items) ? items : [];
+  try {
+    localStorage.setItem(CATEGORY_CACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      data: categoriesMemoryCache
+    }));
+  } catch (_) {}
+}
+
+async function loadCategoriesCached() {
+  const cached = readCategoriesCache();
+  if (cached) return cached;
+  if (categoriesRequestPromise) return categoriesRequestPromise;
+
+  categoriesRequestPromise = (async () => {
+    try {
+      const r = await fetch(`${API_URL}?action=categories`);
+      if (!r.ok) throw new Error(`categories api ${r.status}`);
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message || "categories api success false");
+      const items = Array.isArray(j.data) ? j.data : [];
+      writeCategoriesCache(items);
+      return items;
+    } catch (err) {
+      if (DEBUG) console.warn("loadCategoriesCached failed", err);
+      return [];
+    } finally {
+      categoriesRequestPromise = null;
+    }
+  })();
+
+  return categoriesRequestPromise;
+}
+
+function loadCategoryByTab(tab, items = []) {
+  const target = String(tab || "").trim().toLowerCase();
+  return (Array.isArray(items) ? items : []).find(item =>
+    String(item.sheetTab || item.sheet_tab || "").trim().toLowerCase() === target
+  ) || null;
 }
 
 /* ===== category thumb ===== */
@@ -1102,10 +1135,14 @@ function applyCategoryThumb(categoryImageUrl) {
   el("crumb") && (el("crumb").textContent = `Sheet › ${tab}`);
   el("pageTitle") && (el("pageTitle").textContent = tab);
 
-  setupPdfDownloadButton(tab);
+  const [meta, categories] = await Promise.all([
+    loadMetaConfig(),
+    loadCategoriesCached()
+  ]);
 
-  const meta = await loadMetaConfig();
-  const categoryRecord = await loadCategoryByTab(tab);
+  setupPdfDownloadButton(tab, categories);
+
+  const categoryRecord = loadCategoryByTab(tab, categories);
   const categoryType = String(categoryRecord?.categoryType || "PRICE").trim().toUpperCase();
 
   if (categoryType === "VISUAL_CATALOG") {

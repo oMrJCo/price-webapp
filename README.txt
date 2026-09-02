@@ -1,15 +1,29 @@
-LEEPLUS v1.2.3 — Mobile Model List Fullwidth Fix
+LEEPLUS Speed Fix Restart 01 — Retail
 
-แก้ปัญหา HD / MATTE / PRIVACY / Visual Catalog บนมือถือ
-ที่ Card ถูกบีบเหลือประมาณ 42% และข้อความแตกทีละตัว
+ฐานงาน:
+- price_sheet.js ตัว Retail หลัง Rollback ที่พี่ส่งมารอบล่าสุด
+- ใช้ Speed Fix data-loading path ที่เราเคยทดสอบผ่านที่ประมาณ 2–3 วินาที
 
-สาเหตุ:
-Mobile CSS เดิมมี tbody tr td:last-child { max-width:42% }
-แต่ Compatibility / Visual Catalog มี td เดียว จึงถูกบีบ
+แก้เฉพาะความเร็ว:
+1. Meta cache 5 นาที + background refresh
+2. Categories cache 5 นาที และโหลดครั้งเดียวใช้ร่วมกัน
+3. GViz cache 5 นาที + background refresh
+4. แชร์ in-flight request ไม่ยิง request เดิมซ้ำ
+5. เริ่มโหลด GViz พร้อมกับ Meta/Categories เพื่อลดเวลารอแบบต่อคิว
+6. ตัด Date.now()/no-store ออกจาก request ข้อมูลหลัก
 
-วางทับ GitHub:
-- /price_sheet.js
-- /dealer/price_sheet.js
+ไม่แตะ:
+- UI
+- Search
+- ราคา
+- Compatibility
+- Visual Catalog
+- Auto Badge
+- Contact / Promotion Popup
+- Analytics
 
-ไม่ต้อง Deploy Code.gs
-หลังวางให้ปิด Safari tab เดิม เปิดใหม่ แล้วทดสอบอีกครั้ง
+ขั้นตอน:
+1. แทน price_sheet.js ฝั่ง Retail
+2. Commit / Push
+3. เปิดหมวดราคา Retail และจับเวลา
+4. ถ้าผ่าน ค่อยทำ Dealer ต่อ

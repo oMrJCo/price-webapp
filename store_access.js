@@ -350,6 +350,10 @@
     updateAccessButton();
     await validateSavedToken();
     renderApprovedBox();
+    try{
+      const q=new URL(location.href).searchParams;
+      if(q.get("access")==="1") open("login");
+    }catch(_){}
   }
 
   if(document.readyState === "loading"){

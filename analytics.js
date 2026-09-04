@@ -35,6 +35,13 @@
   const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
   const MAX_DATA_LENGTH = 300;
 
+  // Geo-IP: province/region only. No IP address is stored or sent to our backend.
+  const GEO_ENDPOINT = "https://ipwho.is/";
+  const GEO_CACHE_KEY = "lp_analytics_geo_v1";
+  const GEO_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
+  const GEO_FAIL_CACHE_MS = 6 * 60 * 60 * 1000;
+  const GEO_TIMEOUT_MS = 2500;
+
   function nowIso() {
     return new Date().toISOString();
   }
@@ -76,6 +83,93 @@
     try {
       sessionStorage.setItem(key, value);
     } catch (_) {}
+  }
+
+
+  function readGeoCache() {
+    try {
+      const raw = safeLocalGet(GEO_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || Number(parsed.expiresAt || 0) <= Date.now()) return null;
+      return {
+        province: cleanValue(parsed.province || "").slice(0, 80),
+        country: cleanValue(parsed.country || "").slice(0, 8),
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeGeoCache(province, country, ttlMs) {
+    try {
+      safeLocalSet(
+        GEO_CACHE_KEY,
+        JSON.stringify({
+          province: cleanValue(province || "").slice(0, 80),
+          country: cleanValue(country || "").slice(0, 8),
+          expiresAt: Date.now() + ttlMs,
+        })
+      );
+    } catch (_) {}
+  }
+
+  async function fetchGeo() {
+    const cached = readGeoCache();
+    if (cached) return cached;
+
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = controller
+      ? setTimeout(() => controller.abort(), GEO_TIMEOUT_MS)
+      : null;
+
+    try {
+      const response = await fetch(GEO_ENDPOINT, {
+        method: "GET",
+        mode: "cors",
+        cache: "no-store",
+        signal: controller ? controller.signal : undefined,
+      });
+      if (!response.ok) throw new Error("geo_http_" + response.status);
+
+      const geo = await response.json();
+      if (geo && geo.success === false) throw new Error("geo_failed");
+
+      const province = cleanValue(geo?.region || "").slice(0, 80);
+      const country = cleanValue(geo?.country_code || "").slice(0, 8);
+
+      // Keep only province/region + country code locally. Never persist the public IP.
+      writeGeoCache(province, country, GEO_CACHE_MS);
+      return { province, country };
+    } catch (_) {
+      // Short failure cache prevents repeated calls if the provider is unavailable.
+      writeGeoCache("", "", GEO_FAIL_CACHE_MS);
+      return { province: "", country: "" };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  let geoState = readGeoCache() || { province: "", country: "" };
+  let geoPromise = null;
+
+  function ensureGeo() {
+    const cached = readGeoCache();
+    if (cached) {
+      geoState = cached;
+      return Promise.resolve(cached);
+    }
+    if (!geoPromise) {
+      geoPromise = fetchGeo()
+        .then((geo) => {
+          geoState = geo || { province: "", country: "" };
+          return geoState;
+        })
+        .finally(() => {
+          geoPromise = null;
+        });
+    }
+    return geoPromise;
   }
 
   function getVisitorId() {
@@ -151,6 +245,7 @@
       audience: getAudience(),
       page: getPageName(),
       referrer: getSafeReferrer(),
+      province: cleanValue(geoState.province || "").slice(0, 80),
       data: cleanData(data),
     };
   }
@@ -299,14 +394,18 @@
   }
 
   function init() {
-    trackInitialView();
     installClickTracking();
     installVisibilityTracking();
+
+    // Geo lookup is analytics-only and never blocks page rendering.
+    // Initial view waits only for this background lookup (max ~2.5s) so the
+    // first event can include province when available.
+    ensureGeo().finally(trackInitialView);
 
     // Small public API for future explicit events without coupling to this file.
     window.LeeplusAnalytics = Object.freeze({
       track,
-      version: "1.0.0",
+      version: "1.1.0",
     });
   }
 

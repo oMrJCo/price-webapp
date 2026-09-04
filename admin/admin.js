@@ -560,15 +560,15 @@ function bindContactManager(){
     .analytics-chart-line{fill:none;stroke:#111;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
     .analytics-chart-dot{fill:#fff;stroke:#111;stroke-width:2.5}
     .analytics-province-list{display:grid}
-    .analytics-province-head,.analytics-province-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 70px;gap:10px;align-items:center}
+    .analytics-province-head,.analytics-province-row{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center}
     .analytics-province-head{padding:0 0 8px;color:#888;font-size:10px;font-weight:800;border-bottom:1px solid #eee}
-    .analytics-province-head span:nth-child(n+2),.analytics-province-row>strong,.analytics-province-row>span{text-align:right}
+    .analytics-province-head span:nth-child(n+2){text-align:right}.analytics-province-rank{width:26px;height:26px;border-radius:8px;background:#f3f4f5;display:grid;place-items:center;font-size:11px;font-weight:900;color:#555}
     .analytics-province-row{padding:10px 0;border-bottom:1px solid #f0f0f0}
     .analytics-province-row:last-child{border-bottom:0}
     .analytics-province-name b{font-size:12px}
     .analytics-province-track{height:4px;background:#efefef;border-radius:999px;overflow:hidden;margin-top:6px}
     .analytics-province-track i{display:block;height:100%;background:#111;border-radius:999px}
-    .analytics-province-row>strong{font-size:13px}.analytics-province-row>span{font-size:12px;color:#666;font-weight:800}
+    .analytics-province-meta{font-size:10px;color:#777;margin-top:2px;font-weight:700}
     @media(max-width:1100px){.analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-layout{grid-template-columns:1fr}}
     @media(max-width:650px){
       .analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -576,7 +576,7 @@ function bindContactManager(){
       .analytics-chart-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
       .analytics-chart-summary span{padding:7px;display:block}.analytics-chart-summary b{font-size:15px;display:block}.analytics-chart-summary small{font-size:9px}
       .analytics-line-chart{min-width:560px}
-      .analytics-province-head,.analytics-province-row{grid-template-columns:minmax(0,1fr) 58px 58px}
+      .analytics-province-head,.analytics-province-row{grid-template-columns:28px minmax(0,1fr)}
     }
   `;
   document.head.appendChild(st);
@@ -1010,6 +1010,10 @@ function analyticsListHtml(items,emptyText){
 
 function analyticsDailyChartHtml(items){
   if(!Array.isArray(items)||!items.length)return '<div class="analytics-empty">ยังไม่มีข้อมูลรายวัน</div>';
+  // ตัดวันว่างก่อน Analytics เริ่มมีข้อมูลจริงออก เพื่อไม่ให้กราฟ 30/90 วันมีเส้น 0 ยาวเกินจำเป็น
+  const firstActive=items.findIndex(x=>Number(x.views||0)>0 || Number(x.visitors||0)>0);
+  if(firstActive<0)return '<div class="analytics-empty">ยังไม่มี Views ในช่วงเวลานี้</div>';
+  items=items.slice(firstActive);
   const values=items.map(x=>Math.max(0,Number(x.views||0)));
   const max=Math.max(1,...values);
   const W=760,H=230,padL=42,padR=18,padT=18,padB=38;
@@ -1057,15 +1061,14 @@ function analyticsDailyChartHtml(items){
 
 function analyticsProvinceHtml(items){
   if(!Array.isArray(items)||!items.length)return '<div class="analytics-empty">เริ่มเก็บข้อมูลจังหวัดแล้ว · ข้อมูลเก่าก่อนเปิด Geo จะไม่แสดงจังหวัด</div>';
-  const maxUsers=Math.max(1,...items.map(x=>Number(x.users||0)));
+  const ranked=items.slice().sort((a,b)=>(Number(b.users||0)-Number(a.users||0))||(Number(b.views||0)-Number(a.views||0))).slice(0,12);
+  const maxUsers=Math.max(1,...ranked.map(x=>Number(x.users||0)));
   return `<div class="analytics-province-list">
-    <div class="analytics-province-head"><span>จังหวัด</span><span>ผู้ใช้</span><span>Views</span></div>
-    ${items.slice(0,12).map(x=>{
+    ${ranked.map((x,i)=>{
       const pct=Math.max(3,Math.round(Number(x.users||0)/maxUsers*100));
       return `<div class="analytics-province-row">
-        <div class="analytics-province-name"><b>${esc(x.name||"-")}</b><div class="analytics-province-track"><i style="width:${pct}%"></i></div></div>
-        <strong>${formatAnalyticsNumber(x.users)}</strong>
-        <span>${formatAnalyticsNumber(x.views)}</span>
+        <div class="analytics-province-rank">${i+1}</div>
+        <div class="analytics-province-name"><b>${esc(x.name||"-")}</b><div class="analytics-province-meta">${formatAnalyticsNumber(x.users)} ผู้ใช้ · ${formatAnalyticsNumber(x.views)} Views</div><div class="analytics-province-track"><i style="width:${pct}%"></i></div></div>
       </div>`;
     }).join("")}
   </div>`;

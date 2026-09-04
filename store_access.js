@@ -107,7 +107,7 @@
       .store-access-msg.error{color:#ff8b8b}.store-access-msg.success{color:#6fe0a0}.store-access-msg.info{color:#f5d85d}
       .store-access-approved{padding:12px;border:1px solid rgba(34,181,115,.22);background:rgba(34,181,115,.07);border-radius:12px;margin-bottom:13px;color:#dff8e9;font-size:11px;line-height:1.6}
       .store-access-logout{border:0;background:transparent;color:#9ca3af;font-size:10px;text-decoration:underline;cursor:pointer;padding:7px 0 0}
-      .store-access-note{margin-top:12px;color:#707988;font-size:9px;line-height:1.5}
+      .store-access-flow{margin-top:14px;padding:10px 11px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:#090c12;color:#a8afba;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}.store-access-flow span{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:rgba(243,201,0,.13);color:#f3c900;font-size:9px}.store-access-flow b{color:#596170}.store-access-note{margin-top:10px;color:#707988;font-size:9px;line-height:1.5}
       @media(max-width:760px){
         .store-access-btn{min-height:36px;padding:0 12px;font-size:10px}
         .store-access-card{border-radius:18px}.store-access-head{padding:18px 17px 13px}.store-access-tabs{margin:0 17px}.store-access-body{padding:16px 17px 19px}
@@ -134,7 +134,7 @@
         <div class="store-access-body">
           <section class="store-access-view active" data-store-view="login">
             <h2 class="store-access-title">เข้าสู่ระบบร้านค้า</h2>
-            <p class="store-access-desc">ใช้เบอร์โทรที่ได้รับการอนุมัติแล้ว อุปกรณ์นี้จะจำสิทธิ์ไว้ให้อัตโนมัติ</p>
+            <p class="store-access-desc">ร้านที่ได้รับอนุมัติแล้ว ใช้เบอร์โทรที่ลงทะเบียนเพื่อเปิดดูราคา อุปกรณ์นี้จะจำสิทธิ์ไว้ให้อัตโนมัติ</p>
             <div id="storeApprovedBox"></div>
             <form id="storeLoginForm" novalidate>
               <label class="store-access-field">
@@ -148,7 +148,7 @@
 
           <section class="store-access-view" data-store-view="register">
             <h2 class="store-access-title">ลงทะเบียนร้านค้า</h2>
-            <p class="store-access-desc">ส่งข้อมูลให้ LEEPLUS ตรวจสอบก่อนอนุมัติสิทธิ์ดูราคา</p>
+            <p class="store-access-desc">สำหรับร้านค้าใหม่ ลงทะเบียนครั้งเดียวเพื่อขอสิทธิ์ดูราคา หลังอนุมัติใช้เบอร์เดิมเข้าสู่ระบบได้ทันที</p>
             <form id="storeRegisterForm" novalidate>
               <label class="store-access-field"><span>ชื่อร้าน *</span><input id="storeRegName" maxlength="120" autocomplete="organization" placeholder="ชื่อร้านค้า"></label>
               <label class="store-access-field"><span>ชื่อผู้ติดต่อ</span><input id="storeRegContact" maxlength="120" autocomplete="name" placeholder="ชื่อผู้ติดต่อ"></label>
@@ -157,7 +157,8 @@
               <label class="store-access-field"><span>LINE / Facebook / ช่องทางติดต่อ <small style="color:#707988;font-weight:700">(ไม่บังคับ)</small></span><input id="storeRegContactDetail" maxlength="180" placeholder="ไม่ใส่ก็ได้"></label>
               <button class="store-access-submit" id="storeRegisterSubmit" type="submit">ส่งคำขอสิทธิ์</button>
               <div id="storeRegisterMsg" class="store-access-msg"></div>
-              <div class="store-access-note">เบอร์โทรต้องเป็นตัวเลข 10 หลักเท่านั้น และใช้เป็นรหัสอ้างอิงสิทธิ์ของร้าน</div>
+              <div class="store-access-flow"><span>1</span> ลงทะเบียน <b>›</b> <span>2</span> รอตรวจสอบ <b>›</b> <span>3</span> เปิดดูราคา</div>
+              <div class="store-access-note">เบอร์โทรต้องเป็นตัวเลข 10 หลัก และใช้เป็นข้อมูลยืนยันสิทธิ์ของร้าน กรุณาใช้เบอร์ที่ติดต่อได้จริง</div>
             </form>
           </section>
         </div>
@@ -290,7 +291,16 @@
           renderApprovedBox();
           setTimeout(close, 650);
         }else{
-          setMsg(msg, j?.message || "ยังไม่สามารถเข้าใช้งานได้", j?.status === "PENDING" ? "info" : "error");
+          const status = String(j?.status || "").toUpperCase();
+          if(status === "PENDING"){
+            setMsg(msg, "คำขออยู่ระหว่างการตรวจสอบ เมื่ออนุมัติแล้วใช้เบอร์เดิมเข้าสู่ระบบได้ทันที", "info");
+          }else if(status === "REJECTED"){
+            setMsg(msg, "คำขอนี้ยังไม่ได้รับอนุมัติ กรุณาติดต่อ LEEPLUS เพื่อตรวจสอบข้อมูล", "error");
+          }else if(status === "REVOKED"){
+            setMsg(msg, "สิทธิ์ของร้านนี้ถูกยกเลิก กรุณาติดต่อ LEEPLUS หากต้องการเปิดสิทธิ์อีกครั้ง", "error");
+          }else{
+            setMsg(msg, j?.message || "ยังไม่พบสิทธิ์ของเบอร์นี้ หากเป็นร้านใหม่ให้เลือก ‘ลงทะเบียนร้านค้า’", "error");
+          }
         }
       }catch(_){
         setMsg(msg, "เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่", "error");
@@ -316,13 +326,22 @@
       try{
         const j = await register({storeName, contactName, phone, province, contactDetail});
         if(j?.success){
-          setMsg(msg, j.message || "ส่งคำขอเรียบร้อยแล้ว กรุณารอการตรวจสอบจาก LEEPLUS", "success");
+          setMsg(msg, "ส่งคำขอเรียบร้อยแล้ว ✓ กรุณารอ LEEPLUS ตรวจสอบ เมื่ออนุมัติแล้วใช้เบอร์เดิมเข้าสู่ระบบได้เลย", "success");
           document.getElementById("storeRegisterForm").reset();
         }else{
-          setMsg(msg, j?.message || "ไม่สามารถส่งคำขอได้", j?.status === "PENDING" ? "info" : "error");
-          if(j?.status === "APPROVED"){
+          const status = String(j?.status || "").toUpperCase();
+          if(status === "PENDING"){
+            setMsg(msg, "เบอร์นี้ลงทะเบียนแล้ว และคำขอยังอยู่ระหว่างการตรวจสอบ", "info");
+          }else if(status === "APPROVED"){
+            setMsg(msg, "เบอร์นี้ได้รับอนุมัติแล้ว กำลังพาไปหน้าเข้าสู่ระบบ…", "success");
             loginPhone.value = phone;
             setTimeout(() => switchTab("login"), 700);
+          }else if(status === "REJECTED"){
+            setMsg(msg, "เบอร์นี้มีคำขอที่ยังไม่ได้รับอนุมัติ กรุณาติดต่อ LEEPLUS", "error");
+          }else if(status === "REVOKED"){
+            setMsg(msg, "สิทธิ์ของเบอร์นี้ถูกยกเลิก กรุณาติดต่อ LEEPLUS หากต้องการเปิดสิทธิ์อีกครั้ง", "error");
+          }else{
+            setMsg(msg, j?.message || "ไม่สามารถส่งคำขอได้ กรุณาลองใหม่", "error");
           }
         }
       }catch(_){

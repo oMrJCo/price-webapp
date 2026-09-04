@@ -601,6 +601,10 @@ function bindContactManager(){
     .store-status.rejected,.store-status.revoked{background:#ffe9e7;color:#b42318}
     .store-duplicate{display:inline-flex;margin-left:6px;padding:3px 7px;border-radius:999px;background:#fff0d5;color:#9a5c00;font-size:9px;font-weight:900}
     .store-empty{padding:26px;text-align:center;color:#888;border:1px dashed #ddd;border-radius:14px}
+    .store-activity{margin-top:10px;padding-top:9px;border-top:1px dashed #eceef1;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+    .store-activity-chip{display:inline-flex;padding:4px 7px;border-radius:999px;background:#f3f5f7;color:#5e6672;font-size:9px;font-weight:850}
+    .store-activity-chip.live{background:#e9f8ef;color:#16814b}
+    .store-tabs-line{margin-top:6px;color:#7c8490;font-size:10px}
     @media(max-width:800px){.store-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.store-row-top{grid-template-columns:1fr}.store-actions{justify-content:flex-start}}
   `;
   document.head.appendChild(st);
@@ -724,6 +728,7 @@ async function renderSettingsView(){
 
 let storeAccessRows=[];
 let storeAccessFilter="PENDING";
+let storeAnalyticsMap={};
 
 function storeStatus(v){return String(v||"PENDING").trim().toUpperCase()}
 function storeDate(v){
@@ -734,8 +739,13 @@ function storeDate(v){
 function storeDuplicate(r){return r?.duplicate_name===true||String(r?.duplicate_name||"").toUpperCase()==="TRUE"}
 
 async function loadStoreAccessRows(){
-  const j=await apiGet({action:"storesAdmin"});
-  storeAccessRows=(Array.isArray(j?.data)?j.data:[]).map(r=>({...r,__status:storeStatus(r.status)}));
+  const [storesJ,analyticsJ]=await Promise.all([
+    apiGet({action:"storesAdmin"}),
+    apiGet({action:"storeAnalyticsSummary",days:"30"}).catch(()=>({data:[]}))
+  ]);
+  storeAccessRows=(Array.isArray(storesJ?.data)?storesJ.data:[]).map(r=>({...r,__status:storeStatus(r.status)}));
+  storeAnalyticsMap={};
+  (Array.isArray(analyticsJ?.data)?analyticsJ.data:[]).forEach(x=>{if(x?.store_id)storeAnalyticsMap[x.store_id]=x});
 }
 function storeCount(status){return storeAccessRows.filter(r=>r.__status===status).length}
 
@@ -751,6 +761,15 @@ function storeRowHtml(r){
       <div>
         <div><span class="store-name">${esc(r.store_name||"ไม่ระบุชื่อร้าน")}</span>${storeDuplicate(r)?'<span class="store-duplicate">⚠ ชื่อร้านซ้ำ</span>':""}</div>
         <div class="store-meta"><b>${esc(phone||"—")}</b>${r.contact_name?` · ${esc(r.contact_name)}`:""}${r.province?` · ${esc(r.province)}`:""}${r.contact_detail?`<br>${esc(r.contact_detail)}`:""}<br>ส่งคำขอ ${esc(storeDate(r.created_at))}</div>
+        ${(()=>{
+          const a=storeAnalyticsMap[id]||{};
+          const tabs=Array.isArray(a.top_tabs)?a.top_tabs:[];
+          return `<div class="store-activity">
+            <span class="store-activity-chip ${a.last_active?"live":""}">ล่าสุด ${esc(a.last_active?storeDate(a.last_active):"ยังไม่มีข้อมูล")}</span>
+            <span class="store-activity-chip">${Number(a.sessions||0)} sessions</span>
+            <span class="store-activity-chip">${Number(a.views||0)} views / 30 วัน</span>
+          </div>${tabs.length?`<div class="store-tabs-line">หมวดที่ดู: ${tabs.map(x=>`${esc(x.name)} (${Number(x.count||0)})`).join(" · ")}</div>`:""}`;
+        })()}
       </div>
       <div class="store-actions"><span class="store-status ${status.toLowerCase()}">${esc(status)}</span>${buttons}</div>
     </div>
@@ -772,7 +791,7 @@ function bindStoreActions(){
 
 async function renderStoreAccessView(){
   title.textContent="ร้านค้า / คำขอสิทธิ์";
-  subtitle.textContent="ตรวจสอบร้านค้า อนุมัติสิทธิ์ดูราคา และระงับสิทธิ์";
+  subtitle.textContent="ตรวจสอบสิทธิ์ร้านค้า พร้อมดูการใช้งาน Retail ย้อนหลัง 30 วัน";
   content.innerHTML='<div class="panel"><div class="empty">กำลังโหลดข้อมูลร้านค้า...</div></div>';
   try{await loadStoreAccessRows()}
   catch(e){content.innerHTML=`<div class="panel"><div class="api-needed"><b>ยังอ่าน Store Access ไม่ได้</b><div>${esc(e.message)}</div></div></div>`;return}

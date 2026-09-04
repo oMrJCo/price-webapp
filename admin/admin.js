@@ -50,13 +50,29 @@
     
     .settings-save{position:sticky!important;bottom:12px!important;z-index:40;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(10px);border:1px solid #e6e7ea;border-radius:14px;padding:10px 12px!important;box-shadow:0 12px 35px rgba(0,0,0,.12)}
     .cat-toolbar{position:sticky;top:0;z-index:20;background:rgba(244,245,247,.94);backdrop-filter:blur(10px);padding:8px 0}
+    .dashboard-store-wrap{margin-bottom:14px}
+    .dashboard-store-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .dashboard-store-head h2{margin:0}
+    .dashboard-store-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .dashboard-store-stat{border:1px solid #eceef1;border-radius:14px;padding:14px;background:#fbfcfd}
+    .dashboard-store-stat span{display:block;color:#7c8490;font-size:11px;font-weight:800}
+    .dashboard-store-stat strong{display:block;font-size:26px;line-height:1;margin-top:7px}
+    .dashboard-store-stat small{display:block;margin-top:6px;color:#8b929b;font-size:10px;line-height:1.45}
+    .dashboard-store-latest{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .dashboard-store-box{border:1px solid #eceef1;border-radius:14px;padding:13px;background:#fff}
+    .dashboard-store-box .label{font-size:10px;color:#7c8490;font-weight:850;margin-bottom:6px}
+    .dashboard-store-box b{display:block;font-size:13px}
+    .dashboard-store-box small{display:block;margin-top:4px;color:#7c8490;line-height:1.5}
+    .dashboard-store-empty{color:#8b929b;font-size:12px;padding:6px 0}
     @media(max-width:1100px){
       .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
       .dashboard-health-grid{grid-template-columns:1fr}
+      .dashboard-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .contact-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     }
     @media(max-width:700px){
       .cards{grid-template-columns:1fr!important}
+      .dashboard-store-grid,.dashboard-store-latest{grid-template-columns:1fr}
       .contact-admin-item{grid-template-columns:44px 1fr!important;padding:10px!important}
       .contact-admin-grid{grid-template-columns:1fr!important}
     }
@@ -1023,6 +1039,66 @@ async function loadDashboardLive(runId){
   return result;
 }
 
+
+function dashboardStoreMs(v){
+  const d=new Date(v||"");
+  return Number.isNaN(d.getTime())?0:d.getTime();
+}
+function dashboardStoreSnapshotHtml(s){
+  const latest=s.latestStore;
+  const latestUsage=s.latestUsage;
+  return `<div class="panel dashboard-store-wrap">
+    <div class="dashboard-store-head">
+      <div><h2>ร้านค้า / Store Access</h2><div class="muted" style="font-size:10px;margin-top:3px">สถานะล่าสุดของร้านค้าและการใช้งาน Retail</div></div>
+      <button class="secondary" id="dashboardOpenStores">จัดการร้านค้า</button>
+    </div>
+    <div class="dashboard-store-grid">
+      <div class="dashboard-store-stat"><span>รอตรวจสอบ</span><strong>${s.pending}</strong><small>${s.pending?`มี ${s.pending} ร้านที่ต้องดำเนินการ`:"ไม่มีคำขอค้าง"}</small></div>
+      <div class="dashboard-store-stat"><span>อนุมัติแล้ว</span><strong>${s.approved}</strong><small>ร้านที่เปิดดูราคา Retail ได้</small></div>
+      <div class="dashboard-store-stat"><span>Active 30 วัน</span><strong>${s.active30}</strong><small>ร้านที่มีการใช้งาน Retail ใน 30 วัน</small></div>
+      <div class="dashboard-store-stat"><span>Usage 30 วัน</span><strong>${s.views}</strong><small>${s.sessions} sessions · views จากร้านที่ระบุตัวตนได้</small></div>
+    </div>
+    <div class="dashboard-store-latest">
+      <div class="dashboard-store-box">
+        <div class="label">ร้านล่าสุด</div>
+        ${latest?`<b>${esc(latest.store_name||"ไม่ระบุชื่อร้าน")}</b><small>${esc(latest.province||"ไม่ระบุจังหวัด")} · ${esc(storeStatus(latest.status))}<br>สมัคร ${esc(storeDate(latest.created_at))}</small>`:'<div class="dashboard-store-empty">ยังไม่มีข้อมูลร้านค้า</div>'}
+      </div>
+      <div class="dashboard-store-box">
+        <div class="label">Usage ล่าสุด</div>
+        ${latestUsage?`<b>${esc(latestUsage.store_name||"ไม่ระบุชื่อร้าน")}</b><small>ล่าสุด ${esc(storeDate(latestUsage.last_active))}<br>${Number(latestUsage.sessions||0)} sessions · ${Number(latestUsage.views||0)} views / 30 วัน</small>`:'<div class="dashboard-store-empty">ยังไม่มี Store Analytics</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+async function loadDashboardStoreSnapshot(){
+  const host=document.querySelector("#dashboardStoreSnapshot");
+  if(!host)return;
+  try{
+    const [storesJ,analyticsJ]=await Promise.all([
+      apiGet({action:"storesAdmin"}),
+      apiGet({action:"storeAnalyticsSummary",days:"30"}).catch(()=>({data:[]}))
+    ]);
+    const stores=(Array.isArray(storesJ?.data)?storesJ.data:[]).map(r=>({...r,__status:storeStatus(r.status)}));
+    const analytics=Array.isArray(analyticsJ?.data)?analyticsJ.data:[];
+    const storeById={}; stores.forEach(r=>{if(r.store_id)storeById[r.store_id]=r});
+    const approved=stores.filter(r=>r.__status==="APPROVED").length;
+    const pending=stores.filter(r=>r.__status==="PENDING").length;
+    const activeRows=analytics.filter(a=>dashboardStoreMs(a.last_active)>0);
+    const active30=new Set(activeRows.map(a=>a.store_id).filter(Boolean)).size;
+    const views=analytics.reduce((n,a)=>n+Number(a.views||0),0);
+    const sessions=analytics.reduce((n,a)=>n+Number(a.sessions||0),0);
+    const latestStore=[...stores].sort((a,b)=>dashboardStoreMs(b.created_at)-dashboardStoreMs(a.created_at))[0]||null;
+    const latestA=[...activeRows].sort((a,b)=>dashboardStoreMs(b.last_active)-dashboardStoreMs(a.last_active))[0]||null;
+    const latestUsage=latestA?{...latestA,store_name:storeById[latestA.store_id]?.store_name||latestA.store_id}:null;
+    host.innerHTML=dashboardStoreSnapshotHtml({pending,approved,active30,views,sessions,latestStore,latestUsage});
+    document.querySelector("#dashboardOpenStores")?.addEventListener("click",()=>render("stores"));
+  }catch(err){
+    console.warn("Dashboard Store Snapshot failed:",err);
+    host.innerHTML=`<div class="panel dashboard-store-wrap"><div class="dashboard-store-head"><div><h2>ร้านค้า / Store Access</h2><div class="muted" style="font-size:10px;margin-top:3px">โหลดข้อมูลร้านค้าไม่สำเร็จ</div></div><button class="secondary" id="dashboardOpenStores">จัดการร้านค้า</button></div></div>`;
+    document.querySelector("#dashboardOpenStores")?.addEventListener("click",()=>render("stores"));
+  }
+}
+
 function dashboardBadge(text,type=""){return `<span class="smart-badge ${type}">${text}</span>`}
 function dashboardValue(v){return v===null||v===undefined?"—":v}
 function renderDashboardData(d,meta={}){
@@ -1032,6 +1108,7 @@ function renderDashboardData(d,meta={}){
       <div class="muted" style="font-size:11px">${meta.cacheText||""}${d.isLight?" · แสดงข้อมูลพื้นฐานก่อนเพื่อให้ Backoffice เปิดเร็ว":""}</div>
       <button class="primary" id="refreshDashboardBtn">รีเฟรชข้อมูล Dashboard</button>
     </div>
+    <div id="dashboardStoreSnapshot"><div class="panel dashboard-store-wrap"><div class="dashboard-store-head"><div><h2>ร้านค้า / Store Access</h2><div class="muted" style="font-size:10px;margin-top:3px">กำลังโหลดสถานะร้านค้า...</div></div><button class="secondary" data-go="stores">จัดการร้านค้า</button></div></div></div>
     <div class="cards">
       <div class="card"><span class="muted">หมวดเปิดใช้งาน</span><strong>${dashboardValue(d.active)}</strong><small>จากทั้งหมด ${dashboardValue(d.total)} หมวด</small></div>
       <div class="card"><span class="muted">รายการข้อมูลรวม</span><strong>${dashboardValue(d.items)}</strong><small>${d.isLight?"กดรีเฟรชเพื่อคำนวณ":"ข้อมูลจากทุก Sheet"}</small></div>
@@ -1077,6 +1154,7 @@ function renderDashboardData(d,meta={}){
     </div>`;
   document.querySelector("#refreshDashboardBtn")?.addEventListener("click",refreshDashboardHeavy);
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>render(b.dataset.go));
+  loadDashboardStoreSnapshot();
 }
 function renderLiveDashboard(){
   title.textContent='ภาพรวม';subtitle.textContent='สถานะระบบและข้อมูลล่าสุดจาก Google Sheet';

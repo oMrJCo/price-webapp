@@ -386,7 +386,12 @@ async function loadSheetWithMeta(tab) {
     const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
     const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
     const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
-    return !((hasMETA && hasCATEGORY) || hasBRAND);
+
+    // Apps Script gateway preserves blank separator rows from the Sheet.
+    // Old GViz effectively did not render these as products. If they pass
+    // through, groupByBrandPreserveSheetOrder() turns them into "Unknown".
+    const isBlankRow = !String(r.brand || "").trim() && !String(r.model || "").trim();
+    return !isBlankRow && !((hasMETA && hasCATEGORY) || hasBRAND);
   }).map(({ __all, ...rest }) => rest);
 
   if (DEBUG) {

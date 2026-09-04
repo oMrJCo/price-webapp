@@ -66,8 +66,8 @@
       btn.title = "อุปกรณ์นี้ได้รับสิทธิ์ดูราคาแล้ว";
     }else{
       btn.classList.remove("is-approved");
-      btn.textContent = "สิทธิ์ดูราคา";
-      btn.title = "เข้าสู่ระบบร้านค้า / ลงทะเบียน";
+      btn.textContent = "ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา";
+      btn.title = "ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา";
     }
   }
 
@@ -339,7 +339,7 @@
     btn.type = "button";
     btn.id = "storeAccessBtn";
     btn.className = "store-access-btn";
-    btn.textContent = "สิทธิ์ดูราคา";
+    btn.textContent = "ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา";
     nav.insertBefore(btn, nav.firstChild);
   }
 

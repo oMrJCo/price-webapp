@@ -57,6 +57,7 @@ const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/ma
 const GH_BASE = "/price-webapp/";
 const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
 let GATED_PDF_URL = "";
+let PRICE_LOCKED = false;
 
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
@@ -301,6 +302,7 @@ function parseGvizResponse(text) {
     throw err;
   }
   GATED_PDF_URL = String(json?.pdfUrl || "");
+  PRICE_LOCKED = Boolean(json?.priceLocked);
   return json;
 }
 function colLabel(c) { return String(c.label || c.id || "").trim(); }
@@ -1015,7 +1017,11 @@ function renderTable(rows, brandImageMap) {
           <div class="model">${formatModelWithAutoBadge(r.model)}</div>
         </div>
       </td>
-      <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
+      <td class="price">${
+        PRICE_LOCKED
+          ? `<a href="/?access=1" class="priceUnlockBtn" title="ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา">ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา</a>`
+          : `<span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span>`
+      }</td>
     `;
     tbody.appendChild(tr);
   }
@@ -1123,10 +1129,6 @@ function applyCategoryThumb(categoryImageUrl) {
   try {
     pricePayload = await loadSheetWithMeta(tab);
   } catch (e) {
-    if (e && (e.code === "STORE_ACCESS_REQUIRED" || e.code === "DEALER_ACCESS_REQUIRED")) {
-      renderCatalogLocked(e.code);
-      return;
-    }
     throw e;
   }
   const {

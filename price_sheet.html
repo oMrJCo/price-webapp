@@ -872,6 +872,19 @@ tbody tr td:last-child{text-align:right!important}
   text-align:left!important;
 }
 
+
+  /* Store Access 04.1 — public catalog / locked price */
+  .priceUnlockBtn{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-height:34px;max-width:180px;padding:7px 11px;border-radius:999px;
+    background:#f3c900;color:#090b10!important;text-decoration:none!important;
+    font-size:10px;line-height:1.25;font-weight:950;text-align:center;white-space:normal;
+  }
+  .priceUnlockBtn:hover{filter:brightness(1.05)}
+  @media(max-width:640px){
+    .priceUnlockBtn{max-width:132px;min-height:32px;padding:6px 9px;font-size:9px}
+  }
+
 </style>
 </head>
 <body class="retail-mode">
@@ -955,6 +968,6 @@ tbody tr td:last-child{text-align:right!important}
     </div>
   </div>
 
-  <script src="./price_sheet.js?v=20260905-04"></script>
+  <script src="./price_sheet.js?v=20260905-04-1"></script>
 </body>
 </html>

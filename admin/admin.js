@@ -64,15 +64,39 @@
     .dashboard-store-box b{display:block;font-size:13px}
     .dashboard-store-box small{display:block;margin-top:4px;color:#7c8490;line-height:1.5}
     .dashboard-store-empty{color:#8b929b;font-size:12px;padding:6px 0}
+    .store-overview-hero{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;margin-bottom:12px}
+    .store-overview-main{padding:18px}
+    .store-overview-main h2{margin:0 0 6px;font-size:18px}
+    .store-overview-main p{margin:0;color:#727985;font-size:12px;line-height:1.6}
+    .store-overview-alert{padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+    .store-overview-alert strong{font-size:32px;line-height:1}
+    .store-overview-alert .warning{color:#9a6700}
+    .store-overview-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .store-overview-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .store-overview-card{cursor:pointer;border:1px solid #e5e7eb;border-radius:16px;padding:15px;background:#fff;transition:.15s}
+    .store-overview-card:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.05)}
+    .store-overview-card span{display:block;color:#7b838f;font-size:11px;font-weight:800}
+    .store-overview-card strong{display:block;margin-top:8px;font-size:26px;line-height:1}
+    .store-overview-card small{display:block;color:#9097a1;font-size:10px;margin-top:7px;line-height:1.4}
+    .store-overview-sections{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .store-overview-section{padding:16px}
+    .store-overview-section h3{margin:0 0 12px;font-size:14px}
+    .store-mini-list{display:grid;gap:8px}
+    .store-mini-row{border:1px solid #eceef1;border-radius:12px;padding:11px 12px;background:#fcfcfd}
+    .store-mini-row b{display:block;font-size:12px}
+    .store-mini-row small{display:block;margin-top:4px;color:#7f8792;font-size:10px;line-height:1.5}
+    .store-mini-row .metric{font-weight:900;color:#111827}
     @media(max-width:1100px){
       .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
       .dashboard-health-grid{grid-template-columns:1fr}
       .dashboard-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .store-overview-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
       .contact-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     }
     @media(max-width:700px){
       .cards{grid-template-columns:1fr!important}
-      .dashboard-store-grid,.dashboard-store-latest{grid-template-columns:1fr}
+      .dashboard-store-grid,.dashboard-store-latest,.store-overview-hero,.store-overview-sections{grid-template-columns:1fr}
+      .store-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
       .contact-admin-item{grid-template-columns:44px 1fr!important;padding:10px!important}
       .contact-admin-grid{grid-template-columns:1fr!important}
     }
@@ -800,14 +824,102 @@ function bindStoreActions(){
     btn.disabled=true;
     try{
       await apiGet({action:"storeSetStatus",storeId:id,status:next});
-      await renderStoreAccessView();
+      await renderStoreManagementView();
     }catch(e){alert("อัปเดตไม่สำเร็จ: "+e.message);btn.disabled=false}
   });
 }
 
-async function renderStoreAccessView(){
-  title.textContent="ร้านค้า / คำขอสิทธิ์";
-  subtitle.textContent="ตรวจสอบสิทธิ์ร้านค้า พร้อมดูการใช้งาน Retail ย้อนหลัง 30 วัน";
+
+function storeOverviewUsageRows(){
+  return storeAccessRows.map(r=>{
+    const a=storeAnalyticsMap[r.store_id]||{};
+    return {...r,__a:a,__lastMs:dashboardStoreMs(a.last_active),__views:Number(a.views||0),__sessions:Number(a.sessions||0)};
+  });
+}
+async function renderStoreOverview(){
+  title.textContent="ร้านค้า / Store Access";
+  subtitle.textContent="ภาพรวมร้านค้า สิทธิ์ใช้งาน และ Retail Usage";
+  content.innerHTML='<div class="panel"><div class="empty">กำลังโหลดภาพรวมร้านค้า...</div></div>';
+  try{await loadStoreAccessRows()}
+  catch(e){content.innerHTML=`<div class="panel"><div class="api-needed"><b>ยังอ่าน Store Access ไม่ได้</b><div>${esc(e.message)}</div></div></div>`;return}
+
+  const rows=storeOverviewUsageRows();
+  const total=rows.length;
+  const pending=storeCount("PENDING"), approved=storeCount("APPROVED");
+  const now=Date.now(), d7=7*86400000, d30=30*86400000;
+  const active7=rows.filter(r=>r.__lastMs && now-r.__lastMs<=d7).length;
+  const active30=rows.filter(r=>r.__lastMs && now-r.__lastMs<=d30).length;
+  const usageViews=rows.reduce((n,r)=>n+r.__views,0);
+  const usageSessions=rows.reduce((n,r)=>n+r.__sessions,0);
+
+  const newest=[...rows].sort((a,b)=>dashboardStoreMs(b.created_at)-dashboardStoreMs(a.created_at)).slice(0,4);
+  const recent=[...rows].filter(r=>r.__lastMs).sort((a,b)=>b.__lastMs-a.__lastMs).slice(0,4);
+  const top=[...rows].filter(r=>r.__views>0).sort((a,b)=>b.__views-a.__views).slice(0,4);
+
+  const mini=(r,mode)=>{
+    if(!r)return "";
+    const a=r.__a||{};
+    if(mode==="usage") return `<div class="store-mini-row"><b>${esc(r.store_name||"ไม่ระบุชื่อร้าน")}</b><small>ล่าสุด ${esc(a.last_active?storeDate(a.last_active):"—")} · <span class="metric">${r.__sessions} sessions / ${r.__views} views</span></small></div>`;
+    if(mode==="top") return `<div class="store-mini-row"><b>${esc(r.store_name||"ไม่ระบุชื่อร้าน")}</b><small><span class="metric">${r.__views} views</span> · ${r.__sessions} sessions / 30 วัน</small></div>`;
+    return `<div class="store-mini-row"><b>${esc(r.store_name||"ไม่ระบุชื่อร้าน")}</b><small>${esc(r.province||"ไม่ระบุจังหวัด")} · ${esc(r.__status)} · สมัคร ${esc(storeDate(r.created_at))}</small></div>`;
+  };
+
+  content.innerHTML=`
+    <div class="store-overview-hero">
+      <div class="panel store-overview-main">
+        <h2>Store Overview</h2>
+        <p>ดูสถานะร้านค้าและการใช้งานก่อน แล้วค่อยเข้าไปจัดการคำขอหรือสิทธิ์ของแต่ละร้าน</p>
+        <div class="store-overview-actions">
+          <button class="primary" id="storeGoPending">ดูคำขอสิทธิ์${pending?` (${pending})`:""}</button>
+          <button class="secondary" id="storeGoAll">ดูร้านค้าทั้งหมด</button>
+          <button class="secondary" id="storeOverviewRefresh">รีเฟรช</button>
+        </div>
+      </div>
+      <div class="panel store-overview-alert">
+        <div><span class="muted">รอตรวจสอบ</span><strong class="${pending?"warning":""}">${pending}</strong></div>
+        <small class="muted">${pending?`มี ${pending} ร้านรอพี่ตรวจสอบ`:"ไม่มีคำขอค้าง"}</small>
+      </div>
+    </div>
+
+    <div class="store-overview-cards">
+      <div class="store-overview-card" data-store-filter="ALL"><span>ร้านทั้งหมด</span><strong>${total}</strong><small>ทุกสถานะในระบบ</small></div>
+      <div class="store-overview-card" data-store-filter="PENDING"><span>รอตรวจสอบ</span><strong>${pending}</strong><small>คำขอที่ต้องดำเนินการ</small></div>
+      <div class="store-overview-card" data-store-filter="APPROVED"><span>อนุมัติแล้ว</span><strong>${approved}</strong><small>ร้านที่เปิดดูราคาได้</small></div>
+      <div class="store-overview-card"><span>Active 7 วัน</span><strong>${active7}</strong><small>ร้านที่กลับมาใช้งานล่าสุด</small></div>
+      <div class="store-overview-card"><span>Active 30 วัน</span><strong>${active30}</strong><small>${usageSessions} sessions · ${usageViews} views</small></div>
+    </div>
+
+    <div class="store-overview-sections">
+      <div class="panel store-overview-section">
+        <h3>ร้านสมัครล่าสุด</h3>
+        <div class="store-mini-list">${newest.length?newest.map(r=>mini(r,"new")).join(""):'<div class="store-empty">ยังไม่มีข้อมูลร้านค้า</div>'}</div>
+      </div>
+      <div class="panel store-overview-section">
+        <h3>Active ล่าสุด</h3>
+        <div class="store-mini-list">${recent.length?recent.map(r=>mini(r,"usage")).join(""):'<div class="store-empty">ยังไม่มี Store Analytics</div>'}</div>
+      </div>
+      <div class="panel store-overview-section">
+        <h3>Usage สูงสุด / 30 วัน</h3>
+        <div class="store-mini-list">${top.length?top.map(r=>mini(r,"top")).join(""):'<div class="store-empty">ยังไม่มี Usage</div>'}</div>
+      </div>
+      <div class="panel store-overview-section">
+        <h3>สถานะระบบ</h3>
+        <div class="store-mini-list">
+          <div class="store-mini-row"><b>Approved Rate</b><small><span class="metric">${total?Math.round((approved/total)*100):0}%</span> ของร้านทั้งหมด</small></div>
+          <div class="store-mini-row"><b>Active 30D Rate</b><small><span class="metric">${approved?Math.round((active30/approved)*100):0}%</span> ของร้านที่อนุมัติแล้ว</small></div>
+        </div>
+      </div>
+    </div>`;
+
+  document.querySelector("#storeGoPending").onclick=()=>{storeAccessFilter="PENDING";renderStoreManagementView()};
+  document.querySelector("#storeGoAll").onclick=()=>{storeAccessFilter="ALL";renderStoreManagementView()};
+  document.querySelector("#storeOverviewRefresh").onclick=()=>renderStoreOverview();
+  document.querySelectorAll("[data-store-filter]").forEach(el=>el.onclick=()=>{storeAccessFilter=el.dataset.storeFilter;renderStoreManagementView()});
+}
+
+async function renderStoreManagementView(){
+  title.textContent="จัดการร้านค้า / คำขอสิทธิ์";
+  subtitle.textContent="ตรวจสอบ อนุมัติ ปฏิเสธ และระงับสิทธิ์ร้านค้า";
   content.innerHTML='<div class="panel"><div class="empty">กำลังโหลดข้อมูลร้านค้า...</div></div>';
   try{await loadStoreAccessRows()}
   catch(e){content.innerHTML=`<div class="panel"><div class="api-needed"><b>ยังอ่าน Store Access ไม่ได้</b><div>${esc(e.message)}</div></div></div>`;return}
@@ -820,12 +932,13 @@ async function renderStoreAccessView(){
       <div class="panel"><span class="muted">ระงับสิทธิ์</span><strong>${storeCount("REVOKED")}</strong></div>
     </div>
     <div class="store-toolbar">
-      <div class="store-filters">${["PENDING","APPROVED","REJECTED","REVOKED","ALL"].map(x=>`<button class="${storeAccessFilter===x?"primary":"secondary"} store-filter" data-filter="${x}">${x==="ALL"?"ทั้งหมด":x}</button>`).join("")}</div>
+      <div class="store-filters"><button class="secondary" id="storeBackOverview">← ภาพรวม</button>${["PENDING","APPROVED","REJECTED","REVOKED","ALL"].map(x=>`<button class="${storeAccessFilter===x?"primary":"secondary"} store-filter" data-filter="${x}">${x==="ALL"?"ทั้งหมด":x}</button>`).join("")}</div>
       <button class="secondary" id="storeRefresh">รีเฟรช</button>
     </div>
     <div class="panel"><div class="store-list">${shown.length?shown.map(storeRowHtml).join(""):'<div class="store-empty">ยังไม่มีรายการในสถานะนี้</div>'}</div></div>`;
-  document.querySelectorAll(".store-filter").forEach(b=>b.onclick=()=>{storeAccessFilter=b.dataset.filter;renderStoreAccessView()});
-  document.querySelector("#storeRefresh").onclick=()=>renderStoreAccessView();
+  document.querySelector("#storeBackOverview").onclick=()=>renderStoreOverview();
+  document.querySelectorAll(".store-filter").forEach(b=>b.onclick=()=>{storeAccessFilter=b.dataset.filter;renderStoreManagementView()});
+  document.querySelector("#storeRefresh").onclick=()=>renderStoreManagementView();
   bindStoreActions();
 }
 
@@ -1370,7 +1483,7 @@ async function renderAnalyticsView(days=30,force=false){
 }
 
 
-const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(30)},stores(){renderStoreAccessView()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
+const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(30)},stores(){renderStoreOverview()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
 <div class="cat-toolbar"><button class="primary" id="addCategory">+ เพิ่มหมวดสินค้า</button><button class="secondary" id="reloadCats">รีเฟรช</button></div>
 <div class="panel"><h2>รายการหมวดสินค้า</h2><div id="catAdminRows">${categoryAdminRows()}</div></div>
 <div id="categoryModal" class="modal hidden"><div class="modal-card">

@@ -548,8 +548,36 @@ function bindContactManager(){
     .analytics-bar-value{text-align:right;font-size:11px;font-weight:900}
     .analytics-empty{padding:18px;text-align:center;color:#888;border:1px dashed #ddd;border-radius:12px}
     .analytics-note{font-size:11px;color:#888}
+    .analytics-chart-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 12px}
+    .analytics-chart-summary span{background:#f7f7f8;border:1px solid #ececee;border-radius:12px;padding:9px 10px;display:flex;align-items:baseline;gap:7px}
+    .analytics-chart-summary b{font-size:17px;color:#111}.analytics-chart-summary small{font-size:10px;color:#777}
+    .analytics-chart-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .analytics-line-chart{display:block;width:100%;min-width:620px;height:auto;max-height:260px}
+    .analytics-chart-grid{stroke:#e9eaec;stroke-width:1}
+    .analytics-chart-y{font-size:10px;fill:#888;text-anchor:end}
+    .analytics-chart-x{font-size:10px;fill:#777;text-anchor:middle}
+    .analytics-chart-area{fill:rgba(17,17,17,.055)}
+    .analytics-chart-line{fill:none;stroke:#111;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    .analytics-chart-dot{fill:#fff;stroke:#111;stroke-width:2.5}
+    .analytics-province-list{display:grid}
+    .analytics-province-head,.analytics-province-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 70px;gap:10px;align-items:center}
+    .analytics-province-head{padding:0 0 8px;color:#888;font-size:10px;font-weight:800;border-bottom:1px solid #eee}
+    .analytics-province-head span:nth-child(n+2),.analytics-province-row>strong,.analytics-province-row>span{text-align:right}
+    .analytics-province-row{padding:10px 0;border-bottom:1px solid #f0f0f0}
+    .analytics-province-row:last-child{border-bottom:0}
+    .analytics-province-name b{font-size:12px}
+    .analytics-province-track{height:4px;background:#efefef;border-radius:999px;overflow:hidden;margin-top:6px}
+    .analytics-province-track i{display:block;height:100%;background:#111;border-radius:999px}
+    .analytics-province-row>strong{font-size:13px}.analytics-province-row>span{font-size:12px;color:#666;font-weight:800}
     @media(max-width:1100px){.analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-layout{grid-template-columns:1fr}}
-    @media(max-width:650px){.analytics-grid{grid-template-columns:1fr}.analytics-stat strong{font-size:24px}}
+    @media(max-width:650px){
+      .analytics-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .analytics-stat{min-height:96px;padding:12px}.analytics-stat strong{font-size:23px}
+      .analytics-chart-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+      .analytics-chart-summary span{padding:7px;display:block}.analytics-chart-summary b{font-size:15px;display:block}.analytics-chart-summary small{font-size:9px}
+      .analytics-line-chart{min-width:560px}
+      .analytics-province-head,.analytics-province-row{grid-template-columns:minmax(0,1fr) 58px 58px}
+    }
   `;
   document.head.appendChild(st);
 })();
@@ -980,17 +1008,67 @@ function analyticsListHtml(items,emptyText){
     </div>`).join("")}</div>`;
 }
 
-function analyticsDailyBarsHtml(items){
+function analyticsDailyChartHtml(items){
   if(!Array.isArray(items)||!items.length)return '<div class="analytics-empty">ยังไม่มีข้อมูลรายวัน</div>';
-  const max=Math.max(1,...items.map(x=>Number(x.views||0)));
-  return `<div class="analytics-bars">${items.map(x=>{
-    const w=Math.max(2,Math.round((Number(x.views||0)/max)*100));
-    return `<div class="analytics-bar-row">
-      <div class="analytics-bar-label">${esc(analyticsDateLabel(x.date))}</div>
-      <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${w}%"></div></div>
-      <div class="analytics-bar-value">${formatAnalyticsNumber(x.views)}</div>
+  const values=items.map(x=>Math.max(0,Number(x.views||0)));
+  const max=Math.max(1,...values);
+  const W=760,H=230,padL=42,padR=18,padT=18,padB=38;
+  const plotW=W-padL-padR,plotH=H-padT-padB;
+  const x=i=>items.length<=1?padL+plotW/2:padL+(i/(items.length-1))*plotW;
+  const y=v=>padT+plotH-(Math.max(0,v)/max)*plotH;
+  const points=values.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area=`${padL},${padT+plotH} ${points} ${x(items.length-1).toFixed(1)},${padT+plotH}`;
+  const ticks=4;
+  const grid=Array.from({length:ticks+1},(_,i)=>{
+    const val=Math.round(max*(ticks-i)/ticks);
+    const yy=padT+(plotH*i/ticks);
+    return `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" class="analytics-chart-grid"/>
+      <text x="${padL-8}" y="${yy+4}" class="analytics-chart-y">${formatAnalyticsNumber(val)}</text>`;
+  }).join("");
+  const step=Math.max(1,Math.ceil(items.length/6));
+  const labels=items.map((it,i)=>{
+    if(i!==0 && i!==items.length-1 && i%step!==0)return "";
+    return `<text x="${x(i)}" y="${H-10}" class="analytics-chart-x">${esc(analyticsDateLabel(it.date))}</text>`;
+  }).join("");
+  const dots=items.map((it,i)=>{
+    const cx=x(i),cy=y(values[i]);
+    const title=`${analyticsDateLabel(it.date)} · ${formatAnalyticsNumber(values[i])} Views · ${formatAnalyticsNumber(it.visitors||0)} Users`;
+    return `<circle cx="${cx}" cy="${cy}" r="4.5" class="analytics-chart-dot"><title>${esc(title)}</title></circle>`;
+  }).join("");
+  const latest=values.length?values[values.length-1]:0;
+  const best=Math.max(...values);
+  const avg=values.length?values.reduce((a,b)=>a+b,0)/values.length:0;
+  return `
+    <div class="analytics-chart-summary">
+      <span><b>${formatAnalyticsNumber(latest)}</b><small>ล่าสุด</small></span>
+      <span><b>${formatAnalyticsNumber(best)}</b><small>สูงสุด/วัน</small></span>
+      <span><b>${formatAnalyticsNumber(avg.toFixed(1))}</b><small>เฉลี่ย/วัน</small></span>
+    </div>
+    <div class="analytics-chart-scroll">
+      <svg class="analytics-line-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="กราฟ Views รายวัน">
+        ${grid}
+        <polygon points="${area}" class="analytics-chart-area"></polygon>
+        <polyline points="${points}" class="analytics-chart-line"></polyline>
+        ${dots}
+        ${labels}
+      </svg>
     </div>`;
-  }).join("")}</div>`;
+}
+
+function analyticsProvinceHtml(items){
+  if(!Array.isArray(items)||!items.length)return '<div class="analytics-empty">เริ่มเก็บข้อมูลจังหวัดแล้ว · ข้อมูลเก่าก่อนเปิด Geo จะไม่แสดงจังหวัด</div>';
+  const maxUsers=Math.max(1,...items.map(x=>Number(x.users||0)));
+  return `<div class="analytics-province-list">
+    <div class="analytics-province-head"><span>จังหวัด</span><span>ผู้ใช้</span><span>Views</span></div>
+    ${items.slice(0,12).map(x=>{
+      const pct=Math.max(3,Math.round(Number(x.users||0)/maxUsers*100));
+      return `<div class="analytics-province-row">
+        <div class="analytics-province-name"><b>${esc(x.name||"-")}</b><div class="analytics-province-track"><i style="width:${pct}%"></i></div></div>
+        <strong>${formatAnalyticsNumber(x.users)}</strong>
+        <span>${formatAnalyticsNumber(x.views)}</span>
+      </div>`;
+    }).join("")}
+  </div>`;
 }
 
 async function loadAnalyticsSummary(days=30){
@@ -1037,7 +1115,12 @@ function renderAnalyticsData(d,days){
       <div>
         <div class="panel" style="margin-bottom:14px">
           <h2>Views รายวัน</h2>
-          ${analyticsDailyBarsHtml(d.daily)}
+          ${analyticsDailyChartHtml(d.daily)}
+        </div>
+        <div class="panel" style="margin-bottom:14px">
+          <h2>พื้นที่ผู้ใช้งาน</h2>
+          <div class="analytics-note" style="margin-bottom:10px">นับผู้ใช้แบบ Unique Visitor · จังหวัดจาก Geo-IP · ไม่เก็บ IP</div>
+          ${analyticsProvinceHtml(d.provinces)}
         </div>
         <div class="panel">
           <h2>หมวดที่เปิดดูมากที่สุด</h2>

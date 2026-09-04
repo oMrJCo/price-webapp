@@ -86,17 +86,35 @@
     .store-mini-row b{display:block;font-size:12px}
     .store-mini-row small{display:block;margin-top:4px;color:#7f8792;font-size:10px;line-height:1.5}
     .store-mini-row .metric{font-weight:900;color:#111827}
+    .store-manage-tools{display:grid;grid-template-columns:minmax(220px,1.2fr) repeat(3,minmax(140px,.6fr)) auto;gap:8px;margin:10px 0 14px}
+    .store-manage-tools input,.store-manage-tools select{width:100%;min-height:42px;border:1px solid #dfe3e8;border-radius:12px;padding:0 12px;background:#fff}
+    .store-manage-tools button{min-height:42px}
+    .store-card-click{cursor:pointer}
+    .store-card-click:hover{background:#fcfcfd}
+    .store-detail-overlay{position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:9998;display:flex;justify-content:flex-end}
+    .store-detail-drawer{width:min(560px,96vw);height:100%;overflow:auto;background:#fff;padding:20px;box-shadow:-18px 0 50px rgba(0,0,0,.16)}
+    .store-detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+    .store-detail-head h2{margin:0;font-size:22px}
+    .store-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .store-detail-box{border:1px solid #e7e9ed;border-radius:14px;padding:12px}
+    .store-detail-box span{display:block;color:#7d8590;font-size:10px;font-weight:800}
+    .store-detail-box b{display:block;margin-top:5px;font-size:13px;word-break:break-word}
+    .store-detail-usage{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+    .store-detail-usage .store-detail-box b{font-size:20px}
+    .store-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
     @media(max-width:1100px){
       .cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
       .dashboard-health-grid{grid-template-columns:1fr}
       .dashboard-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .store-overview-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .store-manage-tools{grid-template-columns:1fr 1fr}
       .contact-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     }
     @media(max-width:700px){
       .cards{grid-template-columns:1fr!important}
       .dashboard-store-grid,.dashboard-store-latest,.store-overview-hero,.store-overview-sections{grid-template-columns:1fr}
       .store-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .store-manage-tools,.store-detail-grid,.store-detail-usage{grid-template-columns:1fr}
       .contact-admin-item{grid-template-columns:44px 1fr!important;padding:10px!important}
       .contact-admin-grid{grid-template-columns:1fr!important}
     }
@@ -917,6 +935,68 @@ async function renderStoreOverview(){
   document.querySelectorAll("[data-store-filter]").forEach(el=>el.onclick=()=>{storeAccessFilter=el.dataset.storeFilter;renderStoreManagementView()});
 }
 
+
+function storeCsvEscape(v){
+  const s=String(v??"");
+  return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;
+}
+function downloadStoreCsv(rows){
+  const head=["store_id","status","store_name","contact_name","phone","province","contact_detail","created_at","approved_at","last_active","sessions_30d","views_30d"];
+  const body=rows.map(r=>{
+    const a=storeAnalyticsMap[r.store_id]||{};
+    return [r.store_id,r.__status,r.store_name,r.contact_name,r.phone,r.province,r.contact_detail,r.created_at,r.approved_at,a.last_active,a.sessions||0,a.views||0]
+      .map(storeCsvEscape).join(",");
+  });
+  const blob=new Blob(["\ufeff"+[head.join(","),...body].join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url;a.download=`leeplus-stores-${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function openStoreDetail(storeId){
+  const r=storeAccessRows.find(x=>String(x.store_id)===String(storeId));
+  if(!r)return;
+  const a=storeAnalyticsMap[r.store_id]||{};
+  document.querySelector("#storeDetailOverlay")?.remove();
+  const overlay=document.createElement("div");
+  overlay.id="storeDetailOverlay";
+  overlay.className="store-detail-overlay";
+  overlay.innerHTML=`<div class="store-detail-drawer">
+    <div class="store-detail-head">
+      <div><h2>${esc(r.store_name||"ไม่ระบุชื่อร้าน")}</h2><div class="muted" style="margin-top:5px">${esc(r.__status||storeStatus(r.status))}${r.duplicate_name?` · ⚠️ ชื่อร้านซ้ำ`:""}</div></div>
+      <button class="secondary" id="storeDetailClose">ปิด</button>
+    </div>
+    <div class="store-detail-grid">
+      <div class="store-detail-box"><span>ผู้ติดต่อ</span><b>${esc(r.contact_name||"—")}</b></div>
+      <div class="store-detail-box"><span>เบอร์โทร</span><b>${esc(r.phone||"—")}</b></div>
+      <div class="store-detail-box"><span>จังหวัด</span><b>${esc(r.province||"—")}</b></div>
+      <div class="store-detail-box"><span>LINE / Facebook / ช่องทางติดต่อ</span><b>${esc(r.contact_detail||"—")}</b></div>
+      <div class="store-detail-box"><span>สมัคร</span><b>${esc(storeDate(r.created_at))}</b></div>
+      <div class="store-detail-box"><span>อนุมัติ</span><b>${esc(r.approved_at?storeDate(r.approved_at):"—")}</b></div>
+    </div>
+    <div class="store-detail-usage">
+      <div class="store-detail-box"><span>Sessions / 30 วัน</span><b>${Number(a.sessions||0)}</b></div>
+      <div class="store-detail-box"><span>Views / 30 วัน</span><b>${Number(a.views||0)}</b></div>
+      <div class="store-detail-box"><span>ล่าสุด</span><b style="font-size:12px">${esc(a.last_active?storeDate(a.last_active):"ยังไม่มีข้อมูล")}</b></div>
+    </div>
+    <div class="store-detail-box"><span>หมวดที่ดู</span><b>${esc(Array.isArray(a.top_tabs)?a.top_tabs.map(x=>`${x.tab} (${x.count})`).join(" · "):(a.top_tabs||"ยังไม่มีข้อมูล"))}</b></div>
+    <div class="store-detail-actions">
+      <button class="secondary" id="storeCopyPhone">คัดลอกเบอร์</button>
+      ${r.__status==="PENDING"?`<button class="primary" data-detail-status="APPROVED">อนุมัติ</button><button class="danger" data-detail-status="REJECTED">ปฏิเสธ</button>`:""}
+      ${r.__status==="APPROVED"?`<button class="danger" data-detail-status="REVOKED">ระงับสิทธิ์</button>`:""}
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  document.querySelector("#storeDetailClose").onclick=()=>overlay.remove();
+  overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.remove()});
+  document.querySelector("#storeCopyPhone").onclick=async()=>{try{await navigator.clipboard.writeText(String(r.phone||""));showToast?.("คัดลอกเบอร์แล้ว")}catch{}};
+  overlay.querySelectorAll("[data-detail-status]").forEach(btn=>btn.onclick=async()=>{
+    const st=btn.dataset.detailStatus;
+    await setStoreStatus(r.store_id,st);
+    overlay.remove();
+    await renderStoreManagementView();
+  });
+}
+
 async function renderStoreManagementView(){
   title.textContent="จัดการร้านค้า / คำขอสิทธิ์";
   subtitle.textContent="ตรวจสอบ อนุมัติ ปฏิเสธ และระงับสิทธิ์ร้านค้า";
@@ -935,10 +1015,39 @@ async function renderStoreManagementView(){
       <div class="store-filters"><button class="secondary" id="storeBackOverview">← ภาพรวม</button>${["PENDING","APPROVED","REJECTED","REVOKED","ALL"].map(x=>`<button class="${storeAccessFilter===x?"primary":"secondary"} store-filter" data-filter="${x}">${x==="ALL"?"ทั้งหมด":x}</button>`).join("")}</div>
       <button class="secondary" id="storeRefresh">รีเฟรช</button>
     </div>
+    <div class="store-manage-tools">
+      <input id="storeSearch" type="search" placeholder="ค้นหา ชื่อร้าน / เบอร์ / ผู้ติดต่อ / จังหวัด">
+      <select id="storeProvinceFilter"><option value="">ทุกจังหวัด</option></select>
+      <select id="storeActivityFilter">
+        <option value="">ทุกการใช้งาน</option>
+        <option value="ACTIVE30">Active 30 วัน</option>
+        <option value="INACTIVE30">ไม่เคลื่อนไหว 30 วัน</option>
+      </select>
+      <select id="storeSort">
+        <option value="NEWEST">สมัครล่าสุด</option>
+        <option value="ACTIVE">ใช้งานล่าสุด</option>
+        <option value="VIEWS">Views สูงสุด</option>
+        <option value="NAME">ชื่อร้าน A-Z</option>
+      </select>
+      <button class="secondary" id="storeExportCsv">Export CSV</button>
+    </div>
     <div class="panel"><div class="store-list">${shown.length?shown.map(storeRowHtml).join(""):'<div class="store-empty">ยังไม่มีรายการในสถานะนี้</div>'}</div></div>`;
   document.querySelector("#storeBackOverview").onclick=()=>renderStoreOverview();
   document.querySelectorAll(".store-filter").forEach(b=>b.onclick=()=>{storeAccessFilter=b.dataset.filter;renderStoreManagementView()});
   document.querySelector("#storeRefresh").onclick=()=>renderStoreManagementView();
+  const provinces=[...new Set(storeAccessRows.map(r=>String(r.province||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"th"));
+  const pf=document.querySelector("#storeProvinceFilter");
+  if(pf){const current=pf.value;pf.innerHTML='<option value="">ทุกจังหวัด</option>'+provinces.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("");pf.value=current}
+  const rerender=()=>renderStoreManagementView();
+  document.querySelector("#storeSearch")?.addEventListener("input",()=>{clearTimeout(window.__storeSearchTimer);window.__storeSearchTimer=setTimeout(rerender,180)});
+  document.querySelector("#storeProvinceFilter")?.addEventListener("change",rerender);
+  document.querySelector("#storeActivityFilter")?.addEventListener("change",rerender);
+  document.querySelector("#storeSort")?.addEventListener("change",rerender);
+  document.querySelector("#storeExportCsv")?.addEventListener("click",()=>downloadStoreCsv(rows));
+  document.querySelectorAll("[data-store-id]").forEach(card=>card.addEventListener("click",e=>{
+    if(e.target.closest("button"))return;
+    openStoreDetail(card.dataset.storeId);
+  }));
   bindStoreActions();
 }
 

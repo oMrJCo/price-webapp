@@ -1,22 +1,26 @@
-LEEPLUS Analytics 06 - Geo Client
+LEEPLUS Store Access 03 — Frontend Popup
 
-ไฟล์ที่แก้: analytics.js
+ไฟล์ที่ใช้:
+- index.html
+- store_access.js
 
-สิ่งที่เพิ่ม
-- ดึง Geo-IP จาก ipwho.is เฉพาะ region/province
-- ไม่บันทึกและไม่ส่ง IP ไปยัง Apps Script
-- Cache จังหวัดใน localStorage 7 วันต่อ browser/visitor
-- หาก Geo provider ล่ม จะ cache failure 6 ชม. เพื่อลดการยิงซ้ำ
-- timeout 2.5 วินาที และไม่บล็อกการแสดงหน้าเว็บ
-- payload Analytics เพิ่ม field: province
-- Analytics เดิม / visitorId / sessionId / Retail / Dealer / click / engagement ยังอยู่ครบ
+รอบนี้เพิ่มเฉพาะ Store Access UI/Flow:
+1. ปุ่ม "สิทธิ์ดูราคา" บนหน้า Retail
+2. Popup 2 โหมด
+   - มีสิทธิ์แล้ว: กรอกเบอร์ 10 หลัก
+   - ลงทะเบียนร้านค้า
+3. ช่องเบอร์รับเฉพาะตัวเลข และจำกัด 10 หลัก
+4. สมัคร -> storeRegister
+5. Login -> storeLogin
+6. จำอุปกรณ์ด้วย token ใน localStorage
+7. เปิดเว็บครั้งต่อไป -> storeValidateToken
+8. Approved แสดงชื่อร้านบนปุ่ม
+9. มีคำสั่ง "ลืมสิทธิ์ในอุปกรณ์นี้"
 
-วิธีใช้
-1) แตก ZIP
-2) เอา analytics.js ไปทับไฟล์เดิมที่ root ของเว็บ
-3) Deploy/Push
-4) เปิดเว็บด้วย browser/profile ใหม่ หรือเคลียร์ localStorage key lp_analytics_geo_v1 เพื่อทดสอบ Geo ใหม่
+สำคัญ:
+- Phase 03 ยังไม่ล็อกราคา
+- Dealer Code เดิมยังทำงานเหมือนเดิม
+- ไม่แก้ app.js / Contact / Promotion Popup / Analytics / Speed Fix
+- หลังเทส Flow ครบแล้ว Phase ถัดไปจึงทำ Price Gate จริง
 
-หมายเหตุ
-- ขั้นนี้ backend Code.js ยังไม่บันทึก province จนกว่าจะทำไฟล์ถัดไป
-- ไม่แตะ app.js, price_sheet.js, Contact, Popup หรือ Speed Fix
+ไฟล์ index.html ใช้ฐาน Retail index(6).html ที่มี Dealer Access เดิม

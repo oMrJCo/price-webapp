@@ -582,6 +582,30 @@ function bindContactManager(){
   document.head.appendChild(st);
 })();
 
+
+(function ensureStoreAccessAdminStyles(){
+  if(document.getElementById("storeAccessAdminStyle"))return;
+  const st=document.createElement("style");
+  st.id="storeAccessAdminStyle";
+  st.textContent=`
+    .store-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+    .store-filters{display:flex;gap:7px;flex-wrap:wrap}
+    .store-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+    .store-summary .panel{padding:14px}.store-summary strong{display:block;font-size:25px;margin-top:5px}
+    .store-list{display:grid;gap:9px}.store-row{border:1px solid #e8e9ec;border-radius:14px;padding:13px;background:#fff}
+    .store-row-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+    .store-name{font-size:14px;font-weight:900}.store-meta{font-size:11px;color:#777;margin-top:4px;line-height:1.65}
+    .store-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+    .store-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900}
+    .store-status.pending{background:#fff4cc;color:#7a5b00}.store-status.approved{background:#e7f7ed;color:#147a45}
+    .store-status.rejected,.store-status.revoked{background:#ffe9e7;color:#b42318}
+    .store-duplicate{display:inline-flex;margin-left:6px;padding:3px 7px;border-radius:999px;background:#fff0d5;color:#9a5c00;font-size:9px;font-weight:900}
+    .store-empty{padding:26px;text-align:center;color:#888;border:1px dashed #ddd;border-radius:14px}
+    @media(max-width:800px){.store-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.store-row-top{grid-template-columns:1fr}.store-actions{justify-content:flex-start}}
+  `;
+  document.head.appendChild(st);
+})();
+
 async function renderSettingsView(){
   title.textContent='ตั้งค่าเว็บไซต์';
   subtitle.textContent='ช่องทางติดต่อและการเข้าถึงราคาตัวแทนจำหน่าย';
@@ -695,6 +719,92 @@ async function renderSettingsView(){
     catch(e){msg.className="media-msg error";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}
     finally{btn.disabled=false}
   };
+}
+
+
+let storeAccessRows=[];
+let storeAccessFilter="PENDING";
+
+function storeStatus(v){return String(v||"PENDING").trim().toUpperCase()}
+function storeDate(v){
+  if(!v)return "—";
+  const d=new Date(v); if(Number.isNaN(d.getTime()))return String(v);
+  return d.toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"});
+}
+function storeDuplicate(r){return r?.duplicate_name===true||String(r?.duplicate_name||"").toUpperCase()==="TRUE"}
+
+async function loadStoreAccessRows(){
+  const j=await apiGet({action:"storesAdmin"});
+  storeAccessRows=(Array.isArray(j?.data)?j.data:[]).map(r=>({...r,__status:storeStatus(r.status)}));
+}
+function storeCount(status){return storeAccessRows.filter(r=>r.__status===status).length}
+
+function storeRowHtml(r){
+  const status=r.__status, id=r.store_id||"", phone=r.phone||"";
+  const buttons=status==="PENDING"
+    ? `<button class="primary store-action" data-id="${esc(id)}" data-action="APPROVED">อนุมัติ</button><button class="danger store-action" data-id="${esc(id)}" data-action="REJECTED">ปฏิเสธ</button>`
+    : status==="APPROVED"
+      ? `<button class="danger store-action" data-id="${esc(id)}" data-action="REVOKED">ระงับสิทธิ์</button>`
+      : `<button class="secondary store-action" data-id="${esc(id)}" data-action="APPROVED">อนุมัติ</button>`;
+  return `<div class="store-row">
+    <div class="store-row-top">
+      <div>
+        <div><span class="store-name">${esc(r.store_name||"ไม่ระบุชื่อร้าน")}</span>${storeDuplicate(r)?'<span class="store-duplicate">⚠ ชื่อร้านซ้ำ</span>':""}</div>
+        <div class="store-meta"><b>${esc(phone||"—")}</b>${r.contact_name?` · ${esc(r.contact_name)}`:""}${r.province?` · ${esc(r.province)}`:""}${r.contact_detail?`<br>${esc(r.contact_detail)}`:""}<br>ส่งคำขอ ${esc(storeDate(r.created_at))}</div>
+      </div>
+      <div class="store-actions"><span class="store-status ${status.toLowerCase()}">${esc(status)}</span>${buttons}</div>
+    </div>
+  </div>`;
+}
+
+function bindStoreActions(){
+  document.querySelectorAll(".store-action").forEach(btn=>btn.onclick=async()=>{
+    const next=btn.dataset.action, id=btn.dataset.id;
+    const label=next==="APPROVED"?"อนุมัติ":next==="REJECTED"?"ปฏิเสธ":"ระงับสิทธิ์";
+    if(!confirm(`${label}ร้านนี้?`))return;
+    btn.disabled=true;
+    try{
+      await apiGet({action:"storeSetStatus",storeId:id,status:next});
+      await renderStoreAccessView();
+    }catch(e){alert("อัปเดตไม่สำเร็จ: "+e.message);btn.disabled=false}
+  });
+}
+
+async function renderStoreAccessView(){
+  title.textContent="ร้านค้า / คำขอสิทธิ์";
+  subtitle.textContent="ตรวจสอบร้านค้า อนุมัติสิทธิ์ดูราคา และระงับสิทธิ์";
+  content.innerHTML='<div class="panel"><div class="empty">กำลังโหลดข้อมูลร้านค้า...</div></div>';
+  try{await loadStoreAccessRows()}
+  catch(e){content.innerHTML=`<div class="panel"><div class="api-needed"><b>ยังอ่าน Store Access ไม่ได้</b><div>${esc(e.message)}</div></div></div>`;return}
+  const shown=storeAccessFilter==="ALL"?storeAccessRows:storeAccessRows.filter(r=>r.__status===storeAccessFilter);
+  content.innerHTML=`
+    <div class="store-summary">
+      <div class="panel"><span class="muted">รอตรวจสอบ</span><strong>${storeCount("PENDING")}</strong></div>
+      <div class="panel"><span class="muted">อนุมัติแล้ว</span><strong>${storeCount("APPROVED")}</strong></div>
+      <div class="panel"><span class="muted">ปฏิเสธ</span><strong>${storeCount("REJECTED")}</strong></div>
+      <div class="panel"><span class="muted">ระงับสิทธิ์</span><strong>${storeCount("REVOKED")}</strong></div>
+    </div>
+    <div class="store-toolbar">
+      <div class="store-filters">${["PENDING","APPROVED","REJECTED","REVOKED","ALL"].map(x=>`<button class="${storeAccessFilter===x?"primary":"secondary"} store-filter" data-filter="${x}">${x==="ALL"?"ทั้งหมด":x}</button>`).join("")}</div>
+      <button class="secondary" id="storeRefresh">รีเฟรช</button>
+    </div>
+    <div class="panel"><div class="store-list">${shown.length?shown.map(storeRowHtml).join(""):'<div class="store-empty">ยังไม่มีรายการในสถานะนี้</div>'}</div></div>`;
+  document.querySelectorAll(".store-filter").forEach(b=>b.onclick=()=>{storeAccessFilter=b.dataset.filter;renderStoreAccessView()});
+  document.querySelector("#storeRefresh").onclick=()=>renderStoreAccessView();
+  bindStoreActions();
+}
+
+function ensureStoreAccessNav(){
+  const nav=document.querySelector("aside nav");
+  if(!nav||nav.querySelector('[data-view="stores"]'))return;
+  const btn=document.createElement("button");
+  btn.className="nav";btn.dataset.view="stores";btn.textContent="ร้านค้า / คำขอสิทธิ์";
+  const analyticsBtn=nav.querySelector('[data-view="analytics"]');
+  const settingsBtn=nav.querySelector('[data-view="settings"]');
+  if(analyticsBtn)nav.insertBefore(btn,analyticsBtn);
+  else if(settingsBtn)nav.insertBefore(btn,settingsBtn);
+  else nav.appendChild(btn);
+  btn.onclick=()=>render("stores");
 }
 
 function val(v){return v==null?"":String(v)}
@@ -1163,7 +1273,7 @@ async function renderAnalyticsView(days=30,force=false){
 }
 
 
-const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(30)},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
+const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(30)},stores(){renderStoreAccessView()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
 <div class="cat-toolbar"><button class="primary" id="addCategory">+ เพิ่มหมวดสินค้า</button><button class="secondary" id="reloadCats">รีเฟรช</button></div>
 <div class="panel"><h2>รายการหมวดสินค้า</h2><div id="catAdminRows">${categoryAdminRows()}</div></div>
 <div id="categoryModal" class="modal hidden"><div class="modal-card">
@@ -1426,4 +1536,4 @@ async function openCategoryModal(x=null){
   };
 }
 
-function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};ensureAnalyticsNav();document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();
+function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};ensureAnalyticsNav();ensureStoreAccessNav();document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();

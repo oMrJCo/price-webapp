@@ -139,7 +139,7 @@
             <form id="storeLoginForm" novalidate>
               <label class="store-access-field">
                 <span>เบอร์โทรร้านค้า</span>
-                <input id="storeLoginPhone" class="store-access-phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" placeholder="0XXXXXXXXX">
+                <input id="storeLoginPhone" class="store-access-phone" type="text" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" placeholder="0XXXXXXXXX">
               </label>
               <button class="store-access-submit" id="storeLoginSubmit" type="submit">เข้าสู่ระบบดูราคา</button>
               <div id="storeLoginMsg" class="store-access-msg"></div>
@@ -152,9 +152,9 @@
             <form id="storeRegisterForm" novalidate>
               <label class="store-access-field"><span>ชื่อร้าน *</span><input id="storeRegName" maxlength="120" autocomplete="organization" placeholder="ชื่อร้านค้า"></label>
               <label class="store-access-field"><span>ชื่อผู้ติดต่อ</span><input id="storeRegContact" maxlength="120" autocomplete="name" placeholder="ชื่อผู้ติดต่อ"></label>
-              <label class="store-access-field"><span>เบอร์โทร *</span><input id="storeRegPhone" class="store-access-phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" placeholder="0XXXXXXXXX"></label>
+              <label class="store-access-field"><span>เบอร์โทร *</span><input id="storeRegPhone" class="store-access-phone" type="text" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" placeholder="0XXXXXXXXX"></label>
               <label class="store-access-field"><span>จังหวัด</span><input id="storeRegProvince" maxlength="80" autocomplete="address-level1" placeholder="จังหวัด"></label>
-              <label class="store-access-field"><span>LINE / Facebook / ช่องทางติดต่อ</span><input id="storeRegContactDetail" maxlength="180" placeholder="เช่น LINE ID หรือชื่อ Facebook"></label>
+              <label class="store-access-field"><span>LINE / Facebook / ช่องทางติดต่อ <small style="color:#707988;font-weight:700">(ไม่บังคับ)</small></span><input id="storeRegContactDetail" maxlength="180" placeholder="ไม่ใส่ก็ได้"></label>
               <button class="store-access-submit" id="storeRegisterSubmit" type="submit">ส่งคำขอสิทธิ์</button>
               <div id="storeRegisterMsg" class="store-access-msg"></div>
               <div class="store-access-note">เบอร์โทรต้องเป็นตัวเลข 10 หลักเท่านั้น และใช้เป็นรหัสอ้างอิงสิทธิ์ของร้าน</div>
@@ -245,7 +245,12 @@
     }
   }
 
+  function normalizePhone(v){
+    return String(v ?? "").replace(/\D/g,"").slice(0,10);
+  }
+
   async function login(phone){
+    phone = normalizePhone(phone);
     return await post("storeLogin", {phone});
   }
 
@@ -268,7 +273,8 @@
       e.preventDefault();
       const btn = document.getElementById("storeLoginSubmit");
       const msg = document.getElementById("storeLoginMsg");
-      const phone = loginPhone.value;
+      const phone = normalizePhone(loginPhone.value);
+      loginPhone.value = phone;
       if(!/^\d{10}$/.test(phone)){
         setMsg(msg, "กรุณากรอกเบอร์โทรเป็นตัวเลข 10 หลัก", "error");
         loginPhone.focus(); return;
@@ -297,7 +303,8 @@
       const msg = document.getElementById("storeRegisterMsg");
       const storeName = document.getElementById("storeRegName").value.trim();
       const contactName = document.getElementById("storeRegContact").value.trim();
-      const phone = regPhone.value;
+      const phone = normalizePhone(regPhone.value);
+      regPhone.value = phone;
       const province = document.getElementById("storeRegProvince").value.trim();
       const contactDetail = document.getElementById("storeRegContactDetail").value.trim();
 

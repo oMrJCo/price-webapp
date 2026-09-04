@@ -1,26 +1,13 @@
-LEEPLUS Store Access 03 — Frontend Popup
+LEEPLUS Store Access 03.1 — Phone Leading Zero Fix
 
-ไฟล์ที่ใช้:
-- index.html
-- store_access.js
+แก้เฉพาะ Frontend:
+- เบอร์โทรใช้ text + inputmode=numeric เพื่อเก็บเลข 0 ด้านหน้าแน่นอน
+- บังคับรับเฉพาะตัวเลขและไม่เกิน 10 หลัก
+- normalize เป็น string ก่อนส่ง API
+- LINE / Facebook / ช่องทางติดต่อ ระบุชัดว่าไม่บังคับ
+- ไม่แตะ Dealer / Contact / Promotion / Analytics / Speed Fix
 
-รอบนี้เพิ่มเฉพาะ Store Access UI/Flow:
-1. ปุ่ม "สิทธิ์ดูราคา" บนหน้า Retail
-2. Popup 2 โหมด
-   - มีสิทธิ์แล้ว: กรอกเบอร์ 10 หลัก
-   - ลงทะเบียนร้านค้า
-3. ช่องเบอร์รับเฉพาะตัวเลข และจำกัด 10 หลัก
-4. สมัคร -> storeRegister
-5. Login -> storeLogin
-6. จำอุปกรณ์ด้วย token ใน localStorage
-7. เปิดเว็บครั้งต่อไป -> storeValidateToken
-8. Approved แสดงชื่อร้านบนปุ่ม
-9. มีคำสั่ง "ลืมสิทธิ์ในอุปกรณ์นี้"
-
-สำคัญ:
-- Phase 03 ยังไม่ล็อกราคา
-- Dealer Code เดิมยังทำงานเหมือนเดิม
-- ไม่แก้ app.js / Contact / Promotion Popup / Analytics / Speed Fix
-- หลังเทส Flow ครบแล้ว Phase ถัดไปจึงทำ Price Gate จริง
-
-ไฟล์ index.html ใช้ฐาน Retail index(6).html ที่มี Dealer Access เดิม
+หมายเหตุสำคัญ:
+ถ้า Backoffice ยังแสดง 839900171 แทน 0839900171 หลังใช้ไฟล์นี้
+แปลว่า Google Sheet/Apps Script ฝั่ง Stores กำลังแปลง phone เป็น Number
+ต้องแก้ Backend ให้บันทึก phone เป็นข้อความ (string) ด้วย

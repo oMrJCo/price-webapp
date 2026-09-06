@@ -120,9 +120,9 @@
     modal.className = "store-access-modal";
     modal.setAttribute("aria-hidden","true");
     modal.innerHTML = `
-      <div class="store-access-card" role="dialog" aria-modal="true" aria-label="LEEPLUS Store Access">
+      <div class="store-access-card" role="dialog" aria-modal="true" aria-label="JackLeeplus Store Access">
         <div class="store-access-head">
-          <div class="store-access-brand">LEEPLUS <span>STORE ACCESS</span></div>
+          <div class="store-access-brand">JackLeeplus <span>STORE ACCESS</span></div>
           <button type="button" class="store-access-close" id="storeAccessClose" aria-label="ปิด">×</button>
         </div>
 
@@ -295,9 +295,9 @@
           if(status === "PENDING"){
             setMsg(msg, "คำขออยู่ระหว่างการตรวจสอบ เมื่ออนุมัติแล้วใช้เบอร์เดิมเข้าสู่ระบบได้ทันที", "info");
           }else if(status === "REJECTED"){
-            setMsg(msg, "คำขอนี้ยังไม่ได้รับอนุมัติ กรุณาติดต่อ LEEPLUS เพื่อตรวจสอบข้อมูล", "error");
+            setMsg(msg, "คำขอนี้ยังไม่ได้รับอนุมัติ กรุณาติดต่อ JackLeeplus เพื่อตรวจสอบข้อมูล", "error");
           }else if(status === "REVOKED"){
-            setMsg(msg, "สิทธิ์ของร้านนี้ถูกยกเลิก กรุณาติดต่อ LEEPLUS หากต้องการเปิดสิทธิ์อีกครั้ง", "error");
+            setMsg(msg, "สิทธิ์ของร้านนี้ถูกยกเลิก กรุณาติดต่อ JackLeeplus หากต้องการเปิดสิทธิ์อีกครั้ง", "error");
           }else{
             setMsg(msg, j?.message || "ยังไม่พบสิทธิ์ของเบอร์นี้ หากเป็นร้านใหม่ให้เลือก ‘ลงทะเบียนร้านค้า’", "error");
           }
@@ -326,7 +326,7 @@
       try{
         const j = await register({storeName, contactName, phone, province, contactDetail});
         if(j?.success){
-          setMsg(msg, "ส่งคำขอเรียบร้อยแล้ว ✓ กรุณารอ LEEPLUS ตรวจสอบ เมื่ออนุมัติแล้วใช้เบอร์เดิมเข้าสู่ระบบได้เลย", "success");
+          setMsg(msg, "ส่งคำขอเรียบร้อยแล้ว ✓ กรุณารอทีมงาน JackLeeplus ตรวจสอบ เมื่ออนุมัติแล้วใช้เบอร์เดิมเข้าสู่ระบบได้เลย", "success");
           document.getElementById("storeRegisterForm").reset();
         }else{
           const status = String(j?.status || "").toUpperCase();
@@ -337,9 +337,9 @@
             loginPhone.value = phone;
             setTimeout(() => switchTab("login"), 700);
           }else if(status === "REJECTED"){
-            setMsg(msg, "เบอร์นี้มีคำขอที่ยังไม่ได้รับอนุมัติ กรุณาติดต่อ LEEPLUS", "error");
+            setMsg(msg, "เบอร์นี้มีคำขอที่ยังไม่ได้รับอนุมัติ กรุณาติดต่อ JackLeeplus", "error");
           }else if(status === "REVOKED"){
-            setMsg(msg, "สิทธิ์ของเบอร์นี้ถูกยกเลิก กรุณาติดต่อ LEEPLUS หากต้องการเปิดสิทธิ์อีกครั้ง", "error");
+            setMsg(msg, "สิทธิ์ของเบอร์นี้ถูกยกเลิก กรุณาติดต่อ JackLeeplus หากต้องการเปิดสิทธิ์อีกครั้ง", "error");
           }else{
             setMsg(msg, j?.message || "ไม่สามารถส่งคำขอได้ กรุณาลองใหม่", "error");
           }

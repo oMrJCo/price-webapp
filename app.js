@@ -77,8 +77,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function loadMeta() {
-    const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
-      cache: "no-store",
+    const res = await fetch(`${API_URL}?action=meta`, {
+      cache: "default",
     });
 
     if (!res.ok) throw new Error("Meta API load failed");
@@ -95,8 +95,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function loadCategories() {
-    const res = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, {
-      cache: "no-store",
+    const res = await fetch(`${API_URL}?action=categories`, {
+      cache: "default",
     });
 
     if (!res.ok) throw new Error("Categories API load failed");
@@ -167,22 +167,27 @@ function setupPromotionPopup(data, audience){
     try {
       // Home Fix 01: Meta and Categories fail independently.
       // Never fall back to the legacy categories.json because it can show obsolete cards.
-      const results = await Promise.allSettled([loadMeta(), loadCategories()]);
-      const meta = results[0].status === "fulfilled"
-        ? results[0].value
-        : (cacheRead(HOME_CACHE_META) || {});
-      const categories = results[1].status === "fulfilled"
-        ? results[1].value
-        : (cacheRead(HOME_CACHE_CATEGORIES) || []);
+      // Home Speed Fix 02: render from last-known-good data immediately.
+      // Apps Script refresh is moved off the critical path whenever cache exists.
+      const cachedMeta = cacheRead(HOME_CACHE_META);
+      const cachedCategories = cacheRead(HOME_CACHE_CATEGORIES);
+      let meta = cachedMeta || {};
+      let categories = Array.isArray(cachedCategories) ? cachedCategories : [];
 
-      if (results[0].status === "rejected") {
-        console.warn("Meta API unavailable; using last known good meta", results[0].reason);
-      }
-      if (results[1].status === "rejected") {
-        console.warn("Categories API unavailable; legacy categories.json fallback disabled", results[1].reason);
-      }
       if (!categories.length) {
-        throw new Error("Categories API unavailable and no last-known-good cache exists");
+        // True first visit: we still need current categories once. Never use legacy categories.json.
+        const results = await Promise.allSettled([loadMeta(), loadCategories()]);
+        meta = results[0].status === "fulfilled" ? results[0].value : meta;
+        categories = results[1].status === "fulfilled" ? results[1].value : categories;
+        if (results[0].status === "rejected") console.warn("Meta API unavailable", results[0].reason);
+        if (results[1].status === "rejected") console.warn("Categories API unavailable", results[1].reason);
+        if (!categories.length) throw new Error("Categories API unavailable and no last-known-good cache exists");
+      } else {
+        // Existing visitor: do not wait for Apps Script. Refresh quietly for the next page load.
+        Promise.allSettled([loadMeta(), loadCategories()]).then(function(results){
+          if (results[0].status === "rejected") console.warn("Background meta refresh failed", results[0].reason);
+          if (results[1].status === "rejected") console.warn("Background categories refresh failed", results[1].reason);
+        });
       }
 
       const siteMeta = meta.site || meta || {};

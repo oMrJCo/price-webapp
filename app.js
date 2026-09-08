@@ -62,6 +62,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
+  const HOME_CACHE_META = "leeplus_home_meta_v1";
+  const HOME_CACHE_CATEGORIES = "leeplus_home_categories_v1";
+
+  function cacheRead(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+  }
+
+  function cacheWrite(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+  }
+
   async function loadMeta() {
     const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
       cache: "no-store",
@@ -75,7 +89,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       throw new Error(json.message || "Meta API success false");
     }
 
-    return json.data || {};
+    const data = json.data || {};
+    cacheWrite(HOME_CACHE_META, data);
+    return data;
   }
 
   async function loadCategories() {
@@ -91,7 +107,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       throw new Error(json.message || "Categories API success false");
     }
 
-    return (json.data || []).map(normalizeCategory);
+    const data = (json.data || []).map(normalizeCategory);
+    cacheWrite(HOME_CACHE_CATEGORIES, data);
+    return data;
   }
 
   async function loadFallbackJson() {
@@ -147,10 +165,25 @@ function setupPromotionPopup(data, audience){
     let data;
 
     try {
-      const [meta, categories] = await Promise.all([
-        loadMeta(),
-        loadCategories(),
-      ]);
+      // Home Fix 01: Meta and Categories fail independently.
+      // Never fall back to the legacy categories.json because it can show obsolete cards.
+      const results = await Promise.allSettled([loadMeta(), loadCategories()]);
+      const meta = results[0].status === "fulfilled"
+        ? results[0].value
+        : (cacheRead(HOME_CACHE_META) || {});
+      const categories = results[1].status === "fulfilled"
+        ? results[1].value
+        : (cacheRead(HOME_CACHE_CATEGORIES) || []);
+
+      if (results[0].status === "rejected") {
+        console.warn("Meta API unavailable; using last known good meta", results[0].reason);
+      }
+      if (results[1].status === "rejected") {
+        console.warn("Categories API unavailable; legacy categories.json fallback disabled", results[1].reason);
+      }
+      if (!categories.length) {
+        throw new Error("Categories API unavailable and no last-known-good cache exists");
+      }
 
       const siteMeta = meta.site || meta || {};
       let coverSlides = [];
@@ -203,10 +236,10 @@ function setupPromotionPopup(data, audience){
         categories,
       };
 
-      console.log("Loaded meta/categories from Google Sheet API");
+      console.log("Loaded current home data; legacy categories.json fallback disabled");
     } catch (apiErr) {
-      console.warn("Sheet API failed, fallback to categories.json", apiErr);
-      data = await loadFallbackJson();
+      console.error("Current home data unavailable", apiErr);
+      throw apiErr;
     }
 
     setText("siteTitle", data.siteTitle || "LEEPLUS");

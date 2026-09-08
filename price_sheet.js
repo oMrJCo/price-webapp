@@ -66,6 +66,30 @@ function el(id) { return document.getElementById(id); }
 function getParam(name) { return new URL(window.location.href).searchParams.get(name) || ""; }
 const DEBUG = getParam("debug") === "1";
 
+/* ===== SPEED FIX 2026-09-08 =====
+   Short session cache smooths transient Apps Script latency without persisting
+   gated prices across browser sessions. Auth tokens are part of catalog keys. */
+const SPEED_CACHE = { meta: 300000, categories: 300000, catalog: 60000 };
+function speedCacheGet_(key, ttl) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const box = JSON.parse(raw);
+    if (!box || !box.at || (Date.now() - box.at) > ttl) return null;
+    return box.value;
+  } catch (_) { return null; }
+}
+function speedCacheSet_(key, value) {
+  try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), value })); } catch (_) {}
+  return value;
+}
+function speedTokenKey_() {
+  let storeToken = "", dealerToken = "";
+  try { storeToken = localStorage.getItem("leeplus_store_access_token") || ""; } catch (_) {}
+  try { dealerToken = sessionStorage.getItem("leeplus_dealer_token") || ""; } catch (_) {}
+  return `${storeToken}|${dealerToken}`;
+}
+
 function escapeHTML(s) {
   return String(s ?? "")
     .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
@@ -218,18 +242,15 @@ function setupImageModal() {
 
 /* ===== META API ===== */
 async function loadMetaConfig() {
+  const cacheKey = "leeplus_speed_meta_v1";
+  const cached = speedCacheGet_(cacheKey, SPEED_CACHE.meta);
+  if (cached) return cached;
   try {
-    const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
-      cache: "no-store"
-    });
-
+    const res = await fetch(`${API_URL}?action=meta`);
     if (!res.ok) throw new Error("Meta API failed");
-
     const json = await res.json();
-
     if (!json.success) throw new Error("Meta API success false");
-
-    return json.data || {};
+    return speedCacheSet_(cacheKey, json.data || {});
   } catch (e) {
     console.warn("loadMetaConfig failed:", e);
     return {
@@ -286,8 +307,7 @@ function gvizJsonUrl(sheetName) {
     tab:sheetName,
     audience:"RETAIL",
     storeToken,
-    dealerToken,
-    t:String(Date.now())
+    dealerToken
   });
   return `${API_URL}?${params.toString()}`;
 }
@@ -328,12 +348,23 @@ function pickIndex(cols, candidates) {
   return -1;
 }
 
-async function loadSheetWithMeta(tab) {
-  const url = gvizJsonUrl(tab);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch GViz JSON");
-  const text = await res.text();
+async function fetchCatalogText_(tab) {
+  const authKey = speedTokenKey_();
+  const cacheKey = `leeplus_speed_catalog_v1:${String(tab).toLowerCase()}:${authKey}`;
+  const cached = speedCacheGet_(cacheKey, SPEED_CACHE.catalog);
+  if (typeof cached === "string" && cached) return cached;
 
+  const res = await fetch(gvizJsonUrl(tab));
+  if (!res.ok) throw new Error("Failed to fetch catalog JSON");
+  const text = await res.text();
+  // Cache only successful, parseable responses. Session storage avoids long-lived price copies.
+  parseGvizResponse(text);
+  speedCacheSet_(cacheKey, text);
+  return text;
+}
+
+async function loadSheetWithMeta(tab) {
+  const text = await fetchCatalogText_(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
   const cols = Array.isArray(table?.cols) ? table.cols : [];
@@ -406,10 +437,7 @@ async function loadSheetWithMeta(tab) {
 
 
 async function loadCompatibilitySheet(tab) {
-  const url = gvizJsonUrl(tab);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch Compatibility GViz JSON");
-  const text = await res.text();
+  const text = await fetchCatalogText_(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
   const cols = Array.isArray(table?.cols) ? table.cols : [];
@@ -617,10 +645,8 @@ function filterCompatibilityRows(all, query) {
 
 
 async function loadVisualCatalogSheet(tab) {
-  const url = gvizJsonUrl(tab);
-  const res = await fetch(`${url}&v=${Date.now()}`, { cache:"no-store" });
-  if (!res.ok) throw new Error("Failed to fetch Visual Catalog GViz JSON");
-  const json = parseGvizResponse(await res.text());
+  const text = await fetchCatalogText_(tab);
+  const json = parseGvizResponse(text);
   const table=json?.table||{}, cols=Array.isArray(table.cols)?table.cols:[], rows=Array.isArray(table.rows)?table.rows:[];
 
   const findCol=(names,fallback)=>{
@@ -1035,10 +1061,15 @@ function renderTable(rows, brandImageMap) {
 
 async function loadCategoryByTab(tab) {
   try {
-    const r = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, { cache: "no-store" });
-    if (!r.ok) throw new Error(`categories api ${r.status}`);
-    const j = await r.json();
-    const items = Array.isArray(j.data) ? j.data : [];
+    const cacheKey = "leeplus_speed_categories_v1";
+    let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
+    if (!Array.isArray(items)) {
+      const r = await fetch(`${API_URL}?action=categories`);
+      if (!r.ok) throw new Error(`categories api ${r.status}`);
+      const j = await r.json();
+      items = Array.isArray(j.data) ? j.data : [];
+      speedCacheSet_(cacheKey, items);
+    }
     const target = String(tab || "").trim().toLowerCase();
 
     return items.find(item =>
@@ -1089,8 +1120,10 @@ function applyCategoryThumb(categoryImageUrl) {
   el("pageTitle") && (el("pageTitle").textContent = tab);
 
 
-  const meta = await loadMetaConfig();
-  const categoryRecord = await loadCategoryByTab(tab);
+  const [meta, categoryRecord] = await Promise.all([
+    loadMetaConfig(),
+    loadCategoryByTab(tab)
+  ]);
   const categoryType = String(categoryRecord?.categoryType || "PRICE").trim().toUpperCase();
 
   if (categoryType === "VISUAL_CATALOG") {

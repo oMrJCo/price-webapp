@@ -66,6 +66,40 @@ function el(id) { return document.getElementById(id); }
 function getParam(name) { return new URL(window.location.href).searchParams.get(name) || ""; }
 const DEBUG = getParam("debug") === "1";
 
+const PRETTY_TAB_SLUG_OVERRIDES = {
+  "lens camera film model list": "lens-camera-film"
+};
+
+function prettySlugFromTab_(tab) {
+  const raw = String(tab || "").trim();
+  const key = raw.toLowerCase();
+  if (PRETTY_TAB_SLUG_OVERRIDES[key]) return PRETTY_TAB_SLUG_OVERRIDES[key];
+
+  return raw
+    .toLowerCase()
+    .replace(/\bmodel\s+list\b/g, "")
+    .replace(/\blist\b/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
+}
+
+function prettySlugFromLocation_() {
+  const m = String(location.pathname || "").match(/^\/price\/([^/?#]+)\/?$/i);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
+function setPrettyPriceUrl_(tab) {
+  try {
+    const slug = prettySlugFromTab_(tab);
+    if (!slug) return;
+    const target = `/price/${encodeURIComponent(slug)}`;
+    if (location.pathname !== target) history.replaceState(null, "", target);
+  } catch (_) {}
+}
+
+
 /* ===== SPEED FIX 2026-09-08 =====
    Short session cache smooths transient Apps Script latency without persisting
    gated prices across browser sessions. Auth tokens are part of catalog keys. */
@@ -1059,19 +1093,23 @@ function renderTable(rows, brandImageMap) {
 }
 
 
+async function loadCategoriesCached_() {
+  const cacheKey = "leeplus_speed_categories_v1";
+  let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
+  if (!Array.isArray(items)) {
+    const r = await fetch(`${API_URL}?action=categories`);
+    if (!r.ok) throw new Error(`categories api ${r.status}`);
+    const j = await r.json();
+    items = Array.isArray(j.data) ? j.data : [];
+    speedCacheSet_(cacheKey, items);
+  }
+  return items;
+}
+
 async function loadCategoryByTab(tab) {
   try {
-    const cacheKey = "leeplus_speed_categories_v1";
-    let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
-    if (!Array.isArray(items)) {
-      const r = await fetch(`${API_URL}?action=categories`);
-      if (!r.ok) throw new Error(`categories api ${r.status}`);
-      const j = await r.json();
-      items = Array.isArray(j.data) ? j.data : [];
-      speedCacheSet_(cacheKey, items);
-    }
+    const items = await loadCategoriesCached_();
     const target = String(tab || "").trim().toLowerCase();
-
     return items.find(item =>
       String(item.sheetTab || item.sheet_tab || "").trim().toLowerCase() === target
     ) || null;
@@ -1079,6 +1117,32 @@ async function loadCategoryByTab(tab) {
     if (DEBUG) console.warn("loadCategoryByTab failed", err);
     return null;
   }
+}
+
+async function resolvePrettyPriceRoute_() {
+  const queryTab = getParam("tab");
+  const slug = getParam("slug") || prettySlugFromLocation_();
+
+  if (queryTab) return { tab: queryTab, slug: prettySlugFromTab_(queryTab) };
+  if (!slug) return { tab: "Battery", slug: "battery" };
+
+  try {
+    const items = await loadCategoriesCached_();
+    const wanted = String(slug).trim().toLowerCase();
+    const found = items.find(item => {
+      const sheetTab = String(item.sheetTab || item.sheet_tab || "").trim();
+      return prettySlugFromTab_(sheetTab) === wanted;
+    });
+    if (found) {
+      const tab = String(found.sheetTab || found.sheet_tab || "").trim();
+      return { tab, slug: prettySlugFromTab_(tab) };
+    }
+  } catch (err) {
+    if (DEBUG) console.warn("resolvePrettyPriceRoute failed", err);
+  }
+
+  // Safe fallback for simple sheet names such as Battery -> battery.
+  return { tab: String(slug).replace(/-/g, " "), slug: String(slug) };
 }
 
 function renderCatalogLocked(code) {
@@ -1115,7 +1179,9 @@ function applyCategoryThumb(categoryImageUrl) {
   ensureSmartModelStyles();
   setupImageModal();
 
-  const tab = getParam("tab") || "Battery";
+  const route = await resolvePrettyPriceRoute_();
+  const tab = route.tab || "Battery";
+  setPrettyPriceUrl_(tab);
   el("crumb") && (el("crumb").textContent = `Sheet › ${tab}`);
   el("pageTitle") && (el("pageTitle").textContent = tab);
 

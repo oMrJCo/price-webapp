@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LEEPLUS</title>
+  <style>
+    body{margin:0;background:#090d12;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh}
+    .box{text-align:center;padding:28px}
+    a{color:#f3c900}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <strong>LEEPLUS</strong>
+    <p id="msg">กำลังเปิดรายการสินค้า…</p>
+    <a id="home" href="/" hidden>กลับหน้าหลัก</a>
+  </div>
+  <script>
+    (function(){
+      var m = String(location.pathname || "").match(/^\/price\/([^/?#]+)\/?$/i);
+      if (m) {
+        var slug = decodeURIComponent(m[1]);
+        location.replace("/price_sheet.html?slug=" + encodeURIComponent(slug));
+        return;
+      }
+      document.getElementById("msg").textContent = "ไม่พบหน้าที่ต้องการ";
+      document.getElementById("home").hidden = false;
+    })();
+  </script>
+</body>
+</html>

@@ -802,6 +802,8 @@ function visualColorSwatchStyle(colorText){
     "midnight green":"#3f5b52",
 
     "white":"#f5f5f2",
+    "star white":"#f2f1ec",
+    "glacier":"#aebbc4",
     "cloud white":"#f5f5f0",
     "starlight":"#d9d2c4",
     "white silver":"linear-gradient(135deg,#ffffff 0%,#e7eaed 48%,#b8bec4 100%)",
@@ -811,6 +813,8 @@ function visualColorSwatchStyle(colorText){
     "gold":"#d9b45c",
     "light gold":"#e7cd99",
     "rose gold":"#d9a7a0",
+    "burgundy":"#6f263d",
+
 
     "red":"#d65353",
     "product red":"#c84f55",
@@ -830,6 +834,7 @@ function visualColorSwatchStyle(colorText){
     "mist blue":"#91b1bf",
     "mistblue":"#91b1bf",
     "deep blue":"#1e3d68",
+    "night sky":"#27384d",
 
     "purple":"#9b82cf",
     "deep purple":"#65547c",
@@ -849,6 +854,7 @@ function visualColorSwatchStyle(colorText){
     ["ขาว","#f5f5f2"],
     ["เหลือง","#e7c958"],
     ["ทอง","#d9b45c"],
+    ["เบอร์กันดี","#6f263d"],
     ["แดง","#d65353"],
     ["ส้ม","#e9782e"],
     ["เขียว","#6c9b72"],
@@ -889,7 +895,7 @@ function renderVisualCatalog(rows,query=""){
     const gallery=images.slice(0,6).map(u=>`<div class="vc-gallery-item"><img src="${escapeHTML(normalizeImageUrl(u))}" alt="" loading="lazy"></div>`).join("");
     const models=[...modelMap.values()].map(m=>`
       <div class="vc-model">
-        <div class="vc-model-name">${highlightHTML(m.model||m.code||"-",query)}</div>
+        <div class="vc-model-name">${formatModelWithAutoBadge(m.model||m.code||"-")}</div>
         <div class="vc-model-info">
           ${m.variant?`<div class="vc-variant">${highlightHTML(m.variant,query)}</div>`:""}
           <div class="vc-colors">${m.colors.length?m.colors.map(c=>`<span class="vc-color"><i class="vc-swatch" style="background:${visualColorSwatchStyle(c)}"></i><span>${highlightHTML(c,query)}</span></span>`).join(""):'<span class="vc-color">-</span>'}</div>

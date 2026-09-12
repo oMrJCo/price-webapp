@@ -1,6 +1,12 @@
-LEEPLUS Pretty URL Back Fix
+LEEPLUS Visual Catalog — NEW Badge + Color Fix 01
 
-แก้ปุ่ม กลับหน้าหมวด ใน price_sheet.html จากลิงก์แบบ relative ./index.html เป็น absolute /index.html
-เพื่อไม่ให้ /price/battery ตีความเป็น /price/index.html
+แก้เฉพาะ price_sheet.js
 
-วิธีใช้: ทับ price_sheet.html ที่ root แล้ว commit/deploy
+1) VISUAL_CATALOG: ชื่อรุ่นที่มี NEW หรือ (NEW) จะแสดงเป็น badge แบบเดียวกับหน้าราคาปกติ
+2) เพิ่มสีสำหรับสีใหม่: Burgundy / เบอร์กันดี, Star White, Glacier, Night Sky
+3) ไม่แตะ Store Access, Analytics, Dealer, Contact/Popup หรือ Pretty URL routing
+
+วิธีใช้:
+- นำ price_sheet.js ไปทับไฟล์เดิม
+- Commit/Deploy
+- Hard refresh หน้าเว็บ (Ctrl+F5) แล้วทดสอบ i18 Pro / Pro Max / Pro DUO

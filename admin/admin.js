@@ -150,17 +150,52 @@ let sheetTabs=[], sheetLoadState="idle";
 
 let categoryApiData=[];
 
-async function apiGet(params){
-  const q=new URLSearchParams({...params,t:String(Date.now())});
-  const r=await fetch(`${SHEET_API}?${q.toString()}`,{cache:"no-store"});
-  if(!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j=await r.json();
-  if(j && j.success===false) throw new Error(j.message||"API error");
-  return j;
+// Backoffice data layer: cache reads, dedupe identical in-flight requests, and always bypass cache for writes.
+const BO_CACHE_PREFIX="leeplus_bo_api_v2:";
+const BO_READ_TTL={
+  categoriesAdmin:5*60*1000, tabs:5*60*1000, media:10*60*1000, siteMedia:5*60*1000,
+  brands:5*60*1000, adminSettings:5*60*1000, storesAdmin:60*1000, storeAnalyticsSummary:2*60*1000,
+  analyticsSummary:2*60*1000
+};
+const boInflight=new Map();
+function boCacheKey(params){
+  const clean=Object.entries(params||{}).filter(([k])=>k!=="__force").sort(([a],[b])=>a.localeCompare(b));
+  return BO_CACHE_PREFIX+new URLSearchParams(clean).toString();
 }
-async function loadCategoryApi(){
+function boCacheRead(key,ttl){
+  try{const x=JSON.parse(sessionStorage.getItem(key)||"null");if(x&&Date.now()-Number(x.at||0)<ttl)return x.data}catch(_){}
+  return null;
+}
+function boCacheWrite(key,data){try{sessionStorage.setItem(key,JSON.stringify({at:Date.now(),data}))}catch(_){}}
+function invalidateApiCache(actions){
+  const wanted=actions?new Set([].concat(actions)):null;
+  try{for(let i=sessionStorage.length-1;i>=0;i--){const k=sessionStorage.key(i);if(!k||!k.startsWith(BO_CACHE_PREFIX))continue;if(!wanted){sessionStorage.removeItem(k);continue}const q=k.slice(BO_CACHE_PREFIX.length),a=new URLSearchParams(q).get("action");if(wanted.has(a))sessionStorage.removeItem(k)}}catch(_){}
+}
+async function apiGet(params){
+  params={...(params||{})};
+  const force=!!params.__force; delete params.__force;
+  const action=String(params.action||"");
+  const ttl=BO_READ_TTL[action]||0;
+  const key=boCacheKey(params);
+  if(ttl&&!force){const hit=boCacheRead(key,ttl);if(hit!==null)return hit}
+  if(ttl&&!force&&boInflight.has(key))return boInflight.get(key);
+  const task=(async()=>{
+    const q=new URLSearchParams(params);
+    // Only forced reads/writes get a cache-buster. Normal reads are browser/cache friendly.
+    if(force||!ttl)q.set("t",String(Date.now()));
+    const r=await fetch(`${SHEET_API}?${q.toString()}`,ttl&&!force?{cache:"default"}:{cache:"no-store"});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j=await r.json();
+    if(j && j.success===false) throw new Error(j.message||"API error");
+    if(ttl)boCacheWrite(key,j); else invalidateApiCache(); // any write may affect several admin views
+    return j;
+  })();
+  if(ttl)boInflight.set(key,task);
+  try{return await task}finally{if(ttl)boInflight.delete(key)}
+}
+async function loadCategoryApi(force=false){
   try{
-    const j=await apiGet({action:"categoriesAdmin"});
+    const j=await apiGet({action:"categoriesAdmin",__force:force});
     categoryApiData=Array.isArray(j.data)?j.data:[];
   }catch(e){
     console.warn("categoriesAdmin not ready:",e);
@@ -168,7 +203,7 @@ async function loadCategoryApi(){
   }
 }
 let mediaFiles=[], mediaState="idle";
-async function loadMediaLibrary(){mediaState="loading";try{const j=await apiGet({action:"media",kind:"image"});mediaFiles=Array.isArray(j.data)?j.data:[];mediaState="ok"}catch(e){console.warn(e);mediaFiles=[];mediaState="error"}}
+async function loadMediaLibrary(force=false){mediaState="loading";try{const j=await apiGet({action:"media",kind:"image",__force:force});mediaFiles=Array.isArray(j.data)?j.data:[];mediaState="ok"}catch(e){console.warn(e);mediaFiles=[];mediaState="error"}}
 function mediaUsage(url){return cats().filter(c=>String(c.image||"")===String(url||""))}
 function mediaCards(){if(mediaState==="loading")return '<div class="empty">กำลังโหลดรูป...</div>';if(mediaState==="error")return '<div class="api-needed"><b>ยังอ่าน Media Library ไม่ได้</b><div>ตรวจสอบว่า Deploy Code.gs ของ Phase 4A แล้ว</div></div>';if(!mediaFiles.length)return '<div class="empty">ยังไม่มีรูปใน Media Library</div>';return `<div class="media-grid">${mediaFiles.map(f=>{const used=mediaUsage(f.url);return `<div class="media-card"><div class="media-image"><img src="${esc(f.url)}"></div><div class="media-body"><b title="${esc(f.name)}">${esc(f.name)}</b><div class="muted">${used.length?`ใช้อยู่: ${used.map(x=>esc(x.titleTH||x.titleEN)).join(", ")}`:"ยังไม่ถูกใช้กับหมวด"}</div><div class="media-actions"><button class="secondary media-copy" data-url="${esc(f.url)}">คัดลอก URL</button><a class="media-open" href="${esc(f.url)}" target="_blank">เปิดรูป</a></div></div></div>`}).join("")}</div>`}
 function bindMediaActions(){document.querySelectorAll(".media-copy").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.url);const o=b.textContent;b.textContent="คัดลอกแล้ว";setTimeout(()=>b.textContent=o,1200)}catch(e){prompt("คัดลอก URL นี้",b.dataset.url)}})}
@@ -177,6 +212,10 @@ async function renderMediaView(){
   title.textContent='รูปและสื่อ';
   subtitle.textContent='จัดการสื่อหน้าแรก โลโก้แบรนด์ และคลังรูปในจุดเดียว';
   await Promise.all([loadSheetTabs(),loadCategoryApi()]);
+  // Warm independent media data together; brand manager reuses the in-flight/cached result.
+  const mapped=liveCats().filter(c=>catTab(c));
+  if(!mapped.some(c=>catTab(c)===activeBrandTab))activeBrandTab=mapped.length?catTab(mapped[0]):"";
+  await Promise.all([loadSiteMedia(),loadMediaLibrary(),activeBrandTab?loadBrandsForTab(activeBrandTab):Promise.resolve()]);
   const heroHtml=await renderHeroManager();
   const brandHtml=await renderBrandManager();
   content.innerHTML=`${heroHtml}${brandHtml}
@@ -201,7 +240,7 @@ async function renderMediaView(){
   document.querySelector("#mediaCount").textContent=`${mediaFiles.length} ไฟล์`;
   document.querySelector("#mediaUploadBtn").onclick=()=>document.querySelector("#mediaFile").click();
   document.querySelector("#mediaFile").onchange=e=>uploadFromMedia(e.target.files[0]);
-  document.querySelector("#mediaRefresh").onclick=()=>renderMediaView();
+  document.querySelector("#mediaRefresh").onclick=()=>{invalidateApiCache(["media","siteMedia","brands","categoriesAdmin","tabs"]);sheetLoadState="idle";renderMediaView()};
   bindMediaActions();
   bindHeroRows();
   document.querySelector("#addHeroSlide").onclick=()=>{
@@ -224,10 +263,10 @@ async function renderMediaView(){
 
 let pdfFiles=[], pdfState="idle";
 
-async function loadPdfLibrary(){
+async function loadPdfLibrary(force=false){
   pdfState="loading";
   try{
-    const j=await apiGet({action:"media",kind:"pdf"});
+    const j=await apiGet({action:"media",kind:"pdf",__force:force});
     pdfFiles=Array.isArray(j.data)?j.data:[];
     pdfState="ok";
   }catch(e){
@@ -277,7 +316,7 @@ async function renderPdfView(){
   document.querySelector("#pdfCount").textContent=`${pdfFiles.length} ไฟล์`;
   document.querySelector("#pdfUploadBtn").onclick=()=>document.querySelector("#pdfLibraryFile").click();
   document.querySelector("#pdfLibraryFile").onchange=e=>uploadFromPdfLibrary(e.target.files[0]);
-  document.querySelector("#pdfRefresh").onclick=()=>renderPdfView();
+  document.querySelector("#pdfRefresh").onclick=()=>{invalidateApiCache(["media"]);renderPdfView()};
   bindPdfActions();
 }
 
@@ -286,9 +325,9 @@ let siteMediaConfig={coverSlides:[],coverInterval:3};
 let brandLogoRows=[];
 let activeBrandTab="";
 
-async function loadSiteMedia(){
+async function loadSiteMedia(force=false){
   try{
-    const j=await apiGet({action:"siteMedia"});
+    const j=await apiGet({action:"siteMedia",__force:force});
     siteMediaConfig={
       coverSlides:Array.isArray(j.coverSlides)?j.coverSlides:[],
       coverInterval:Number(j.coverInterval||3)||3
@@ -348,10 +387,10 @@ async function renderHeroManager(){
     <div class="section-save"><button class="primary" id="saveHero">บันทึกสื่อหน้าแรก</button><span id="heroMsg" class="media-msg"></span></div>
   </div>`;
 }
-async function loadBrandsForTab(tab){
+async function loadBrandsForTab(tab,force=false){
   if(!tab){brandLogoRows=[];return}
   try{
-    const j=await apiGet({action:"brands",tab});
+    const j=await apiGet({action:"brands",tab,__force:force});
     brandLogoRows=Array.isArray(j.data)?j.data:[];
   }catch(e){brandLogoRows=[];console.warn(e)}
 }
@@ -447,8 +486,8 @@ async function renderBrandManager(){
 
 
 let siteSettings={};
-async function loadSiteSettings(){
-  try{const j=await apiGet({action:"adminSettings"});siteSettings=j.data||{}}
+async function loadSiteSettings(force=false){
+  try{const j=await apiGet({action:"adminSettings",__force:force});siteSettings=j.data||{}}
   catch(e){console.warn("adminSettings failed",e);siteSettings={}}
 }
 async function saveSiteSettings(){
@@ -796,10 +835,10 @@ function storeDate(v){
 }
 function storeDuplicate(r){return r?.duplicate_name===true||String(r?.duplicate_name||"").toUpperCase()==="TRUE"}
 
-async function loadStoreAccessRows(){
+async function loadStoreAccessRows(force=false){
   const [storesJ,analyticsJ]=await Promise.all([
-    apiGet({action:"storesAdmin"}),
-    apiGet({action:"storeAnalyticsSummary",days:"30"}).catch(()=>({data:[]}))
+    apiGet({action:"storesAdmin",__force:force}),
+    apiGet({action:"storeAnalyticsSummary",days:"30",__force:force}).catch(()=>({data:[]}))
   ]);
   storeAccessRows=(Array.isArray(storesJ?.data)?storesJ.data:[]).map(r=>({...r,__status:storeStatus(r.status)}));
   storeAnalyticsMap={};
@@ -931,7 +970,7 @@ async function renderStoreOverview(){
 
   document.querySelector("#storeGoPending").onclick=()=>{storeAccessFilter="PENDING";renderStoreManagementView()};
   document.querySelector("#storeGoAll").onclick=()=>{storeAccessFilter="ALL";renderStoreManagementView()};
-  document.querySelector("#storeOverviewRefresh").onclick=()=>renderStoreOverview();
+  document.querySelector("#storeOverviewRefresh").onclick=()=>{invalidateApiCache(["storesAdmin","storeAnalyticsSummary"]);renderStoreOverview()};
   document.querySelectorAll("[data-store-filter]").forEach(el=>el.onclick=()=>{storeAccessFilter=el.dataset.storeFilter;renderStoreManagementView()});
 }
 
@@ -1034,7 +1073,7 @@ async function renderStoreManagementView(){
     <div class="panel"><div class="store-list">${shown.length?shown.map(storeRowHtml).join(""):'<div class="store-empty">ยังไม่มีรายการในสถานะนี้</div>'}</div></div>`;
   document.querySelector("#storeBackOverview").onclick=()=>renderStoreOverview();
   document.querySelectorAll(".store-filter").forEach(b=>b.onclick=()=>{storeAccessFilter=b.dataset.filter;renderStoreManagementView()});
-  document.querySelector("#storeRefresh").onclick=()=>renderStoreManagementView();
+  document.querySelector("#storeRefresh").onclick=()=>{invalidateApiCache(["storesAdmin","storeAnalyticsSummary"]);renderStoreManagementView()};
   const provinces=[...new Set(storeAccessRows.map(r=>String(r.province||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"th"));
   const pf=document.querySelector("#storeProvinceFilter");
   if(pf){const current=pf.value;pf.innerHTML='<option value="">ทุกจังหวัด</option>'+provinces.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join("");pf.value=current}
@@ -1096,6 +1135,7 @@ async function uploadFile(file,kind){
   if(!r.ok) throw new Error(`HTTP ${r.status}`);
   const j=await r.json();
   if(!j.success) throw new Error(j.message||"Upload failed");
+  invalidateApiCache(["media"]);
   return j;
 }
 
@@ -1125,23 +1165,22 @@ async function saveCategoryOrder(rows){
 }
 
 
-async function loadSheetTabs(){
-  if(sheetLoadState==="loading"||sheetLoadState==="ok")return;
+async function loadSheetTabs(force=false){
+  if(sheetLoadState==="loading"&&!force)return;
+  if(sheetLoadState==="ok"&&!force)return;
   sheetLoadState="loading";
   try{
-    const r=await fetch(`${SHEET_API}?action=tabs&t=${Date.now()}`,{cache:"no-store"});
-    if(!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j=await r.json();
+    const j=await apiGet({action:"tabs",__force:force});
     const raw=Array.isArray(j)?j:(j.tabs||j.data||j.sheets||[]);
     if(!Array.isArray(raw)) throw new Error("รูปแบบข้อมูล tabs ไม่ถูกต้อง");
     sheetTabs=raw.map(x=>typeof x==="string"?x:(x.name||x.title||x.sheetTab||"")).map(x=>String(x).trim()).filter(Boolean);
     sheetLoadState="ok";
   }catch(e){
     console.warn("Tabs API not ready:",e);
-    sheetTabs=[];
-    sheetLoadState="unsupported";
+    sheetTabs=[];sheetLoadState="unsupported";
   }
 }
+
 function liveCats(){return categoryApiData.length?categoryApiData:cats()}
 function catTab(c){return String(c.sheetTab||sheetFromUrl(c.price_url)||"").trim()}
 function sheetStatus(){
@@ -1168,7 +1207,7 @@ function sheetRows(){
 }
 
 const content=document.querySelector('#content'), title=document.querySelector('#title'), subtitle=document.querySelector('#subtitle');let db={categories:[]};
-async function load(){await Promise.all([loadCategoryApi(),(async()=>{try{const r=await fetch('../categories.json?ts='+Date.now());db=await r.json()}catch(e){console.error(e)}})()]);sheetLoadState="idle";render('dashboard')}
+async function load(){await Promise.all([loadCategoryApi(),(async()=>{try{const r=await fetch('../categories.json',{cache:'default'});db=await r.json()}catch(e){console.error(e)}})()]);sheetLoadState="idle";render('dashboard')}
 function cats(){return db.categories||[]}
 
 const DASHBOARD_CACHE_KEY="leeplus_bo_dashboard_v1";
@@ -1292,13 +1331,13 @@ function dashboardStoreSnapshotHtml(s){
     </div>
   </div>`;
 }
-async function loadDashboardStoreSnapshot(){
+async function loadDashboardStoreSnapshot(force=false){
   const host=document.querySelector("#dashboardStoreSnapshot");
   if(!host)return;
   try{
     const [storesJ,analyticsJ]=await Promise.all([
-      apiGet({action:"storesAdmin"}),
-      apiGet({action:"storeAnalyticsSummary",days:"30"}).catch(()=>({data:[]}))
+      apiGet({action:"storesAdmin",__force:force}),
+      apiGet({action:"storeAnalyticsSummary",days:"30",__force:force}).catch(()=>({data:[]}))
     ]);
     const stores=(Array.isArray(storesJ?.data)?storesJ.data:[]).map(r=>({...r,__status:storeStatus(r.status)}));
     const analytics=Array.isArray(analyticsJ?.data)?analyticsJ.data:[];
@@ -1503,8 +1542,8 @@ function analyticsProvinceHtml(items){
   </div>`;
 }
 
-async function loadAnalyticsSummary(days=30){
-  const j=await apiGet({action:"analyticsSummary",days:String(days)});
+async function loadAnalyticsSummary(days=30,force=false){
+  const j=await apiGet({action:"analyticsSummary",days:String(days),__force:force});
   if(!j||j.success===false)throw new Error(j?.message||"Analytics API failed");
   return j.data||{};
 }
@@ -1583,7 +1622,7 @@ async function renderAnalyticsView(days=30,force=false){
   subtitle.textContent="ดูจำนวนผู้ใช้งานและพฤติกรรมการเข้าเว็บ LEEPLUS";
   content.innerHTML='<div class="panel"><div class="empty">กำลังโหลด Analytics...</div></div>';
   try{
-    const d=await loadAnalyticsSummary(days);
+    const d=await loadAnalyticsSummary(days,force);
     renderAnalyticsData(d,days);
   }catch(err){
     console.warn("Analytics load failed:",err);
@@ -1644,7 +1683,7 @@ const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(
   </div>
 </div>`;
 bindCategoryAdmin()},media(){renderMediaView()},pdf(){renderPdfView()},async sheet(){
-    await loadCategoryApi();title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unmapped.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{await Promise.all([loadSheetTabs(),loadCategoryApi()]);views.sheet()})},
+    await loadCategoryApi();title.textContent='Google Sheet';subtitle.textContent='ตรวจสอบการเชื่อมหมวดสินค้ากับ Tab ใน Google Sheet';const s=sheetStatus();content.innerHTML=`<div class="sheet-tools"><button class="refresh-sheet" id="refreshSheet">รีเฟรชจาก Google Sheet</button><div class="sheet-counts">${badge(`เชื่อมแล้ว ${s.linked.length}`,"ok")} ${badge(`Tab ยังไม่ผูก ${s.unmapped.length}`,"wait")} ${badge(`Mapping หา Tab ไม่เจอ ${s.missing.length}`,"bad")}</div></div><div class="panel"><h2>Sheet Tabs</h2><div id="sheetRows">${sheetRows()}</div></div>${s.missing.length?`<div class="panel"><h2>Mapping ที่หา Tab ไม่เจอ</h2>${s.missing.map(t=>`<div class="sheet-row"><div class="grow"><b>${t}</b><div class="muted">ตรวจชื่อ Tab หรือแก้ Mapping</div></div>${badge("ไม่พบ Tab","bad")}</div>`).join("")}</div>`:""}`;document.querySelector("#refreshSheet")?.addEventListener("click",async()=>{sheetLoadState="idle";await Promise.all([loadSheetTabs(true),loadCategoryApi(true)]);views.sheet()})},
 settings(){renderSettingsView()}
 };
 function rows(a){return a.length?a.map(x=>`<div class="row">${x.image?`<img class="thumb" src="${x.image}">`:'<div class="thumb"></div>'}<div class="grow"><b>${x.titleTH||x.titleEN||'-'}</b><div class="muted">${x.titleEN||''}</div></div><span class="tag">${x.sheetTab||sheetFromUrl(x.price_url)||'ยังไม่ผูก Sheet'}</span></div>`).join(''):'<div class="empty">ยังไม่มีข้อมูล</div>'}
@@ -1739,7 +1778,7 @@ function closeLibraryPicker(){
 
 function bindCategoryAdmin(){
   document.querySelector("#addCategory")?.addEventListener("click",()=>openCategoryModal());
-  document.querySelector("#reloadCats")?.addEventListener("click",async()=>{await Promise.all([loadCategoryApi(),loadSheetTabs()]);views.categories()});
+  document.querySelector("#reloadCats")?.addEventListener("click",async()=>{sheetLoadState="idle";await Promise.all([loadCategoryApi(true),loadSheetTabs(true)]);views.categories()});
   document.querySelectorAll(".edit-cat").forEach(b=>b.addEventListener("click",()=>openCategoryModal(categoryApiData[Number(b.dataset.i)])));
   bindCategoryDragSort();
 }

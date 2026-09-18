@@ -513,6 +513,7 @@ async function loadSupabasePriceSheetWithMeta_(tab) {
     price: String(r?.retail_price ?? "").trim(),
     image_url: String(r?.image_url ?? "").trim(),
     updated: String(r?.updated_text ?? "").trim(),
+    stock_status: String(r?.stock_status ?? "IN_STOCK").trim().toUpperCase(),
     __all: [r?.brand, r?.model, r?.retail_price, r?.image_url, r?.updated_text]
       .map(v => String(v ?? "").trim())
   }));
@@ -1163,7 +1164,22 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   }
 }
 
+function ensureStockFrontendStyles_() {
+  if (document.getElementById("leeplusStockFrontendStyle")) return;
+  const st = document.createElement("style");
+  st.id = "leeplusStockFrontendStyle";
+  st.textContent = `
+    .stockOutRow td{opacity:.78}
+    .stockOutRow .model{opacity:.9}
+    .stockOutRow .priceValue{opacity:.78}
+    .retailStockBadge{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;padding:3px 7px;border-radius:999px;background:#3a2b08;border:1px solid #7b5b08;color:#ffd84d;font-size:9px;font-weight:950;line-height:1.2;vertical-align:middle;white-space:nowrap}
+    @media(max-width:600px){.retailStockBadge{margin-left:6px;padding:3px 6px;font-size:8px}}
+  `;
+  document.head.appendChild(st);
+}
+
 function renderTable(rows, brandImageMap) {
+  ensureStockFrontendStyles_();
   const tbody = el("tbody");
   if (!tbody) return;
   tbody.innerHTML = "";
@@ -1204,11 +1220,14 @@ function renderTable(rows, brandImageMap) {
       : ``;
 
     const tr = document.createElement("tr");
+    const isOutOfStock = String(r.stock_status || "IN_STOCK").toUpperCase() === "OUT_OF_STOCK";
+    if (isOutOfStock) tr.classList.add("stockOutRow");
+    const stockBadge = isOutOfStock ? `<span class="retailStockBadge">สินค้าหมด</span>` : "";
     tr.innerHTML = `
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px; min-width:0;">
           ${thumbHtml}
-          <div class="model">${formatModelWithAutoBadge(r.model)}</div>
+          <div class="model">${formatModelWithAutoBadge(r.model)}${stockBadge}</div>
         </div>
       </td>
       <td class="price">${

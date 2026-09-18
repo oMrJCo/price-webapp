@@ -57,7 +57,7 @@ const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/ma
 const GH_BASE = "/price-webapp/";
 const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
 const SUPABASE_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/catalog-api";
-const SUPABASE_DATA_CACHE_PREFIX = "leeplus_supabase_catalog_v1:";
+const SUPABASE_DATA_CACHE_PREFIX = "leeplus_supabase_catalog_v2:";
 const CATALOG_GRANT_CACHE_KEY = "leeplus_catalog_grant_v1";
 let GATED_PDF_URL = "";
 let PRICE_LOCKED = false;
@@ -450,7 +450,15 @@ async function fetchSupabaseCatalog_(tab, forceFresh = false) {
 
   if (!forceFresh) {
     const cached = speedCacheGet_(cacheKey, SPEED_CACHE.catalog);
-    if (cached && cached.success && Array.isArray(cached.rows)) return cached;
+    const cachedRows = Array.isArray(cached?.rows) ? cached.rows : [];
+    // Reject only stale DATA created before stock_status was part of the catalog schema.
+    // Never clear or modify Store Access authentication.
+    const cacheHasStockSchema = cachedRows.length === 0 ||
+      cachedRows.every(r => Object.prototype.hasOwnProperty.call(r || {}, "stock_status"));
+    if (cached && cached.success && Array.isArray(cached.rows) && cacheHasStockSchema) return cached;
+    if (cached && !cacheHasStockSchema) {
+      try { sessionStorage.removeItem(cacheKey); } catch (_) {}
+    }
   }
 
   const headers = grant ? { "X-Catalog-Grant": grant } : {};
@@ -1243,7 +1251,7 @@ function renderTable(rows, brandImageMap) {
 
 async function loadCategoriesCached_() {
   // Supabase-first category metadata. Apps Script remains rollback only.
-  const cacheKey = "leeplus_supabase_categories_v1";
+  const cacheKey = "leeplus_supabase_categories_v2";
   let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
   if (Array.isArray(items)) return items;
 

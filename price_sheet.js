@@ -56,6 +56,9 @@ const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
 const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
+const SUPABASE_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/catalog-api";
+const SUPABASE_DATA_CACHE_PREFIX = "leeplus_supabase_catalog_v1:";
+const CATALOG_GRANT_CACHE_KEY = "leeplus_catalog_grant_v1";
 let GATED_PDF_URL = "";
 let PRICE_LOCKED = false;
 
@@ -397,7 +400,153 @@ async function fetchCatalogText_(tab) {
   return text;
 }
 
-async function loadSheetWithMeta(tab) {
+async function getCatalogGrant_() {
+  let storeToken = "";
+  try { storeToken = localStorage.getItem("leeplus_store_access_token") || ""; } catch (_) {}
+  if (!storeToken) return "";
+
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(CATALOG_GRANT_CACHE_KEY) || "null");
+    const now = Math.floor(Date.now() / 1000);
+    if (cached && cached.token && Number(cached.exp) > now + 45) return String(cached.token);
+  } catch (_) {}
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "catalogGrant", token: storeToken })
+    });
+    if (!res.ok) return "";
+    const data = await res.json();
+    if (!data?.success || !data?.authorized || !data?.catalogGrant) return "";
+    try {
+      sessionStorage.setItem(CATALOG_GRANT_CACHE_KEY, JSON.stringify({
+        token: String(data.catalogGrant),
+        exp: Number(data.catalogGrantExp || 0)
+      }));
+    } catch (_) {}
+    return String(data.catalogGrant);
+  } catch (_) {
+    return "";
+  }
+}
+
+function clearSupabaseCatalogDataCache_(tab) {
+  // DATA recovery only. Never touch leeplus_store_access_token or other auth state.
+  const prefix = `${SUPABASE_DATA_CACHE_PREFIX}${String(tab || "").toLowerCase()}:`;
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const key = sessionStorage.key(i) || "";
+      if (key.startsWith(prefix)) sessionStorage.removeItem(key);
+    }
+  } catch (_) {}
+}
+
+async function fetchSupabaseCatalog_(tab, forceFresh = false) {
+  const grant = await getCatalogGrant_();
+  const accessKey = grant ? "retail" : "public";
+  const cacheKey = `${SUPABASE_DATA_CACHE_PREFIX}${String(tab).toLowerCase()}:${accessKey}`;
+
+  if (!forceFresh) {
+    const cached = speedCacheGet_(cacheKey, SPEED_CACHE.catalog);
+    if (cached && cached.success && Array.isArray(cached.rows)) return cached;
+  }
+
+  const headers = grant ? { "X-Catalog-Grant": grant } : {};
+  const res = await fetch(`${SUPABASE_CATALOG_API}?category=${encodeURIComponent(tab)}`, {
+    headers,
+    cache: "no-store"
+  });
+  if (!res.ok) throw new Error(`Supabase catalog ${res.status}`);
+  const data = await res.json();
+  if (!data?.success || !Array.isArray(data?.rows)) throw new Error("Invalid Supabase catalog response");
+
+  // If this browser has Store Access but Edge unexpectedly returned PUBLIC,
+  // discard only the short-lived grant and retry grant acquisition once.
+  let hasStoreToken = false;
+  try { hasStoreToken = Boolean(localStorage.getItem("leeplus_store_access_token")); } catch (_) {}
+  if (hasStoreToken && data.access !== "RETAIL") {
+    try { sessionStorage.removeItem(CATALOG_GRANT_CACHE_KEY); } catch (_) {}
+    if (!forceFresh) return fetchSupabaseCatalog_(tab, true);
+  }
+
+  speedCacheSet_(cacheKey, data);
+  return data;
+}
+
+async function fetchSupabaseCategoryPdf_(grant) {
+  if (!grant) return new Map();
+  try {
+    const res = await fetch(SUPABASE_CATALOG_API, {
+      headers: { "X-Catalog-Grant": grant },
+      cache: "no-store"
+    });
+    if (!res.ok) return new Map();
+    const data = await res.json();
+    const map = new Map();
+    for (const c of (data?.categories || [])) {
+      map.set(String(c.sheet_tab || "").toLowerCase(), String(c.pdf_url || ""));
+    }
+    return map;
+  } catch (_) { return new Map(); }
+}
+
+async function loadSupabasePriceSheetWithMeta_(tab) {
+  let data;
+  try {
+    data = await fetchSupabaseCatalog_(tab, false);
+  } catch (firstError) {
+    clearSupabaseCatalogDataCache_(tab);
+    data = await fetchSupabaseCatalog_(tab, true); // one clean DATA retry; auth is preserved
+  }
+
+  PRICE_LOCKED = Boolean(data.price_locked);
+
+  const grant = await getCatalogGrant_();
+  const pdfMap = await fetchSupabaseCategoryPdf_(grant);
+  GATED_PDF_URL = pdfMap.get(String(tab).toLowerCase()) || "";
+
+  const raw = (data.rows || []).map(r => ({
+    brand: String(r?.brand ?? "").trim(),
+    model: String(r?.model ?? "").trim(),
+    price: String(r?.retail_price ?? "").trim(),
+    image_url: String(r?.image_url ?? "").trim(),
+    updated: String(r?.updated_text ?? "").trim(),
+    __all: [r?.brand, r?.model, r?.retail_price, r?.image_url, r?.updated_text]
+      .map(v => String(v ?? "").trim())
+  }));
+
+  let categoryImageUrl = "";
+  const brandImageMap = new Map();
+  for (const r of raw) {
+    const rowKeys = r.__all.map(metaKey);
+    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    const url = normalizeImageUrl(r.image_url) || extractFirstUrlFromRow(r.__all);
+    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) categoryImageUrl = url;
+    if (hasBRAND && url) {
+      const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand)
+        ? r.brand : pickBrandNameFromRow(r.__all);
+      if (b) brandImageMap.set(b, url);
+    }
+  }
+
+  const products = raw.filter(r => {
+    const rowKeys = r.__all.map(metaKey);
+    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    const isBlankRow = !r.brand && !r.model;
+    return !isBlankRow && !((hasMETA && hasCATEGORY) || hasBRAND);
+  }).map(({ __all, ...rest }) => rest);
+
+  if (DEBUG) console.log("[LEEPLUS] PRICE source: Supabase Edge", { tab, access: data.access, count: products.length });
+  return { rows: products, categoryImageUrl, brandImageMap };
+}
+
+async function loadLegacySheetWithMeta_(tab) {
   const text = await fetchCatalogText_(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
@@ -417,58 +566,38 @@ async function loadSheetWithMeta(tab) {
     const c = Array.isArray(r.c) ? r.c : [];
     const allValues = c.map(cellValue).map(s => String(s || "").trim());
     return {
-      brand: String(cellValue(c[idx.brand]) || "").trim(),
-      model: String(cellValue(c[idx.model]) || "").trim(),
-      price: String(cellValue(c[idx.price]) || "").trim(),
-      image_url: String(cellValue(c[idx.image_url]) || "").trim(),
-      updated: String(cellValue(c[idx.updated]) || "").trim(),
-      __all: allValues
+      brand: String(cellValue(c[idx.brand]) || "").trim(), model: String(cellValue(c[idx.model]) || "").trim(),
+      price: String(cellValue(c[idx.price]) || "").trim(), image_url: String(cellValue(c[idx.image_url]) || "").trim(),
+      updated: String(cellValue(c[idx.updated]) || "").trim(), __all: allValues
     };
   });
-
-  let categoryImageUrl = "";
-  const brandImageMap = new Map();
-
+  let categoryImageUrl = ""; const brandImageMap = new Map();
   for (const r of raw) {
-    const rowKeys = r.__all.map(metaKey);
-
-    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const rowKeys = r.__all.map(metaKey); const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
     const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
     const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
-
     const url = normalizeImageUrl(r.image_url) || extractFirstUrlFromRow(r.__all);
-
     if (!categoryImageUrl && hasMETA && hasCATEGORY && url) categoryImageUrl = url;
-
-    if (hasBRAND && url) {
-      const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand) ? r.brand : pickBrandNameFromRow(r.__all);
-      if (b) brandImageMap.set(b, url);
-    }
+    if (hasBRAND && url) { const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand) ? r.brand : pickBrandNameFromRow(r.__all); if (b) brandImageMap.set(b, url); }
   }
-
   const products = raw.filter(r => {
-    const rowKeys = r.__all.map(metaKey);
-    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const rowKeys = r.__all.map(metaKey); const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
     const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
     const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
-
-    // Apps Script gateway preserves blank separator rows from the Sheet.
-    // Old GViz effectively did not render these as products. If they pass
-    // through, groupByBrandPreserveSheetOrder() turns them into "Unknown".
-    const isBlankRow = !String(r.brand || "").trim() && !String(r.model || "").trim();
-    return !isBlankRow && !((hasMETA && hasCATEGORY) || hasBRAND);
+    return (r.brand || r.model) && !((hasMETA && hasCATEGORY) || hasBRAND);
   }).map(({ __all, ...rest }) => rest);
-
-  if (DEBUG) {
-    console.log("[DEBUG] GVIZ_JSON_VERSION:", "2026-05-15a");
-    console.log("[DEBUG] idx:", idx);
-    console.log("[DEBUG] old categoryImageUrl:", categoryImageUrl);
-    console.log("[DEBUG] old brandImageMap:", Array.from(brandImageMap.entries()));
-  }
-
   return { rows: products, categoryImageUrl, brandImageMap };
 }
 
+async function loadSheetWithMeta(tab) {
+  // Parallel migration: PRICE prefers Supabase. Legacy Apps Script is rollback/fallback only.
+  try {
+    return await loadSupabasePriceSheetWithMeta_(tab);
+  } catch (error) {
+    console.warn("Supabase PRICE failed; using legacy catalog fallback:", error);
+    return await loadLegacySheetWithMeta_(tab);
+  }
+}
 
 async function loadCompatibilitySheet(tab) {
   const text = await fetchCatalogText_(tab);
@@ -802,8 +931,6 @@ function visualColorSwatchStyle(colorText){
     "midnight green":"#3f5b52",
 
     "white":"#f5f5f2",
-    "star white":"#f2f1ec",
-    "glacier":"#aebbc4",
     "cloud white":"#f5f5f0",
     "starlight":"#d9d2c4",
     "white silver":"linear-gradient(135deg,#ffffff 0%,#e7eaed 48%,#b8bec4 100%)",
@@ -813,8 +940,6 @@ function visualColorSwatchStyle(colorText){
     "gold":"#d9b45c",
     "light gold":"#e7cd99",
     "rose gold":"#d9a7a0",
-    "burgundy":"#6f263d",
-
 
     "red":"#d65353",
     "product red":"#c84f55",
@@ -834,7 +959,6 @@ function visualColorSwatchStyle(colorText){
     "mist blue":"#91b1bf",
     "mistblue":"#91b1bf",
     "deep blue":"#1e3d68",
-    "night sky":"#27384d",
 
     "purple":"#9b82cf",
     "deep purple":"#65547c",
@@ -854,7 +978,6 @@ function visualColorSwatchStyle(colorText){
     ["ขาว","#f5f5f2"],
     ["เหลือง","#e7c958"],
     ["ทอง","#d9b45c"],
-    ["เบอร์กันดี","#6f263d"],
     ["แดง","#d65353"],
     ["ส้ม","#e9782e"],
     ["เขียว","#6c9b72"],
@@ -895,7 +1018,7 @@ function renderVisualCatalog(rows,query=""){
     const gallery=images.slice(0,6).map(u=>`<div class="vc-gallery-item"><img src="${escapeHTML(normalizeImageUrl(u))}" alt="" loading="lazy"></div>`).join("");
     const models=[...modelMap.values()].map(m=>`
       <div class="vc-model">
-        <div class="vc-model-name">${formatModelWithAutoBadge(m.model||m.code||"-")}</div>
+        <div class="vc-model-name">${highlightHTML(m.model||m.code||"-",query)}</div>
         <div class="vc-model-info">
           ${m.variant?`<div class="vc-variant">${highlightHTML(m.variant,query)}</div>`:""}
           <div class="vc-colors">${m.colors.length?m.colors.map(c=>`<span class="vc-color"><i class="vc-swatch" style="background:${visualColorSwatchStyle(c)}"></i><span>${highlightHTML(c,query)}</span></span>`).join(""):'<span class="vc-color">-</span>'}</div>

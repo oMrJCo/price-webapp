@@ -1631,7 +1631,196 @@ async function renderAnalyticsView(days=30,force=false){
 }
 
 
-const views={dashboard(){renderLiveDashboard()},analytics(){renderAnalyticsView(30)},stores(){renderStoreOverview()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
+
+
+// =========================================================
+// PRODUCT DATABASE / STOCK MANAGEMENT 1.0
+// Supabase operational stock state is separate from Sheet sync.
+// =========================================================
+(function ensureProductDbStyles(){
+  if(document.getElementById("productDbAdminStyle"))return;
+  const st=document.createElement("style");
+  st.id="productDbAdminStyle";
+  st.textContent=`
+    .product-db-toolbar{display:grid;grid-template-columns:minmax(240px,1.2fr) minmax(180px,.7fr) minmax(150px,.55fr) auto;gap:8px;margin-bottom:12px}
+    .product-db-toolbar input,.product-db-toolbar select{width:100%;min-height:42px;border:1px solid #dfe3e8;border-radius:12px;padding:0 12px;background:#fff}
+    .product-db-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .product-db-stat{border:1px solid #eceef1;border-radius:14px;padding:13px;background:#fff}
+    .product-db-stat span{display:block;color:#7c8490;font-size:10px;font-weight:850}.product-db-stat strong{display:block;font-size:24px;margin-top:6px}
+    .product-db-list{display:grid;gap:8px}.product-db-row{display:grid;grid-template-columns:54px minmax(220px,1fr) 120px 130px;gap:12px;align-items:center;border:1px solid #e8eaed;border-radius:14px;padding:10px 12px;background:#fff}
+    .product-db-thumb{width:50px;height:50px;border-radius:11px;background:#f2f3f5;overflow:hidden;display:grid;place-items:center}.product-db-thumb img{width:100%;height:100%;object-fit:contain}
+    .product-db-main{min-width:0}.product-db-main b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-db-main small{display:block;color:#7d8590;font-size:10px;margin-top:4px;line-height:1.45}
+    .product-db-price{text-align:right;font-size:13px;font-weight:900}.product-db-status{text-align:center}
+    .stock-pill{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900}.stock-pill.in{background:#e9f8ef;color:#16814b}.stock-pill.out{background:#fff0d5;color:#9a5c00}.stock-pill.hidden{background:#ffe9e7;color:#b42318}
+    .stock-toggle{min-height:36px;min-width:112px}.product-db-empty{padding:30px;text-align:center;color:#858c96;border:1px dashed #dfe3e8;border-radius:14px;background:#fff}
+    .product-db-note{font-size:10px;color:#7c8490;margin:-4px 0 12px}.product-db-msg{font-size:11px;font-weight:800;min-height:18px;margin-bottom:8px}.product-db-msg.ok{color:#16814b}.product-db-msg.bad{color:#b42318}
+    @media(max-width:900px){.product-db-toolbar{grid-template-columns:1fr 1fr}.product-db-summary{grid-template-columns:repeat(2,1fr)}.product-db-row{grid-template-columns:48px minmax(0,1fr) 90px}.product-db-status{grid-column:2/-1;text-align:left}.product-db-price{text-align:right}}
+    @media(max-width:600px){.product-db-toolbar{grid-template-columns:1fr}.product-db-row{grid-template-columns:44px minmax(0,1fr)}.product-db-price{grid-column:2;text-align:left}.product-db-status{grid-column:2}.product-db-summary{grid-template-columns:repeat(2,1fr)}}
+  `;
+  document.head.appendChild(st);
+})();
+
+let productDbCategories=[];
+let productDbCategory="";
+let productDbSearch="";
+let productDbStatus="ALL";
+let productDbTimer=null;
+
+async function productDbRequest(path="",options={}){
+  const method=String(options.method||"GET").toUpperCase();
+
+  // SECURITY: Browser talks only to the existing Apps Script bridge.
+  // LEEPLUS_ADMIN_PRODUCTS_SECRET stays server-side and is never shipped here.
+  if(method==="POST"){
+    let payload={};
+    try{payload=options.body?JSON.parse(options.body):{}}catch(_){throw new Error("Invalid ProductDB payload")}
+    const r=await fetch(SHEET_API,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({
+        action:"adminProductSetStock",
+        adminCode:ADMIN_CODE,
+        category_sheet_tab:payload.category_sheet_tab||"",
+        brand:payload.brand||"",
+        model:payload.model||"",
+        stock_status:payload.stock_status||"",
+        note:payload.note||""
+      }),
+      cache:"no-store"
+    });
+    let j=null;
+    try{j=await r.json()}catch(_){throw new Error(`HTTP ${r.status}`)}
+    if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);
+    return j;
+  }
+
+  const incoming=new URLSearchParams(String(path||"").replace(/^\?/,""));
+  const params={
+    action: incoming.get("mode")==="categories" ? "adminProductCategories" : "adminProducts",
+    adminCode:ADMIN_CODE
+  };
+  if(params.action==="adminProducts"){
+    params.category=incoming.get("category")||"";
+    params.q=incoming.get("q")||"";
+    params.status=incoming.get("status")||"ALL";
+    params.limit=incoming.get("limit")||"200";
+  }
+  const q=new URLSearchParams(params);
+  q.set("t",String(Date.now()));
+  const r=await fetch(`${SHEET_API}?${q.toString()}`,{cache:"no-store"});
+  let j=null;
+  try{j=await r.json()}catch(_){throw new Error(`HTTP ${r.status}`)}
+  if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);
+  return j;
+}
+
+async function loadProductDbCategories(){
+  const j=await productDbRequest("?mode=categories");
+  productDbCategories=Array.isArray(j.categories)?j.categories:[];
+  if(!productDbCategories.some(x=>x.sheet_tab===productDbCategory))productDbCategory=productDbCategories[0]?.sheet_tab||"";
+}
+
+function productStockLabel(status){
+  if(status==="OUT_OF_STOCK")return '<span class="stock-pill out">สินค้าหมด</span>';
+  if(status==="HIDDEN")return '<span class="stock-pill hidden">ซ่อน</span>';
+  return '<span class="stock-pill in">มีสินค้า</span>';
+}
+function productPrice(v){
+  if(v==null||v==="")return "-";
+  const n=Number(String(v).replace(/,/g,""));
+  return Number.isFinite(n)?n.toLocaleString("th-TH")+" ฿":esc(v);
+}
+
+async function fetchProductDbRows(){
+  if(!productDbCategory)return {rows:[],summary:{total:0,in_stock:0,out_of_stock:0,hidden:0}};
+  const q=new URLSearchParams({category:productDbCategory,q:productDbSearch,status:productDbStatus,limit:"700"});
+  return await productDbRequest("?"+q.toString());
+}
+
+async function setProductStock(row,status){
+  const msg=document.querySelector("#productDbMsg");
+  if(msg){msg.className="product-db-msg";msg.textContent="กำลังบันทึก..."}
+  try{
+    await productDbRequest("",{method:"POST",body:JSON.stringify({
+      action:"setStock",
+      category_sheet_tab:row.category_sheet_tab,
+      brand:row.brand||"",
+      model:row.model||"",
+      stock_status:status
+    })});
+    if(msg){msg.className="product-db-msg ok";msg.textContent=status==="OUT_OF_STOCK"?"ตั้งเป็นสินค้าหมดแล้ว":"ตั้งเป็นมีสินค้าแล้ว"}
+    await refreshProductDbRows();
+  }catch(e){if(msg){msg.className="product-db-msg bad";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}}
+}
+
+function productDbRowsHtml(rows){
+  if(!rows.length)return '<div class="product-db-empty">ไม่พบสินค้าในเงื่อนไขนี้</div>';
+  return `<div class="product-db-list">${rows.map((r,i)=>`<div class="product-db-row" data-i="${i}">
+    <div class="product-db-thumb">${r.image_url?`<img src="${esc(r.image_url)}" alt="">`:""}</div>
+    <div class="product-db-main"><b>${esc(r.model||"-")}</b><small>${esc(r.brand||"ไม่ระบุแบรนด์")} · ${esc(r.category_sheet_tab||"")}</small></div>
+    <div class="product-db-price">${productPrice(r.retail_price)}</div>
+    <div class="product-db-status">${productStockLabel(r.stock_status)} <button class="secondary stock-toggle" data-i="${i}" data-next="${r.stock_status==="OUT_OF_STOCK"?"IN_STOCK":"OUT_OF_STOCK"}">${r.stock_status==="OUT_OF_STOCK"?"✓ มีสินค้า":"ตั้งว่าสินค้าหมด"}</button></div>
+  </div>`).join("")}</div>`;
+}
+
+async function refreshProductDbRows(){
+  const box=document.querySelector("#productDbRows");
+  if(!box)return;
+  box.innerHTML='<div class="product-db-empty">กำลังโหลดสินค้า...</div>';
+  try{
+    const j=await fetchProductDbRows();
+    const rows=Array.isArray(j.rows)?j.rows:[];
+    const s=j.summary||{};
+    document.querySelector("#productDbTotal").textContent=Number(s.total||0).toLocaleString("th-TH");
+    document.querySelector("#productDbIn").textContent=Number(s.in_stock||0).toLocaleString("th-TH");
+    document.querySelector("#productDbOut").textContent=Number(s.out_of_stock||0).toLocaleString("th-TH");
+    document.querySelector("#productDbHidden").textContent=Number(s.hidden||0).toLocaleString("th-TH");
+    box.innerHTML=productDbRowsHtml(rows);
+    box.querySelectorAll(".stock-toggle").forEach(b=>b.onclick=()=>setProductStock(rows[Number(b.dataset.i)],b.dataset.next));
+  }catch(e){box.innerHTML=`<div class="product-db-empty">โหลด Product Database ไม่สำเร็จ<br><small>${esc(e.message)}</small></div>`}
+}
+
+async function renderProductDatabaseView(){
+  title.textContent="ฐานข้อมูลสินค้า";
+  subtitle.textContent="ค้นหาสินค้า ดูราคา และกำหนดสถานะมีสินค้า / สินค้าหมด";
+  content.innerHTML='<div class="panel"><div class="product-db-empty">กำลังเชื่อม Product Database...</div></div>';
+  try{await loadProductDbCategories()}catch(e){content.innerHTML=`<div class="panel"><div class="product-db-empty">เชื่อม Product Database ไม่สำเร็จ<br><small>${esc(e.message)}</small></div></div>`;return}
+  content.innerHTML=`
+    <div class="product-db-toolbar">
+      <input id="productDbSearch" placeholder="ค้นหา รุ่น / แบรนด์" value="${esc(productDbSearch)}">
+      <select id="productDbCategory">${productDbCategories.map(c=>`<option value="${esc(c.sheet_tab)}" ${c.sheet_tab===productDbCategory?"selected":""}>${esc(c.title_th||c.title_en||c.sheet_tab)}</option>`).join("")}</select>
+      <select id="productDbStatus"><option value="ALL">ทุกสถานะ</option><option value="IN_STOCK">มีสินค้า</option><option value="OUT_OF_STOCK">สินค้าหมด</option><option value="HIDDEN">ซ่อน</option></select>
+      <button class="secondary" id="productDbRefresh">รีเฟรช</button>
+    </div>
+    <div class="product-db-summary">
+      <div class="product-db-stat"><span>สินค้าทั้งหมด</span><strong id="productDbTotal">-</strong></div>
+      <div class="product-db-stat"><span>มีสินค้า</span><strong id="productDbIn">-</strong></div>
+      <div class="product-db-stat"><span>สินค้าหมด</span><strong id="productDbOut">-</strong></div>
+      <div class="product-db-stat"><span>ซ่อน</span><strong id="productDbHidden">-</strong></div>
+    </div>
+    <div class="product-db-note">สถานะสินค้าเก็บแยกจาก Google Sheet Sync · ถ้าไม่มี Override ระบบถือว่า “มีสินค้า”</div>
+    <div id="productDbMsg" class="product-db-msg"></div>
+    <div id="productDbRows"></div>`;
+  const status=document.querySelector("#productDbStatus");status.value=productDbStatus;
+  document.querySelector("#productDbCategory").onchange=e=>{productDbCategory=e.target.value;refreshProductDbRows()};
+  status.onchange=e=>{productDbStatus=e.target.value;refreshProductDbRows()};
+  document.querySelector("#productDbSearch").oninput=e=>{productDbSearch=e.target.value;clearTimeout(productDbTimer);productDbTimer=setTimeout(refreshProductDbRows,180)};
+  document.querySelector("#productDbRefresh").onclick=refreshProductDbRows;
+  await refreshProductDbRows();
+}
+
+function ensureProductDbNav(){
+  const nav=document.querySelector("aside nav");
+  if(!nav||nav.querySelector('[data-view="products"]'))return;
+  const btn=document.createElement("button");
+  btn.className="nav";btn.dataset.view="products";btn.textContent="ฐานข้อมูลสินค้า";
+  const cat=nav.querySelector('[data-view="categories"]');
+  if(cat?.nextSibling)nav.insertBefore(btn,cat.nextSibling);else nav.appendChild(btn);
+  btn.onclick=()=>render("products");
+}
+
+
+const views={dashboard(){renderLiveDashboard()},products(){renderProductDatabaseView()},analytics(){renderAnalyticsView(30)},stores(){renderStoreOverview()},categories(){title.textContent='หมวดสินค้า';subtitle.textContent='เพิ่ม แก้ไข เปิด-ปิด และเชื่อม Sheet Tab';content.innerHTML=`
 <div class="cat-toolbar"><button class="primary" id="addCategory">+ เพิ่มหมวดสินค้า</button><button class="secondary" id="reloadCats">รีเฟรช</button></div>
 <div class="panel"><h2>รายการหมวดสินค้า</h2><div id="catAdminRows">${categoryAdminRows()}</div></div>
 <div id="categoryModal" class="modal hidden"><div class="modal-card">
@@ -1894,4 +2083,4 @@ async function openCategoryModal(x=null){
   };
 }
 
-function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};ensureAnalyticsNav();ensureStoreAccessNav();document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();
+function render(v){if(v!=="dashboard")dashboardRunId++;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(typeof views[v]==='function'){views[v]()}else{console.error('Unknown admin view:',v)}};ensureAnalyticsNav();ensureStoreAccessNav();ensureProductDbNav();document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>render(b.dataset.view));load();

@@ -1634,31 +1634,31 @@ async function renderAnalyticsView(days=30,force=false){
 
 
 // =========================================================
-// PRODUCT DATABASE / STOCK MANAGEMENT 1.0
-// Supabase operational stock state is separate from Sheet sync.
+// PRODUCT DATABASE / STOCK MANAGEMENT 1.3
+// Control Center: Sheet -> Supabase Sync + Retail/Dealer price + Stock override
 // =========================================================
 (function ensureProductDbStyles(){
-  if(document.getElementById("productDbAdminStyle"))return;
+  if(document.getElementById("productDbAdminStyle"))document.getElementById("productDbAdminStyle").remove();
   const st=document.createElement("style");
   st.id="productDbAdminStyle";
   st.textContent=`
-    .product-db-toolbar{display:grid;grid-template-columns:minmax(260px,1.25fr) minmax(180px,.7fr) minmax(150px,.55fr) auto;gap:8px;margin-bottom:10px;position:sticky;top:0;z-index:4;background:#f6f7f9;padding:8px 0}
-    .product-db-toolbar input,.product-db-toolbar select{width:100%;height:40px;border:1px solid #dfe3e8;border-radius:10px;padding:0 12px;background:#fff;font-size:12px}
-    .product-db-toolbar button{height:40px;white-space:nowrap}
-    .product-db-summary{display:flex;gap:8px;margin-bottom:8px;overflow:auto;padding-bottom:2px}
-    .product-db-stat{min-width:118px;flex:1;border:1px solid #eceef1;border-radius:11px;padding:8px 11px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .product-db-stat span{color:#7c8490;font-size:9px;font-weight:850;white-space:nowrap}.product-db-stat strong{font-size:18px;line-height:1;margin:0}
-    .product-db-note{font-size:9px;color:#7c8490;margin:0 0 8px}.product-db-msg{font-size:10px;font-weight:850;min-height:16px;margin:0 0 6px}.product-db-msg.ok{color:#16814b}.product-db-msg.bad{color:#b42318}
-    .product-db-list{display:grid;gap:4px}.product-db-row{display:grid;grid-template-columns:38px minmax(220px,1fr) 92px 90px 112px;gap:9px;align-items:center;border:1px solid #e8eaed;border-radius:10px;padding:6px 9px;background:#fff;min-height:50px;transition:.15s ease}
-    .product-db-row:hover{border-color:#d4d8de;box-shadow:0 2px 8px rgba(16,24,40,.04)}.product-db-row.is-out{background:#fffaf1;border-color:#f3dfb8}
-    .product-db-thumb{width:36px;height:36px;border-radius:8px;background:#f2f3f5;overflow:hidden;display:grid;place-items:center}.product-db-thumb img{width:100%;height:100%;object-fit:contain}
-    .product-db-main{min-width:0}.product-db-main b{display:block;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-db-main small{display:block;color:#8a919b;font-size:9px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .product-db-price{text-align:right;font-size:12px;font-weight:950;white-space:nowrap}.product-db-status{text-align:center;white-space:nowrap}.product-db-action{text-align:right}
-    .stock-pill{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;white-space:nowrap}.stock-pill.in{background:#e9f8ef;color:#16814b}.stock-pill.out{background:#fff0d5;color:#9a5c00}.stock-pill.hidden{background:#ffe9e7;color:#b42318}
-    .stock-toggle{height:32px;min-width:104px;padding:0 9px;border-radius:8px;font-size:10px;white-space:nowrap}.product-db-row.is-out .stock-toggle{background:#fff;border-color:#e7c98f}
-    .product-db-empty{padding:24px;text-align:center;color:#858c96;border:1px dashed #dfe3e8;border-radius:12px;background:#fff}
-    @media(max-width:900px){.product-db-toolbar{grid-template-columns:1fr 1fr}.product-db-row{grid-template-columns:36px minmax(0,1fr) 80px 86px}.product-db-action{grid-column:2/-1;text-align:right}.product-db-summary{display:grid;grid-template-columns:repeat(2,1fr)}.product-db-stat{min-width:0}}
-    @media(max-width:600px){.product-db-toolbar{grid-template-columns:1fr;position:static;padding-top:0}.product-db-summary{grid-template-columns:repeat(2,1fr)}.product-db-row{grid-template-columns:34px minmax(0,1fr) auto;padding:7px 8px}.product-db-thumb{width:32px;height:32px}.product-db-price{grid-column:3;grid-row:1;text-align:right}.product-db-status{grid-column:2;grid-row:2;text-align:left}.product-db-action{grid-column:3;grid-row:2}.stock-toggle{min-width:88px;height:30px;font-size:9px}}  `;
+    .pdb-syncbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;background:#111318;color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+    .pdb-sync-title{font-size:12px;font-weight:950}.pdb-sync-meta{font-size:9px;color:#b8bec7;margin-top:3px}.pdb-sync-state{display:inline-flex;align-items:center;gap:6px}.pdb-dot{width:7px;height:7px;border-radius:50%;background:#22b573;display:inline-block}
+    .pdb-syncbar button{height:38px;white-space:nowrap}.pdb-syncbar .pdb-sync-btn{background:#f3c900!important;color:#111!important;border-color:#f3c900!important;font-weight:950}.pdb-syncbar .pdb-sync-btn:disabled{opacity:.65;cursor:wait}
+    .product-db-toolbar{display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(190px,.7fr) minmax(150px,.5fr) auto;gap:8px;margin-bottom:8px;position:sticky;top:0;z-index:4;background:#f6f7f9;padding:6px 0}
+    .product-db-toolbar input,.product-db-toolbar select{width:100%;height:38px;border:1px solid #dfe3e8;border-radius:9px;padding:0 11px;background:#fff;font-size:11px}.product-db-toolbar button{height:38px;white-space:nowrap}
+    .product-db-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:6px}.product-db-stat{border:1px solid #eceef1;border-radius:9px;padding:7px 10px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px}.product-db-stat span{color:#7c8490;font-size:8px;font-weight:850}.product-db-stat strong{font-size:17px;line-height:1}
+    .product-db-note{font-size:8px;color:#7c8490;margin:0 0 7px}.product-db-msg{font-size:9px;font-weight:850;min-height:14px;margin:0 0 5px}.product-db-msg.ok{color:#16814b}.product-db-msg.bad{color:#b42318}
+    .product-db-head,.product-db-row{display:grid;grid-template-columns:minmax(250px,1fr) 92px 92px 92px 150px;gap:10px;align-items:center}.product-db-head{padding:0 10px 5px;color:#7c8490;font-size:8px;font-weight:900}.product-db-head div:nth-child(n+2){text-align:right}.product-db-head div:nth-child(4){text-align:center}
+    .product-db-list{display:grid;gap:4px}.product-db-row{border:1px solid #e8eaed;border-radius:9px;padding:7px 10px;background:#fff;min-height:46px;transition:.15s ease}.product-db-row:hover{border-color:#d4d8de}.product-db-row.is-out{background:#fff8f8;border-color:#f0c7cb}
+    .product-db-main{min-width:0}.product-db-main b{display:block;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-db-main small{display:block;color:#8a919b;font-size:8px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .product-db-price{text-align:right;font-size:11px;font-weight:950;white-space:nowrap}.product-db-price.dealer{color:#5c6570}.product-db-status{text-align:center;white-space:nowrap}.product-db-action{text-align:right}
+    .stock-pill{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;white-space:nowrap}.stock-pill.in{background:#e9f8ef;color:#16814b}.stock-pill.out{background:#ffe8ea;color:#b42336}.stock-pill.hidden{background:#eceef1;color:#59616c}
+    .stock-toggle{height:30px;min-width:136px;padding:0 9px;border-radius:8px;font-size:9px;white-space:nowrap}.product-db-row.is-out .stock-toggle{background:#fff;border-color:#e2a7ad;color:#9f2936}
+    .product-db-empty{padding:22px;text-align:center;color:#858c96;border:1px dashed #dfe3e8;border-radius:11px;background:#fff}
+    @media(max-width:980px){.pdb-syncbar{grid-template-columns:1fr auto}.pdb-syncbar .pdb-refresh-btn{display:none}.product-db-toolbar{grid-template-columns:1fr 1fr}.product-db-head{display:none}.product-db-row{grid-template-columns:minmax(180px,1fr) 80px 80px 88px 130px}.product-db-summary{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:650px){.pdb-syncbar{grid-template-columns:1fr}.pdb-syncbar button{width:100%}.product-db-toolbar{grid-template-columns:1fr;position:static}.product-db-row{grid-template-columns:minmax(0,1fr) auto auto;padding:8px}.product-db-main{grid-column:1/-1}.product-db-price{text-align:left}.product-db-status{text-align:right}.product-db-action{grid-column:1/-1;text-align:right}.stock-toggle{width:100%}}
+  `;
   document.head.appendChild(st);
 })();
 
@@ -1667,150 +1667,53 @@ let productDbCategory="";
 let productDbSearch="";
 let productDbStatus="ALL";
 let productDbTimer=null;
+let productDbSyncInfo={last_successful_sync:"",last_successful_sync_at:""};
 
 async function productDbRequest(path="",options={}){
   const method=String(options.method||"GET").toUpperCase();
-
-  // SECURITY: Browser talks only to the existing Apps Script bridge.
-  // LEEPLUS_ADMIN_PRODUCTS_SECRET stays server-side and is never shipped here.
   if(method==="POST"){
     let payload={};
     try{payload=options.body?JSON.parse(options.body):{}}catch(_){throw new Error("Invalid ProductDB payload")}
-    const r=await fetch(SHEET_API,{
-      method:"POST",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({
-        action:"adminProductSetStock",
-        adminCode:ADMIN_CODE,
-        category_sheet_tab:payload.category_sheet_tab||"",
-        brand:payload.brand||"",
-        model:payload.model||"",
-        stock_status:payload.stock_status||"",
-        note:payload.note||""
-      }),
-      cache:"no-store"
-    });
-    let j=null;
-    try{j=await r.json()}catch(_){throw new Error(`HTTP ${r.status}`)}
-    if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);
-    return j;
+    const isSync=payload.action==="syncNow";
+    const body=isSync?{action:"adminProductSync",adminCode:ADMIN_CODE}:{
+      action:"adminProductSetStock",adminCode:ADMIN_CODE,
+      category_sheet_tab:payload.category_sheet_tab||"",brand:payload.brand||"",model:payload.model||"",
+      stock_status:payload.stock_status||"",note:payload.note||""
+    };
+    const r=await fetch(SHEET_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),cache:"no-store"});
+    let j=null;try{j=await r.json()}catch(_){throw new Error(`HTTP ${r.status}`)}
+    if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);return j;
   }
-
   const incoming=new URLSearchParams(String(path||"").replace(/^\?/,""));
-  const params={
-    action: incoming.get("mode")==="categories" ? "adminProductCategories" : "adminProducts",
-    adminCode:ADMIN_CODE
-  };
-  if(params.action==="adminProducts"){
-    params.category=incoming.get("category")||"";
-    params.q=incoming.get("q")||"";
-    params.status=incoming.get("status")||"ALL";
-    params.limit=incoming.get("limit")||"200";
-  }
-  const q=new URLSearchParams(params);
-  q.set("t",String(Date.now()));
-  const r=await fetch(`${SHEET_API}?${q.toString()}`,{cache:"no-store"});
-  let j=null;
-  try{j=await r.json()}catch(_){throw new Error(`HTTP ${r.status}`)}
-  if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);
-  return j;
+  const mode=incoming.get("mode")||"products";
+  const params={action:mode==="categories"?"adminProductCategories":mode==="syncStatus"?"adminProductSyncStatus":"adminProducts",adminCode:ADMIN_CODE};
+  if(params.action==="adminProducts"){params.category=incoming.get("category")||"";params.q=incoming.get("q")||"";params.status=incoming.get("status")||"ALL";params.limit=incoming.get("limit")||"200"}
+  const q=new URLSearchParams(params);q.set("t",String(Date.now()));
+  const r=await fetch(`${SHEET_API}?${q.toString()}`,{cache:"no-store"});let j=null;try{j=await r.json()}catch(_){throw new Error(`HTTP ${r.status}`)}
+  if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);return j;
 }
 
-async function loadProductDbCategories(){
-  const j=await productDbRequest("?mode=categories");
-  productDbCategories=Array.isArray(j.categories)?j.categories:[];
-  if(!productDbCategories.some(x=>x.sheet_tab===productDbCategory))productDbCategory=productDbCategories[0]?.sheet_tab||"";
-}
+async function loadProductDbCategories(){const j=await productDbRequest("?mode=categories");productDbCategories=Array.isArray(j.categories)?j.categories:[];if(!productDbCategories.some(x=>x.sheet_tab===productDbCategory))productDbCategory=productDbCategories[0]?.sheet_tab||""}
+async function loadProductDbSyncStatus(){try{productDbSyncInfo=await productDbRequest("?mode=syncStatus")}catch(_){productDbSyncInfo={last_successful_sync:"",last_successful_sync_at:""}}return productDbSyncInfo}
+function productSyncTimeText(v){if(!v)return "ยังไม่มีข้อมูล";const d=new Date(v);if(Number.isNaN(d.getTime()))return esc(v);return d.toLocaleString("th-TH",{dateStyle:"short",timeStyle:"medium"})}
+function productStockLabel(status){if(status==="OUT_OF_STOCK")return '<span class="stock-pill out">สินค้าหมด</span>';if(status==="HIDDEN")return '<span class="stock-pill hidden">ซ่อน</span>';return '<span class="stock-pill in">มีสินค้า</span>'}
+function productPrice(v){if(v==null||v==="")return "-";const n=Number(String(v).replace(/,/g,""));return Number.isFinite(n)?n.toLocaleString("th-TH")+" ฿":esc(v)}
+async function fetchProductDbRows(){if(!productDbCategory)return {rows:[],summary:{total:0,in_stock:0,out_of_stock:0,hidden:0}};const q=new URLSearchParams({category:productDbCategory,q:productDbSearch,status:productDbStatus,limit:"700"});return await productDbRequest("?"+q.toString())}
 
-function productStockLabel(status){
-  if(status==="OUT_OF_STOCK")return '<span class="stock-pill out">สินค้าหมด</span>';
-  if(status==="HIDDEN")return '<span class="stock-pill hidden">ซ่อน</span>';
-  return '<span class="stock-pill in">มีสินค้า</span>';
-}
-function productPrice(v){
-  if(v==null||v==="")return "-";
-  const n=Number(String(v).replace(/,/g,""));
-  return Number.isFinite(n)?n.toLocaleString("th-TH")+" ฿":esc(v);
-}
+async function setProductStock(row,status){const msg=document.querySelector("#productDbMsg");if(msg){msg.className="product-db-msg";msg.textContent="กำลังบันทึก..."}try{await productDbRequest("",{method:"POST",body:JSON.stringify({action:"setStock",category_sheet_tab:row.category_sheet_tab,brand:row.brand||"",model:row.model||"",stock_status:status})});if(msg){msg.className="product-db-msg ok";msg.textContent=status==="OUT_OF_STOCK"?"ตั้งเป็นสินค้าหมดแล้ว":"เปลี่ยนเป็นมีสินค้าแล้ว"}await refreshProductDbRows()}catch(e){if(msg){msg.className="product-db-msg bad";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}}}
 
-async function fetchProductDbRows(){
-  if(!productDbCategory)return {rows:[],summary:{total:0,in_stock:0,out_of_stock:0,hidden:0}};
-  const q=new URLSearchParams({category:productDbCategory,q:productDbSearch,status:productDbStatus,limit:"700"});
-  return await productDbRequest("?"+q.toString());
-}
+function productDbRowsHtml(rows){if(!rows.length)return '<div class="product-db-empty">ไม่พบสินค้าในเงื่อนไขนี้</div>';return `<div class="product-db-head"><div>สินค้า</div><div>ราคาปลีก</div><div>ราคาตัวแทน</div><div>สถานะ</div><div>จัดการ</div></div><div class="product-db-list">${rows.map((r,i)=>`<div class="product-db-row ${r.stock_status==="OUT_OF_STOCK"?"is-out":""}" data-i="${i}"><div class="product-db-main"><b>${esc(r.model||"-")}</b><small>${esc(r.brand||"ไม่ระบุแบรนด์")} · ${esc(r.category_sheet_tab||"")}</small></div><div class="product-db-price">${productPrice(r.retail_price)}</div><div class="product-db-price dealer">${productPrice(r.dealer_price)}</div><div class="product-db-status">${productStockLabel(r.stock_status)}</div><div class="product-db-action"><button class="secondary stock-toggle" data-i="${i}" data-next="${r.stock_status==="OUT_OF_STOCK"?"IN_STOCK":"OUT_OF_STOCK"}">${r.stock_status==="OUT_OF_STOCK"?"เปลี่ยนเป็นมีสินค้า":"ตั้งเป็นสินค้าหมด"}</button></div></div>`).join("")}</div>`}
 
-async function setProductStock(row,status){
-  const msg=document.querySelector("#productDbMsg");
-  if(msg){msg.className="product-db-msg";msg.textContent="กำลังบันทึก..."}
-  try{
-    await productDbRequest("",{method:"POST",body:JSON.stringify({
-      action:"setStock",
-      category_sheet_tab:row.category_sheet_tab,
-      brand:row.brand||"",
-      model:row.model||"",
-      stock_status:status
-    })});
-    if(msg){msg.className="product-db-msg ok";msg.textContent=status==="OUT_OF_STOCK"?"ตั้งเป็นสินค้าหมดแล้ว":"ตั้งเป็นมีสินค้าแล้ว"}
-    await refreshProductDbRows();
-  }catch(e){if(msg){msg.className="product-db-msg bad";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}}
-}
+async function refreshProductDbRows(){const box=document.querySelector("#productDbRows");if(!box)return;box.innerHTML='<div class="product-db-empty">กำลังโหลดสินค้า...</div>';try{const j=await fetchProductDbRows();const rows=Array.isArray(j.rows)?j.rows:[];const s=j.summary||{};document.querySelector("#productDbTotal").textContent=Number(s.total||0).toLocaleString("th-TH");document.querySelector("#productDbIn").textContent=Number(s.in_stock||0).toLocaleString("th-TH");document.querySelector("#productDbOut").textContent=Number(s.out_of_stock||0).toLocaleString("th-TH");document.querySelector("#productDbHidden").textContent=Number(s.hidden||0).toLocaleString("th-TH");box.innerHTML=productDbRowsHtml(rows);box.querySelectorAll(".stock-toggle").forEach(b=>b.onclick=()=>setProductStock(rows[Number(b.dataset.i)],b.dataset.next))}catch(e){box.innerHTML=`<div class="product-db-empty">โหลด Product Database ไม่สำเร็จ<br><small>${esc(e.message)}</small></div>`}}
 
-function productDbRowsHtml(rows){
-  if(!rows.length)return '<div class="product-db-empty">ไม่พบสินค้าในเงื่อนไขนี้</div>';
-  return `<div class="product-db-list">${rows.map((r,i)=>`<div class="product-db-row ${r.stock_status==="OUT_OF_STOCK"?"is-out":""}" data-i="${i}">
-    <div class="product-db-thumb">${r.image_url?`<img src="${esc(r.image_url)}" alt="">`:""}</div>
-    <div class="product-db-main"><b>${esc(r.model||"-")}</b><small>${esc(r.brand||"ไม่ระบุแบรนด์")} · ${esc(r.category_sheet_tab||"")}</small></div>
-    <div class="product-db-price">${productPrice(r.retail_price)}</div>
-    <div class="product-db-status">${productStockLabel(r.stock_status)}</div>
-    <div class="product-db-action"><button class="secondary stock-toggle" data-i="${i}" data-next="${r.stock_status==="OUT_OF_STOCK"?"IN_STOCK":"OUT_OF_STOCK"}">${r.stock_status==="OUT_OF_STOCK"?"✓ มีสินค้า":"สินค้าหมด"}</button></div>
-  </div>`).join("")}</div>`;
-}
+async function syncProductDatabase(){const btn=document.querySelector("#productDbSync");const msg=document.querySelector("#productDbMsg");if(!btn)return;const old=btn.textContent;btn.disabled=true;btn.textContent="กำลัง Sync...";if(msg){msg.className="product-db-msg";msg.textContent="กำลังส่งข้อมูลจาก Google Sheet ไป Supabase กรุณารอสักครู่..."}try{const j=await productDbRequest("",{method:"POST",body:JSON.stringify({action:"syncNow"})});const x=j.sync||{};if(msg){msg.className="product-db-msg ok";msg.textContent=`Sync สำเร็จ · ${Number(x.categories_count||0)} หมวด · ${Number(x.rows_count||0).toLocaleString("th-TH")} แถว · ${Number(x.duration_sec||0)} วินาที`}await Promise.all([loadProductDbCategories(),loadProductDbSyncStatus()]);const t=document.querySelector("#productDbLastSync");if(t)t.textContent=productSyncTimeText(productDbSyncInfo.last_successful_sync_at);await refreshProductDbRows()}catch(e){if(msg){msg.className="product-db-msg bad";msg.textContent="Sync ไม่สำเร็จ: "+e.message}}finally{btn.disabled=false;btn.textContent=old}}
 
-async function refreshProductDbRows(){
-  const box=document.querySelector("#productDbRows");
-  if(!box)return;
-  box.innerHTML='<div class="product-db-empty">กำลังโหลดสินค้า...</div>';
-  try{
-    const j=await fetchProductDbRows();
-    const rows=Array.isArray(j.rows)?j.rows:[];
-    const s=j.summary||{};
-    document.querySelector("#productDbTotal").textContent=Number(s.total||0).toLocaleString("th-TH");
-    document.querySelector("#productDbIn").textContent=Number(s.in_stock||0).toLocaleString("th-TH");
-    document.querySelector("#productDbOut").textContent=Number(s.out_of_stock||0).toLocaleString("th-TH");
-    document.querySelector("#productDbHidden").textContent=Number(s.hidden||0).toLocaleString("th-TH");
-    box.innerHTML=productDbRowsHtml(rows);
-    box.querySelectorAll(".stock-toggle").forEach(b=>b.onclick=()=>setProductStock(rows[Number(b.dataset.i)],b.dataset.next));
-  }catch(e){box.innerHTML=`<div class="product-db-empty">โหลด Product Database ไม่สำเร็จ<br><small>${esc(e.message)}</small></div>`}
-}
-
-async function renderProductDatabaseView(){
-  title.textContent="ฐานข้อมูลสินค้า";
-  subtitle.textContent="ค้นหาสินค้า ดูราคา และกำหนดสถานะมีสินค้า / สินค้าหมด";
-  content.innerHTML='<div class="panel"><div class="product-db-empty">กำลังเชื่อม Product Database...</div></div>';
-  try{await loadProductDbCategories()}catch(e){content.innerHTML=`<div class="panel"><div class="product-db-empty">เชื่อม Product Database ไม่สำเร็จ<br><small>${esc(e.message)}</small></div></div>`;return}
-  content.innerHTML=`
-    <div class="product-db-toolbar">
-      <input id="productDbSearch" placeholder="ค้นหา รุ่น / แบรนด์" value="${esc(productDbSearch)}">
-      <select id="productDbCategory">${productDbCategories.map(c=>`<option value="${esc(c.sheet_tab)}" ${c.sheet_tab===productDbCategory?"selected":""}>${esc(c.title_th||c.title_en||c.sheet_tab)}</option>`).join("")}</select>
-      <select id="productDbStatus"><option value="ALL">ทุกสถานะ</option><option value="IN_STOCK">มีสินค้า</option><option value="OUT_OF_STOCK">สินค้าหมด</option><option value="HIDDEN">ซ่อน</option></select>
-      <button class="secondary" id="productDbRefresh">รีเฟรช</button>
-    </div>
-    <div class="product-db-summary">
-      <div class="product-db-stat"><span>สินค้าทั้งหมด</span><strong id="productDbTotal">-</strong></div>
-      <div class="product-db-stat"><span>มีสินค้า</span><strong id="productDbIn">-</strong></div>
-      <div class="product-db-stat"><span>สินค้าหมด</span><strong id="productDbOut">-</strong></div>
-      <div class="product-db-stat"><span>ซ่อน</span><strong id="productDbHidden">-</strong></div>
-    </div>
-    <div class="product-db-note">สถานะสินค้าเก็บแยกจาก Google Sheet Sync · ถ้าไม่มี Override ระบบถือว่า “มีสินค้า”</div>
-    <div id="productDbMsg" class="product-db-msg"></div>
-    <div id="productDbRows"></div>`;
-  const status=document.querySelector("#productDbStatus");status.value=productDbStatus;
-  document.querySelector("#productDbCategory").onchange=e=>{productDbCategory=e.target.value;refreshProductDbRows()};
-  status.onchange=e=>{productDbStatus=e.target.value;refreshProductDbRows()};
-  document.querySelector("#productDbSearch").oninput=e=>{productDbSearch=e.target.value;clearTimeout(productDbTimer);productDbTimer=setTimeout(refreshProductDbRows,180)};
-  document.querySelector("#productDbRefresh").onclick=refreshProductDbRows;
-  await refreshProductDbRows();
-}
+async function renderProductDatabaseView(){title.textContent="ฐานข้อมูลสินค้า";subtitle.textContent="Sync ฐานข้อมูลจาก Google Sheet · ตรวจราคา · จัดการสถานะสินค้า";content.innerHTML='<div class="panel"><div class="product-db-empty">กำลังเชื่อม Product Database...</div></div>';try{await Promise.all([loadProductDbCategories(),loadProductDbSyncStatus()])}catch(e){content.innerHTML=`<div class="panel"><div class="product-db-empty">เชื่อม Product Database ไม่สำเร็จ<br><small>${esc(e.message)}</small></div></div>`;return}content.innerHTML=`
+  <div class="pdb-syncbar"><div><div class="pdb-sync-title"><span class="pdb-sync-state"><span class="pdb-dot"></span> Product Database พร้อมใช้งาน</span></div><div class="pdb-sync-meta">Sync ล่าสุด: <b id="productDbLastSync">${productSyncTimeText(productDbSyncInfo.last_successful_sync_at)}</b> · Google Sheet → Supabase</div></div><button class="pdb-sync-btn" id="productDbSync">↻ Sync จาก Google Sheet</button><button class="secondary pdb-refresh-btn" id="productDbRefreshTop">รีเฟรชข้อมูล</button></div>
+  <div class="product-db-toolbar"><input id="productDbSearch" placeholder="ค้นหา รุ่น / แบรนด์" value="${esc(productDbSearch)}"><select id="productDbCategory">${productDbCategories.map(c=>`<option value="${esc(c.sheet_tab)}" ${c.sheet_tab===productDbCategory?"selected":""}>${esc(c.title_th||c.title_en||c.sheet_tab)}</option>`).join("")}</select><select id="productDbStatus"><option value="ALL">ทุกสถานะ</option><option value="IN_STOCK">มีสินค้า</option><option value="OUT_OF_STOCK">สินค้าหมด</option><option value="HIDDEN">ซ่อน</option></select><button class="secondary" id="productDbRefresh">รีเฟรช</button></div>
+  <div class="product-db-summary"><div class="product-db-stat"><span>สินค้าทั้งหมด</span><strong id="productDbTotal">-</strong></div><div class="product-db-stat"><span>มีสินค้า</span><strong id="productDbIn">-</strong></div><div class="product-db-stat"><span>สินค้าหมด</span><strong id="productDbOut">-</strong></div><div class="product-db-stat"><span>ซ่อน</span><strong id="productDbHidden">-</strong></div></div>
+  <div class="product-db-note">Stock Override แยกจาก Google Sheet Sync · การ Sync ใหม่จะไม่ล้างสถานะสินค้าหมด</div><div id="productDbMsg" class="product-db-msg"></div><div id="productDbRows"></div>`;
+  const status=document.querySelector("#productDbStatus");status.value=productDbStatus;document.querySelector("#productDbCategory").onchange=e=>{productDbCategory=e.target.value;refreshProductDbRows()};status.onchange=e=>{productDbStatus=e.target.value;refreshProductDbRows()};document.querySelector("#productDbSearch").oninput=e=>{productDbSearch=e.target.value;clearTimeout(productDbTimer);productDbTimer=setTimeout(refreshProductDbRows,180)};document.querySelector("#productDbRefresh").onclick=refreshProductDbRows;document.querySelector("#productDbRefreshTop").onclick=refreshProductDbRows;document.querySelector("#productDbSync").onclick=syncProductDatabase;await refreshProductDbRows()}
 
 function ensureProductDbNav(){
   const nav=document.querySelector("aside nav");

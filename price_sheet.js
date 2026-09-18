@@ -1180,7 +1180,7 @@ function ensureStockFrontendStyles_() {
     .stockOutRow td{opacity:.78}
     .stockOutRow .model{opacity:.9}
     .stockOutRow .priceValue{opacity:.78}
-    .retailStockBadge{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;padding:3px 7px;border-radius:999px;background:#3a2b08;border:1px solid #7b5b08;color:#ffd84d;font-size:9px;font-weight:950;line-height:1.2;vertical-align:middle;white-space:nowrap}
+    .retailStockBadge{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;padding:3px 7px;border-radius:999px;background:#3b1014;border:1px solid #9f2936;color:#ff6675;font-size:9px;font-weight:950;line-height:1.2;vertical-align:middle;white-space:nowrap}
     @media(max-width:600px){.retailStockBadge{margin-left:6px;padding:3px 6px;font-size:8px}}
   `;
   document.head.appendChild(st);

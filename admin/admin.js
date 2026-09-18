@@ -1642,21 +1642,23 @@ async function renderAnalyticsView(days=30,force=false){
   const st=document.createElement("style");
   st.id="productDbAdminStyle";
   st.textContent=`
-    .product-db-toolbar{display:grid;grid-template-columns:minmax(240px,1.2fr) minmax(180px,.7fr) minmax(150px,.55fr) auto;gap:8px;margin-bottom:12px}
-    .product-db-toolbar input,.product-db-toolbar select{width:100%;min-height:42px;border:1px solid #dfe3e8;border-radius:12px;padding:0 12px;background:#fff}
-    .product-db-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
-    .product-db-stat{border:1px solid #eceef1;border-radius:14px;padding:13px;background:#fff}
-    .product-db-stat span{display:block;color:#7c8490;font-size:10px;font-weight:850}.product-db-stat strong{display:block;font-size:24px;margin-top:6px}
-    .product-db-list{display:grid;gap:8px}.product-db-row{display:grid;grid-template-columns:54px minmax(220px,1fr) 120px 130px;gap:12px;align-items:center;border:1px solid #e8eaed;border-radius:14px;padding:10px 12px;background:#fff}
-    .product-db-thumb{width:50px;height:50px;border-radius:11px;background:#f2f3f5;overflow:hidden;display:grid;place-items:center}.product-db-thumb img{width:100%;height:100%;object-fit:contain}
-    .product-db-main{min-width:0}.product-db-main b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-db-main small{display:block;color:#7d8590;font-size:10px;margin-top:4px;line-height:1.45}
-    .product-db-price{text-align:right;font-size:13px;font-weight:900}.product-db-status{text-align:center}
-    .stock-pill{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900}.stock-pill.in{background:#e9f8ef;color:#16814b}.stock-pill.out{background:#fff0d5;color:#9a5c00}.stock-pill.hidden{background:#ffe9e7;color:#b42318}
-    .stock-toggle{min-height:36px;min-width:112px}.product-db-empty{padding:30px;text-align:center;color:#858c96;border:1px dashed #dfe3e8;border-radius:14px;background:#fff}
-    .product-db-note{font-size:10px;color:#7c8490;margin:-4px 0 12px}.product-db-msg{font-size:11px;font-weight:800;min-height:18px;margin-bottom:8px}.product-db-msg.ok{color:#16814b}.product-db-msg.bad{color:#b42318}
-    @media(max-width:900px){.product-db-toolbar{grid-template-columns:1fr 1fr}.product-db-summary{grid-template-columns:repeat(2,1fr)}.product-db-row{grid-template-columns:48px minmax(0,1fr) 90px}.product-db-status{grid-column:2/-1;text-align:left}.product-db-price{text-align:right}}
-    @media(max-width:600px){.product-db-toolbar{grid-template-columns:1fr}.product-db-row{grid-template-columns:44px minmax(0,1fr)}.product-db-price{grid-column:2;text-align:left}.product-db-status{grid-column:2}.product-db-summary{grid-template-columns:repeat(2,1fr)}}
-  `;
+    .product-db-toolbar{display:grid;grid-template-columns:minmax(260px,1.25fr) minmax(180px,.7fr) minmax(150px,.55fr) auto;gap:8px;margin-bottom:10px;position:sticky;top:0;z-index:4;background:#f6f7f9;padding:8px 0}
+    .product-db-toolbar input,.product-db-toolbar select{width:100%;height:40px;border:1px solid #dfe3e8;border-radius:10px;padding:0 12px;background:#fff;font-size:12px}
+    .product-db-toolbar button{height:40px;white-space:nowrap}
+    .product-db-summary{display:flex;gap:8px;margin-bottom:8px;overflow:auto;padding-bottom:2px}
+    .product-db-stat{min-width:118px;flex:1;border:1px solid #eceef1;border-radius:11px;padding:8px 11px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .product-db-stat span{color:#7c8490;font-size:9px;font-weight:850;white-space:nowrap}.product-db-stat strong{font-size:18px;line-height:1;margin:0}
+    .product-db-note{font-size:9px;color:#7c8490;margin:0 0 8px}.product-db-msg{font-size:10px;font-weight:850;min-height:16px;margin:0 0 6px}.product-db-msg.ok{color:#16814b}.product-db-msg.bad{color:#b42318}
+    .product-db-list{display:grid;gap:4px}.product-db-row{display:grid;grid-template-columns:38px minmax(220px,1fr) 92px 90px 112px;gap:9px;align-items:center;border:1px solid #e8eaed;border-radius:10px;padding:6px 9px;background:#fff;min-height:50px;transition:.15s ease}
+    .product-db-row:hover{border-color:#d4d8de;box-shadow:0 2px 8px rgba(16,24,40,.04)}.product-db-row.is-out{background:#fffaf1;border-color:#f3dfb8}
+    .product-db-thumb{width:36px;height:36px;border-radius:8px;background:#f2f3f5;overflow:hidden;display:grid;place-items:center}.product-db-thumb img{width:100%;height:100%;object-fit:contain}
+    .product-db-main{min-width:0}.product-db-main b{display:block;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.product-db-main small{display:block;color:#8a919b;font-size:9px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .product-db-price{text-align:right;font-size:12px;font-weight:950;white-space:nowrap}.product-db-status{text-align:center;white-space:nowrap}.product-db-action{text-align:right}
+    .stock-pill{display:inline-flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;white-space:nowrap}.stock-pill.in{background:#e9f8ef;color:#16814b}.stock-pill.out{background:#fff0d5;color:#9a5c00}.stock-pill.hidden{background:#ffe9e7;color:#b42318}
+    .stock-toggle{height:32px;min-width:104px;padding:0 9px;border-radius:8px;font-size:10px;white-space:nowrap}.product-db-row.is-out .stock-toggle{background:#fff;border-color:#e7c98f}
+    .product-db-empty{padding:24px;text-align:center;color:#858c96;border:1px dashed #dfe3e8;border-radius:12px;background:#fff}
+    @media(max-width:900px){.product-db-toolbar{grid-template-columns:1fr 1fr}.product-db-row{grid-template-columns:36px minmax(0,1fr) 80px 86px}.product-db-action{grid-column:2/-1;text-align:right}.product-db-summary{display:grid;grid-template-columns:repeat(2,1fr)}.product-db-stat{min-width:0}}
+    @media(max-width:600px){.product-db-toolbar{grid-template-columns:1fr;position:static;padding-top:0}.product-db-summary{grid-template-columns:repeat(2,1fr)}.product-db-row{grid-template-columns:34px minmax(0,1fr) auto;padding:7px 8px}.product-db-thumb{width:32px;height:32px}.product-db-price{grid-column:3;grid-row:1;text-align:right}.product-db-status{grid-column:2;grid-row:2;text-align:left}.product-db-action{grid-column:3;grid-row:2}.stock-toggle{min-width:88px;height:30px;font-size:9px}}  `;
   document.head.appendChild(st);
 })();
 
@@ -1755,11 +1757,12 @@ async function setProductStock(row,status){
 
 function productDbRowsHtml(rows){
   if(!rows.length)return '<div class="product-db-empty">ไม่พบสินค้าในเงื่อนไขนี้</div>';
-  return `<div class="product-db-list">${rows.map((r,i)=>`<div class="product-db-row" data-i="${i}">
+  return `<div class="product-db-list">${rows.map((r,i)=>`<div class="product-db-row ${r.stock_status==="OUT_OF_STOCK"?"is-out":""}" data-i="${i}">
     <div class="product-db-thumb">${r.image_url?`<img src="${esc(r.image_url)}" alt="">`:""}</div>
     <div class="product-db-main"><b>${esc(r.model||"-")}</b><small>${esc(r.brand||"ไม่ระบุแบรนด์")} · ${esc(r.category_sheet_tab||"")}</small></div>
     <div class="product-db-price">${productPrice(r.retail_price)}</div>
-    <div class="product-db-status">${productStockLabel(r.stock_status)} <button class="secondary stock-toggle" data-i="${i}" data-next="${r.stock_status==="OUT_OF_STOCK"?"IN_STOCK":"OUT_OF_STOCK"}">${r.stock_status==="OUT_OF_STOCK"?"✓ มีสินค้า":"ตั้งว่าสินค้าหมด"}</button></div>
+    <div class="product-db-status">${productStockLabel(r.stock_status)}</div>
+    <div class="product-db-action"><button class="secondary stock-toggle" data-i="${i}" data-next="${r.stock_status==="OUT_OF_STOCK"?"IN_STOCK":"OUT_OF_STOCK"}">${r.stock_status==="OUT_OF_STOCK"?"✓ มีสินค้า":"สินค้าหมด"}</button></div>
   </div>`).join("")}</div>`;
 }
 

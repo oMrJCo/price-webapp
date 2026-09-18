@@ -1223,16 +1223,46 @@ function renderTable(rows, brandImageMap) {
 
 
 async function loadCategoriesCached_() {
-  const cacheKey = "leeplus_speed_categories_v1";
+  // Supabase-first category metadata. Apps Script remains rollback only.
+  const cacheKey = "leeplus_supabase_categories_v1";
   let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
-  if (!Array.isArray(items)) {
+  if (Array.isArray(items)) return items;
+
+  try {
+    const grant = await getCatalogGrant_();
+    const headers = grant ? { "X-Catalog-Grant": grant } : {};
+    const r = await fetch(SUPABASE_CATALOG_API, { headers, cache: "no-store" });
+    if (!r.ok) throw new Error(`Supabase categories ${r.status}`);
+    const j = await r.json();
+    if (!j?.success || !Array.isArray(j?.categories)) throw new Error("Invalid Supabase categories response");
+
+    items = j.categories.map(c => ({
+      id: c.id,
+      sheetTab: String(c.sheet_tab || ""),
+      sheet_tab: String(c.sheet_tab || ""),
+      titleTH: String(c.title_th || ""),
+      titleEN: String(c.title_en || ""),
+      categoryType: String(c.category_type || "PRICE"),
+      category_type: String(c.category_type || "PRICE"),
+      dealerEnabled: Boolean(c.dealer_enabled),
+      sort: Number(c.sort_order || 0),
+      image: String(c.image_url || ""),
+      image_url: String(c.image_url || ""),
+      pdf_url: String(c.pdf_url || ""),
+      price_url: String(c.price_url || "")
+    }));
+    return speedCacheSet_(cacheKey, items);
+  } catch (edgeError) {
+    console.warn("Supabase categories failed; using legacy categories fallback:", edgeError);
+    const legacyKey = "leeplus_speed_categories_v1";
+    const legacyCached = speedCacheGet_(legacyKey, SPEED_CACHE.categories);
+    if (Array.isArray(legacyCached)) return legacyCached;
     const r = await fetch(`${API_URL}?action=categories`);
     if (!r.ok) throw new Error(`categories api ${r.status}`);
     const j = await r.json();
     items = Array.isArray(j.data) ? j.data : [];
-    speedCacheSet_(cacheKey, items);
+    return speedCacheSet_(legacyKey, items);
   }
-  return items;
 }
 
 async function loadCategoryByTab(tab) {
@@ -1315,10 +1345,11 @@ function applyCategoryThumb(categoryImageUrl) {
   el("pageTitle") && (el("pageTitle").textContent = tab);
 
 
-  const [meta, categoryRecord] = await Promise.all([
-    loadMetaConfig(),
-    loadCategoryByTab(tab)
-  ]);
+  // Category metadata now comes from Supabase. PRICE images/brand metadata are
+  // already carried in the synced category/catalog snapshot, so Apps Script meta
+  // is no longer on the normal page-load critical path.
+  const categoryRecord = await loadCategoryByTab(tab);
+  const meta = { category: {}, brand: {} };
   const categoryType = String(categoryRecord?.categoryType || "PRICE").trim().toUpperCase();
 
   if (categoryType === "VISUAL_CATALOG") {

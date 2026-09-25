@@ -20,6 +20,164 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const grid = document.getElementById("categoriesGrid");
 
+  // ===== Global Search 01 — Home / all PRICE categories =====
+  const GLOBAL_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/catalog-api";
+  const STORE_TOKEN_KEY = "leeplus_store_access_token";
+  const CATALOG_GRANT_CACHE_KEY = "leeplus_catalog_grant_v1";
+  let globalSearchTimer = null;
+  let globalSearchSeq = 0;
+
+  function escHtml(v){
+    return String(v ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  }
+
+  function money(v){
+    const n = Number(v);
+    if(!Number.isFinite(n)) return "";
+    return new Intl.NumberFormat("th-TH", {maximumFractionDigits:2}).format(n) + " บาท";
+  }
+
+  async function getCatalogGrant(){
+    let storeToken = "";
+    try{ storeToken = localStorage.getItem(STORE_TOKEN_KEY) || ""; }catch(_){ }
+    if(!storeToken) return "";
+    try{
+      const cached = JSON.parse(sessionStorage.getItem(CATALOG_GRANT_CACHE_KEY) || "null");
+      const now = Math.floor(Date.now()/1000);
+      if(cached?.catalogGrant && Number(cached?.catalogGrantExp || 0) > now + 45) return cached.catalogGrant;
+    }catch(_){ }
+    try{
+      const r = await fetch(API_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({action:"catalogGrant", token:storeToken})
+      });
+      const j = await r.json();
+      if(j?.success && j?.authorized && j?.catalogGrant){
+        try{ sessionStorage.setItem(CATALOG_GRANT_CACHE_KEY, JSON.stringify({catalogGrant:j.catalogGrant,catalogGrantExp:Number(j.catalogGrantExp||0)})); }catch(_){ }
+        return j.catalogGrant;
+      }
+    }catch(e){ console.warn("Global Search grant unavailable", e); }
+    return "";
+  }
+
+  function setupGlobalSearch(){
+    const section = document.querySelector(".price-section-heading");
+    if(!section || document.getElementById("globalSearchBox")) return;
+
+    const style = document.createElement("style");
+    style.id = "globalSearchStyle";
+    style.textContent = `
+      .global-search{margin:0 0 22px;padding:14px;border:1px solid rgba(255,255,255,.09);border-radius:20px;background:#0d1119;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+      .global-search-input-wrap{height:58px;display:flex;align-items:center;gap:12px;padding:0 16px;border:1px solid rgba(255,255,255,.12);border-radius:15px;background:#090c12;transition:.18s ease}
+      .global-search-input-wrap:focus-within{border-color:rgba(243,201,0,.72);box-shadow:0 0 0 3px rgba(243,201,0,.08)}
+      .global-search-icon{width:20px;height:20px;flex:0 0 20px;color:#8f98a7}.global-search-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2}
+      #globalSearchInput{width:100%;height:100%;border:0;outline:0;background:transparent;color:#fff;font:800 15px/1 system-ui,-apple-system,sans-serif}
+      #globalSearchInput::placeholder{color:#697282;font-weight:650}
+      .global-search-clear{width:34px;height:34px;flex:0 0 34px;border:0;border-radius:50%;background:transparent;color:#5576ad;font-size:22px;font-weight:900;cursor:pointer;display:none}
+      .global-search-hint{margin:9px 3px 0;color:#6f7887;font-size:10px}.global-search-hint b{color:#aeb6c2}
+      .global-search-results{display:none;margin-top:14px}.global-search-results.show{display:block}
+      .global-search-summary{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:0 2px 10px;color:#8f98a7;font-size:10px}.global-search-summary b{color:#f3c900}
+      .global-search-group{margin-top:12px}.global-search-group-title{display:flex;align-items:center;gap:8px;margin:0 2px 7px;color:#f3c900;font-size:11px;font-weight:950;letter-spacing:.25px}.global-search-group-title span{color:#6f7887;font-size:9px;font-weight:750}
+      .global-search-row{min-height:54px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;margin:7px 0;padding:10px 14px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:linear-gradient(180deg,#101620,#0d121a);color:#fff;text-decoration:none;transition:.16s ease}
+      .global-search-row:hover{border-color:rgba(243,201,0,.42);transform:translateY(-1px)}
+      .global-search-main{min-width:0}.global-search-model{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.global-search-meta{margin-top:3px;color:#737d8d;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .global-search-right{display:flex;align-items:center;gap:9px;white-space:nowrap}.global-search-price{color:#ffe100;font-size:15px;font-weight:950}.global-search-lock{color:#7d8795;font-size:10px;font-weight:800}.global-search-stock{padding:4px 7px;border:1px solid rgba(239,68,68,.35);border-radius:999px;background:rgba(239,68,68,.10);color:#ff8d8d;font-size:8px;font-weight:950}
+      .global-search-empty,.global-search-loading{padding:18px 12px;text-align:center;color:#7d8795;font-size:11px}
+      body.global-search-active .price-section-heading,body.global-search-active #categoriesGrid{display:none!important}
+      @media(max-width:640px){.global-search{margin-bottom:16px;padding:10px;border-radius:16px}.global-search-input-wrap{height:52px;padding:0 12px;border-radius:12px}#globalSearchInput{font-size:14px}.global-search-row{padding:10px 11px;gap:8px}.global-search-model{font-size:12px}.global-search-price{font-size:13px}.global-search-right{gap:6px}}
+    `;
+    document.head.appendChild(style);
+
+    const box = document.createElement("section");
+    box.id = "globalSearchBox";
+    box.className = "global-search";
+    box.setAttribute("aria-label", "ค้นหาสินค้าทุกหมวด");
+    box.innerHTML = `<div class="global-search-input-wrap"><span class="global-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span><input id="globalSearchInput" type="search" autocomplete="off" enterkeyhint="search" placeholder="ค้นหาทุกหมวด เช่น iPhone 15 / Pro Max / A57 / Spark..." aria-label="ค้นหาสินค้าทุกหมวด"><button id="globalSearchClear" class="global-search-clear" type="button" aria-label="ล้างคำค้น">×</button></div><div class="global-search-hint">ค้นหาได้ตั้งแต่ <b>2 ตัวอักษร</b> · ไม่ต้องพิมพ์ชื่อเต็ม · ค้นหาทุกหมวดพร้อมกัน</div><div id="globalSearchResults" class="global-search-results" aria-live="polite"></div>`;
+    section.parentNode.insertBefore(box, section);
+
+    const input = box.querySelector("#globalSearchInput");
+    const clear = box.querySelector("#globalSearchClear");
+    const results = box.querySelector("#globalSearchResults");
+
+    function reset(){
+      if(globalSearchTimer) clearTimeout(globalSearchTimer);
+      globalSearchSeq++;
+      input.value = "";
+      clear.style.display = "none";
+      results.className = "global-search-results";
+      results.innerHTML = "";
+      document.body.classList.remove("global-search-active");
+      input.focus();
+    }
+
+    clear.addEventListener("click", reset);
+    input.addEventListener("input", () => {
+      const q = input.value.trim();
+      clear.style.display = q ? "block" : "none";
+      if(globalSearchTimer) clearTimeout(globalSearchTimer);
+      if(q.length < 2){
+        globalSearchSeq++;
+        results.className = "global-search-results";
+        results.innerHTML = "";
+        document.body.classList.remove("global-search-active");
+        return;
+      }
+      document.body.classList.add("global-search-active");
+      results.className = "global-search-results show";
+      results.innerHTML = `<div class="global-search-loading">กำลังค้นหา...</div>`;
+      globalSearchTimer = setTimeout(() => runGlobalSearch(q, input, results), 300);
+    });
+  }
+
+  async function runGlobalSearch(q, input, results){
+    const seq = ++globalSearchSeq;
+    try{
+      const grant = await getCatalogGrant();
+      const headers = grant ? {"X-Catalog-Grant":grant} : {};
+      const r = await fetch(`${GLOBAL_CATALOG_API}?search=${encodeURIComponent(q)}&limit=60`, {headers, cache:"no-store"});
+      const j = await r.json();
+      if(seq !== globalSearchSeq || input.value.trim() !== q) return;
+      if(!r.ok || !j?.success) throw new Error(j?.error || `HTTP ${r.status}`);
+
+      const rows = Array.isArray(j.rows) ? j.rows : [];
+      if(!rows.length){
+        results.innerHTML = `<div class="global-search-empty">ไม่พบสินค้าที่ตรงกับ “${escHtml(q)}”</div>`;
+        return;
+      }
+      const groups = new Map();
+      rows.forEach(row => {
+        const key = row.category?.sheet_tab || row.category_sheet_tab || "อื่น ๆ";
+        if(!groups.has(key)) groups.set(key, {category:row.category || {sheet_tab:key,title_th:key,title_en:""}, rows:[]});
+        groups.get(key).rows.push(row);
+      });
+      const authorized = j.access === "RETAIL";
+      const html = [`<div class="global-search-summary"><span>พบ <b>${Number(j.count || rows.length).toLocaleString("th-TH")}</b> รายการ${j.total_count > rows.length ? ` · แสดง ${rows.length} รายการแรก` : ""}</span><span>${authorized ? "ราคาปลีก" : "เข้าสู่ระบบร้านค้าเพื่อดูราคา"}</span></div>`];
+      for(const group of groups.values()){
+        const c = group.category || {};
+        const title = c.title_th || c.title_en || c.sheet_tab || "สินค้า";
+        html.push(`<div class="global-search-group"><div class="global-search-group-title">${escHtml(title)} <span>${group.rows.length} รายการ</span></div>`);
+        for(const row of group.rows){
+          const href = buildPriceSheetUrlFromTab(c.sheet_tab || row.category_sheet_tab || "");
+          const brand = String(row.brand || "").trim();
+          const model = String(row.model || "").trim();
+          const name = model || brand || "สินค้า";
+          const meta = [brand && brand !== name ? brand : "", c.title_en || c.sheet_tab || ""].filter(Boolean).join(" · ");
+          const stock = String(row.stock_status || "IN_STOCK").toUpperCase();
+          html.push(`<a class="global-search-row" href="${escHtml(href)}"><div class="global-search-main"><div class="global-search-model">${escHtml(name)}</div><div class="global-search-meta">${escHtml(meta)}</div></div><div class="global-search-right">${stock === "OUT_OF_STOCK" ? '<span class="global-search-stock">สินค้าหมด</span>' : ""}${authorized && row.retail_price !== null && row.retail_price !== undefined && row.retail_price !== "" ? `<span class="global-search-price">${escHtml(money(row.retail_price))}</span>` : '<span class="global-search-lock">ดูราคาเมื่อเข้าสู่ระบบ</span>'}</div></a>`);
+        }
+        html.push(`</div>`);
+      }
+      results.innerHTML = html.join("");
+    }catch(e){
+      console.error("Global Search failed", e);
+      if(seq !== globalSearchSeq) return;
+      results.innerHTML = `<div class="global-search-empty">ค้นหาไม่สำเร็จ กรุณาลองอีกครั้ง</div>`;
+    }
+  }
+
+  setupGlobalSearch();
+
   const API_URL =
     "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
 

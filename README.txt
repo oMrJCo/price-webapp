@@ -1,12 +1,15 @@
-LEEPLUS Visual Catalog — NEW Badge + Color Fix 01
+LEEPLUS Global Search 01.1 — UI Highlight
 
-แก้เฉพาะ price_sheet.js
+แก้เฉพาะ app.js ฝั่งหน้า Home
+- Search เด่นขึ้นด้วยกรอบ/พื้นเหลืองทองแบบบาง ๆ ตาม CI เหลือง-ดำ
+- Focus glow ชัดขึ้น แต่ไม่ทำช่องเหลืองทั้งก้อน
+- ไอคอน Search เป็นสีเหลือง
+- ปุ่มล้างคำค้นเหลือ × ตัวเดียว โดยซ่อน native search cancel ของ browser
+- ไม่แก้ Global Search API / Engine
+- ไม่แก้ Store Access / Login
+- ไม่แก้ Search ในหน้าหมวด
 
-1) VISUAL_CATALOG: ชื่อรุ่นที่มี NEW หรือ (NEW) จะแสดงเป็น badge แบบเดียวกับหน้าราคาปกติ
-2) เพิ่มสีสำหรับสีใหม่: Burgundy / เบอร์กันดี, Star White, Glacier, Night Sky
-3) ไม่แตะ Store Access, Analytics, Dealer, Contact/Popup หรือ Pretty URL routing
-
-วิธีใช้:
-- นำ price_sheet.js ไปทับไฟล์เดิม
-- Commit/Deploy
-- Hard refresh หน้าเว็บ (Ctrl+F5) แล้วทดสอบ i18 Pro / Pro Max / Pro DUO
+ติดตั้ง:
+1) นำ app.js ไปทับ Production app.js
+2) Commit/Deploy
+3) Hard Refresh หน้า Home

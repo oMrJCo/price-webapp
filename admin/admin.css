@@ -165,3 +165,21 @@
 .bill-line > .bill-name-wrap > .bill-suggestions.hidden{display:none}
 .bill-line > .bill-name-wrap > .bill-suggestions .bill-suggest{box-sizing:border-box;max-width:100%}
 @media(max-width:800px){.bill-line > .bill-name-wrap > .bill-suggestions{max-height:280px}}
+
+
+/* Billing v1.8 — separate product search + direct manual rows */
+.bill-product-search{border:1px solid #e4e7eb;border-radius:14px;background:#fbfcfd;padding:12px;position:relative}
+.bill-product-search-head{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;align-items:end}
+.bill-product-search-head label{font-size:10px;font-weight:850;color:#606873}
+.bill-product-search-head input,.bill-product-search-head select{width:100%;height:42px;border:1px solid #dfe3e8;border-radius:10px;padding:0 11px;background:#fff;margin-top:5px}
+.bill-search-caption{font-size:10px;color:#7b8490;margin:7px 2px 0}
+.bill-search-results{margin-top:9px;border:1px solid #dfe3e8;border-radius:12px;background:#fff;max-height:430px;overflow:auto;box-shadow:0 10px 26px rgba(17,24,39,.08)}
+.bill-search-results.hidden{display:none}
+.bill-search-group+.bill-search-group{border-top:1px solid #e8ebef}
+.bill-search-group-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#fff7cf;border-bottom:1px solid #f2e4a4;font-size:10px}
+.bill-search-group-head b{color:#806600}.bill-search-group-head span{color:#7b8490}
+.bill-search-result{display:grid;grid-template-columns:minmax(0,1fr) 190px 66px;gap:10px;align-items:center;padding:9px 10px;border-bottom:1px solid #eef0f3}
+.bill-search-result:last-child{border-bottom:0}.bill-search-main b{display:block;font-size:11px}.bill-search-main small{display:block;color:#858c96;font-size:9px;margin-top:2px}.bill-stock-out{color:#b42318}.bill-search-prices{display:grid;grid-template-columns:1fr;gap:2px;text-align:right;font-size:9px;color:#69717c}.bill-search-prices b{color:#111827}.bill-search-add{height:34px;padding:0 12px}
+.bill-search-empty{padding:20px;text-align:center;color:#858c96}
+.bill-fixed-name,.bill-manual-name{min-width:0}.bill-fixed-name b{display:block;font-size:11px}.bill-fixed-name small,.bill-manual-name small{display:block;color:#858c96;font-size:9px;margin-top:3px}.bill-manual-name .bill-name{width:100%;height:38px;border:1px solid #dfe3e8;border-radius:8px;padding:0 10px;font-weight:700}.bill-items-empty{padding:18px;text-align:center;color:#858c96;border:1px dashed #dfe3e8;border-radius:10px;margin-bottom:7px}
+@media(max-width:800px){.bill-product-search-head{grid-template-columns:1fr}.bill-search-result{grid-template-columns:minmax(0,1fr) 92px 58px}.bill-search-prices span:first-child{display:block}.bill-search-prices{font-size:8px}.bill-search-add{padding:0 8px}.bill-fixed-name,.bill-manual-name{grid-column:1/-1}}

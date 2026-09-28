@@ -1,16 +1,13 @@
-LEEPLUS Billing v1.7 Search/Dropdown Fix
+LEEPLUS Backoffice Billing v1.8
 
-ทับเฉพาะ:
-- /admin/admin.js
-- /admin/admin.css
-
+แก้เฉพาะ admin.js + admin.css
 ห้ามทับ index.html
-ไม่แก้ Code.gs / Apps Script / SQL
+ไม่ต้องแก้ Code.gs / Apps Script / SQL
 
-แก้:
-- port matching behavior จาก Frontend production: compact substring + token matching
-- ค้น Brand + Model + Category ทุก PRICE category
-- preload ALL stock statuses แต่ไม่แสดง HIDDEN
-- OUT_OF_STOCK ยังเห็นพร้อมสถานะ
-- dropdown ผูกกับแถวสินค้า, จำกัดความกว้าง/ความสูง, scroll
-- dropdown ปิดหลังเลือก / click outside / Esc และเปิดทีละอัน
+เปลี่ยน UX:
+- ช่องค้นสินค้าแยกด้านบน
+- ค่าเริ่มต้นค้นหาทุกหมวด + เลือกหมวดได้
+- ผลค้นหาแยกตามหมวด กด เพิ่ม แล้วสร้างบรรทัดในบิลทันที
+- สินค้านอกรายการกด + สินค้านอกรายการ แล้วพิมพ์ชื่อได้ทันที ไม่มี dropdown
+- รายการในบิลแก้จำนวนและราคาต่อหน่วยได้
+- PDF/Print ออกแบบ A4 ใหม่พร้อมเลขบิล ลูกค้า รายการ สรุปยอด หมายเหตุ

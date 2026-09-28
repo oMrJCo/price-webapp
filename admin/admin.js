@@ -1784,8 +1784,10 @@ function renderBillSearchResults(){
     if(!r)return;
     const price=billDraft.price_type==="DEALER"?r.dealer_price:r.retail_price;
     billDraft.items.push({source:"SYSTEM",name:r.model||"-",brand:r.brand||"",category:r.category_sheet_tab||"",qty:1,unit_price:Number(String(price||0).replace(/,/g,""))||0,product_key:key});
-    renderBillItems();renderBillSummary();
-    btn.textContent="เพิ่มแล้ว";setTimeout(()=>btn.textContent="เพิ่ม",650);
+    const addedIndex=billDraft.items.length-1;
+    renderBillItems(addedIndex);renderBillSummary();
+    btn.textContent="✓ เพิ่มแล้ว";btn.classList.add("is-added");
+    setTimeout(()=>{if(btn.isConnected){btn.textContent="เพิ่ม";btn.classList.remove("is-added")}},800);
   });
 }
 function bindBillProductSearch(){
@@ -1840,7 +1842,13 @@ function renderBillItems(focusIndex=-1){
     row.querySelector(".bill-remove").onclick=()=>{billDraft.items.splice(i,1);renderBillItems();renderBillSummary()};
   });
   document.querySelector("#billAddRow").onclick=()=>addBillRow();
-  if(focusIndex>=0)setTimeout(()=>box.querySelector(`.bill-line[data-i="${focusIndex}"] .bill-name`)?.focus(),0);
+  if(focusIndex>=0)setTimeout(()=>{
+    const row=box.querySelector(`.bill-line[data-i="${focusIndex}"]`);
+    if(!row)return;
+    row.classList.add("bill-line-added");
+    row.querySelector(".bill-name")?.focus();
+    setTimeout(()=>row.classList.remove("bill-line-added"),1100);
+  },0);
 }
 function addBillRow(){billDraft.items.push(billBlankItem());renderBillItems(billDraft.items.length-1);renderBillSummary()}
 function renderBillSummary(){const t=billTotals(),box=document.querySelector("#billSummary");if(box)box.innerHTML=`<div><span>รวมสินค้า</span><b>${money(t.subtotal)} ฿</b></div><div><span>ส่วนลด</span><b>- ${money(t.discount)} ฿</b></div><div><span>ค่าจัดส่ง</span><b>${money(t.shipping)} ฿</b></div><div class="total"><span>ยอดสุทธิ</span><strong>${money(t.total)} ฿</strong></div>`}
@@ -1863,13 +1871,120 @@ async function viewBill(id){try{const j=await billApi("adminBillGet",{id});openB
 function openBillDetail(b){document.querySelector("#billDetailOverlay")?.remove();const ov=document.createElement("div");ov.id="billDetailOverlay";ov.className="bill-detail-overlay";ov.innerHTML=`<div class="bill-detail-card"><div class="bill-detail-head"><div><h2>${esc(b.bill_no||"บิล")}</h2><small>${b.created_at?new Date(b.created_at).toLocaleString("th-TH"):""}</small></div><button class="icon-btn" data-close>×</button></div><div class="bill-detail-customer"><b>${esc(b.customer_name||"ลูกค้าทั่วไป")}</b><span>${esc(b.customer_phone||"")}</span></div><div class="bill-detail-items">${(b.items||[]).map(x=>`<div><span><b>${esc(x.name||x.product_name||"-")}</b><small>${esc([x.brand,x.category||x.category_sheet_tab].filter(Boolean).join(" · "))}</small></span><span>${money(x.qty)} × ${money(x.unit_price)}</span><strong>${money(Number(x.qty||0)*Number(x.unit_price||0))} ฿</strong></div>`).join("")}</div><div class="bill-detail-summary"><div><span>รวมสินค้า</span><b>${money(b.subtotal)} ฿</b></div><div><span>ส่วนลด</span><b>${money(b.discount)} ฿</b></div><div><span>ค่าจัดส่ง</span><b>${money(b.shipping)} ฿</b></div><div class="total"><span>ยอดสุทธิ</span><strong>${money(b.total)} ฿</strong></div></div>${b.note?`<div class="bill-detail-note"><b>หมายเหตุ</b><div>${esc(b.note)}</div></div>`:""}<div class="bill-detail-actions"><button class="primary" data-print>พิมพ์ / บันทึก PDF</button><button class="secondary" data-copy>ทำบิลใหม่จากบิลนี้</button><button class="secondary" data-close>ปิด</button></div></div>`;document.body.appendChild(ov);ov.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>ov.remove());ov.onclick=e=>{if(e.target===ov)ov.remove()};ov.querySelector("[data-print]").onclick=()=>printBillData(b);ov.querySelector("[data-copy]").onclick=()=>{billDraft={customer_name:b.customer_name||"",customer_phone:b.customer_phone||"",price_type:b.price_type||"RETAIL",items:(b.items||[]).map(x=>({source:x.source||"EXTERNAL",name:x.name||x.product_name||"",brand:x.brand||"",category:x.category||x.category_sheet_tab||"",qty:Number(x.qty||1),unit_price:Number(x.unit_price||0),product_key:x.product_key||""})),discount:Number(b.discount||0),shipping:Number(b.shipping||0),note:b.note||""};billLastSaved=null;ov.remove();renderBillingView()}}
 async function saveBill(){const msg=document.querySelector("#billMsg");const items=billDraft.items.filter(x=>String(x.name||"").trim());if(!items.length){msg.className="bill-msg bad";msg.textContent="กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ";return}billDraft.customer_name=document.querySelector("#billCustomer").value.trim();billDraft.customer_phone=document.querySelector("#billPhone").value.trim();billDraft.price_type=document.querySelector("#billPriceType").value;billDraft.discount=Math.max(0,Number(document.querySelector("#billDiscount").value||0));billDraft.shipping=Math.max(0,Number(document.querySelector("#billShipping").value||0));billDraft.note=document.querySelector("#billNote").value.trim();msg.className="bill-msg";msg.textContent="กำลังบันทึกบิล...";try{const snapshot={...billDraft,items:items.map(x=>({...x})),...billTotals()};const j=await billApi("adminBillSave",{bill:snapshot});billLastSaved={bill_no:j.bill_no||"",created_at:new Date().toISOString()};msg.className="bill-msg ok";msg.textContent=`บันทึกแล้ว ${j.bill_no||""}`;await loadBillHistory()}catch(e){msg.className="bill-msg bad";msg.textContent="บันทึกไม่สำเร็จ: "+e.message}}
 async function renderBillingView(){
-  title.textContent="เปิดบิล";subtitle.textContent="ค้นหาสินค้า → กดเพิ่มเข้าบิล · สินค้านอกรายการพิมพ์เองได้";
-  content.innerHTML=`<div class="bill-toolbar"><button class="primary" id="billNew">+ บิลใหม่</button><div class="bill-cache-status" id="billCacheStatus">กำลังเตรียมฐานสินค้า...</div><button class="secondary" id="billPrint">พิมพ์ / บันทึก PDF</button><button class="secondary" id="billRefresh">รีเฟรชประวัติ</button></div><div class="bill-grid"><div class="panel"><h2>สร้างบิล</h2><div class="bill-form"><div class="bill-fields"><label class="bill-customer-wrap">ชื่อลูกค้า / ร้านค้า<input id="billCustomer" value="${esc(billDraft.customer_name)}" placeholder="พิมพ์ชื่อลูกค้าเดิมหรือชื่อใหม่"><div id="billCustomerSuggestions" class="bill-customer-suggestions hidden"></div></label><label>เบอร์โทร<input id="billPhone" inputmode="numeric" value="${esc(billDraft.customer_phone)}" placeholder="08xxxxxxxx"></label><label>ประเภทราคา<select id="billPriceType"><option value="RETAIL">ราคาปลีก</option><option value="DEALER">ราคา Dealer</option></select></label></div><div class="bill-product-search"><div class="bill-product-search-head"><label>ค้นหาสินค้า<input id="billProductSearch" autocomplete="off" placeholder="พิมพ์รุ่น / ยี่ห้อ เช่น 11, iphone12, a57 batt"></label><label>หมวดสินค้า<select id="billCategoryFilter"><option value="">ทุกหมวด</option></select></label></div><div class="bill-search-caption" id="billSearchCount">พิมพ์อย่างน้อย 2 ตัวอักษร · เริ่มต้นค้นหาทุกหมวด</div><div id="billSearchResults" class="bill-search-results hidden"></div></div><div id="billItems" class="bill-items"></div><div class="bill-extra"><label>ส่วนลดท้ายบิล<input id="billDiscount" type="number" min="0" step="0.01" value="${esc(billDraft.discount||0)}"></label><label>ค่าจัดส่ง<input id="billShipping" type="number" min="0" step="0.01" value="${esc(billDraft.shipping||0)}"></label><label style="grid-column:1/-1">หมายเหตุ<textarea id="billNote">${esc(billDraft.note||"")}</textarea></label></div><div id="billMsg" class="bill-msg"></div><div class="bill-save-actions"><button class="primary bill-save" id="billSave">บันทึกบิล</button><button class="secondary" id="billPrintBottom">พิมพ์ / บันทึก PDF</button></div></div></div><div><div class="bill-summary" id="billSummary"></div></div></div><div class="panel"><h2>ประวัติบิล</h2><div id="billHistory"></div></div>`;
+  title.textContent="เปิดบิล";subtitle.textContent="ค้นหาสินค้าฝั่งซ้าย · รายการบิลอยู่ฝั่งขวาและเห็นทันที";
+  content.innerHTML=`
+  <div class="bill-v19">
+    <div class="bill-toolbar bill-toolbar-wide">
+      <button class="primary" id="billNew">+ บิลใหม่</button>
+      <div class="bill-cache-status" id="billCacheStatus">กำลังเตรียมฐานสินค้า...</div>
+      <button class="secondary" id="billPrint">พิมพ์ / บันทึก PDF</button>
+      <button class="secondary" id="billRefresh">รีเฟรชประวัติ</button>
+    </div>
+
+    <div class="bill-workspace">
+      <section class="panel bill-left-panel">
+        <div class="bill-section-title"><h2>ข้อมูลลูกค้า</h2></div>
+        <div class="bill-customer-grid">
+          <label class="bill-customer-wrap">ชื่อลูกค้า / ร้านค้า
+            <input id="billCustomer" value="${esc(billDraft.customer_name)}" placeholder="พิมพ์ชื่อลูกค้าเดิมหรือชื่อใหม่">
+            <div id="billCustomerSuggestions" class="bill-customer-suggestions hidden"></div>
+          </label>
+          <label>เบอร์โทร
+            <input id="billPhone" inputmode="numeric" value="${esc(billDraft.customer_phone)}" placeholder="08xxxxxxxx">
+          </label>
+          <label>ประเภทราคา
+            <select id="billPriceType"><option value="RETAIL">ราคาปลีก</option><option value="DEALER">ราคา Dealer</option></select>
+          </label>
+        </div>
+
+        <div class="bill-search-section">
+          <div class="bill-section-title"><h2>ค้นหาสินค้า</h2><span id="billSearchCount">พิมพ์อย่างน้อย 2 ตัวอักษร</span></div>
+          <div class="bill-product-search-head">
+            <label class="bill-search-input-label">ค้นหา
+              <input id="billProductSearch" autocomplete="off" placeholder="รุ่น / ยี่ห้อ เช่น 11, iphone12, a57 batt">
+            </label>
+            <label>หมวดสินค้า
+              <select id="billCategoryFilter"><option value="">ทุกหมวด</option></select>
+            </label>
+          </div>
+          <div id="billSearchResults" class="bill-search-results hidden"></div>
+          <div class="bill-search-help">กด “เพิ่ม” แล้วสินค้าจะเข้าบิลฝั่งขวาทันที</div>
+        </div>
+
+        <div class="bill-left-extra">
+          <label>หมายเหตุ
+            <textarea id="billNote" placeholder="หมายเหตุท้ายบิล">${esc(billDraft.note||"")}</textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel bill-invoice-panel">
+        <div class="bill-invoice-head">
+          <div><h2>Jack Leeplus</h2><small>รายการในบิล</small></div>
+          <div class="bill-live-badge">กำลังเปิดบิล</div>
+        </div>
+
+        <div id="billItems" class="bill-items bill-items-right"></div>
+
+        <div class="bill-invoice-bottom">
+          <div class="bill-money-inputs">
+            <label>ส่วนลดท้ายบิล<input id="billDiscount" type="number" min="0" step="0.01" value="${esc(billDraft.discount||0)}"></label>
+            <label>ค่าจัดส่ง<input id="billShipping" type="number" min="0" step="0.01" value="${esc(billDraft.shipping||0)}"></label>
+          </div>
+          <div class="bill-summary bill-summary-right" id="billSummary"></div>
+        </div>
+
+        <div id="billMsg" class="bill-msg"></div>
+        <div class="bill-save-actions bill-save-actions-wide">
+          <button class="primary bill-save" id="billSave">บันทึกบิล</button>
+          <button class="secondary" id="billPrintBottom">พิมพ์ / บันทึก PDF</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel bill-history-panel">
+      <div class="bill-section-title"><h2>ประวัติบิล</h2><span>ค้นเลขบิล / ชื่อลูกค้า / เบอร์โทร</span></div>
+      <div id="billHistory"></div>
+    </section>
+  </div>`;
+
   document.querySelector("#billPriceType").value=billDraft.price_type;
-  document.querySelector("#billPriceType").onchange=e=>{billDraft.price_type=e.target.value;billDraft.items.forEach(x=>{if(x.source==="SYSTEM"){const r=billProductCache.find(p=>(p.id&&String(p.id)===String(x.product_key))||`${p.category_sheet_tab||""}|${p.brand||""}|${p.model||""}`===x.product_key);if(r){const price=billDraft.price_type==="DEALER"?r.dealer_price:r.retail_price;x.unit_price=Number(String(price||0).replace(/,/g,""))||0}}});renderBillItems();renderBillSummary();renderBillSearchResults()};
-  document.querySelector("#billPhone").oninput=e=>billDraft.customer_phone=e.target.value;document.querySelector("#billDiscount").oninput=e=>{billDraft.discount=Number(e.target.value||0);renderBillSummary()};document.querySelector("#billShipping").oninput=e=>{billDraft.shipping=Number(e.target.value||0);renderBillSummary()};document.querySelector("#billNote").oninput=e=>billDraft.note=e.target.value;document.querySelector("#billSave").onclick=saveBill;document.querySelector("#billRefresh").onclick=loadBillHistory;document.querySelector("#billPrint").onclick=()=>printBillData(currentBillData());document.querySelector("#billPrintBottom").onclick=()=>printBillData(currentBillData());document.querySelector("#billNew").onclick=()=>{if(billDraft.items.some(x=>x.name)&&!confirm("ล้างบิลที่กำลังทำอยู่?"))return;billDraft={customer_name:"",customer_phone:"",price_type:"RETAIL",items:[],discount:0,shipping:0,note:""};billLastSaved=null;renderBillingView()};
+  document.querySelector("#billPriceType").onchange=e=>{
+    billDraft.price_type=e.target.value;
+    billDraft.items.forEach(x=>{
+      if(x.source==="SYSTEM"){
+        const r=billProductCache.find(p=>(p.id&&String(p.id)===String(x.product_key))||`${p.category_sheet_tab||""}|${p.brand||""}|${p.model||""}`===x.product_key);
+        if(r){
+          const price=billDraft.price_type==="DEALER"?r.dealer_price:r.retail_price;
+          x.unit_price=Number(String(price||0).replace(/,/g,""))||0
+        }
+      }
+    });
+    renderBillItems();renderBillSummary();renderBillSearchResults()
+  };
+  document.querySelector("#billPhone").oninput=e=>billDraft.customer_phone=e.target.value;
+  document.querySelector("#billDiscount").oninput=e=>{billDraft.discount=Number(e.target.value||0);renderBillSummary()};
+  document.querySelector("#billShipping").oninput=e=>{billDraft.shipping=Number(e.target.value||0);renderBillSummary()};
+  document.querySelector("#billNote").oninput=e=>billDraft.note=e.target.value;
+  document.querySelector("#billSave").onclick=saveBill;
+  document.querySelector("#billRefresh").onclick=loadBillHistory;
+  document.querySelector("#billPrint").onclick=()=>printBillData(currentBillData());
+  document.querySelector("#billPrintBottom").onclick=()=>printBillData(currentBillData());
+  document.querySelector("#billNew").onclick=()=>{
+    if(billDraft.items.some(x=>x.name)&&!confirm("ล้างบิลที่กำลังทำอยู่?"))return;
+    billDraft={customer_name:"",customer_phone:"",price_type:"RETAIL",items:[],discount:0,shipping:0,note:""};
+    billLastSaved=null;renderBillingView()
+  };
+
   renderBillItems();renderBillSummary();loadBillHistory();bindBillProductSearch();
-  preloadBillProducts().then(rows=>{fillBillCategoryFilter();const el=document.querySelector("#billCacheStatus");if(el)el.textContent=`พร้อมค้นหา ${rows.length.toLocaleString("th-TH")} รายการ / ทุกหมวด`}).catch(e=>{const el=document.querySelector("#billCacheStatus");if(el)el.textContent="โหลดฐานสินค้าไม่สำเร็จ: "+e.message});
+  preloadBillProducts().then(rows=>{
+    fillBillCategoryFilter();
+    const el=document.querySelector("#billCacheStatus");
+    if(el)el.textContent=`พร้อมค้นหา ${rows.length.toLocaleString("th-TH")} รายการ / ทุกหมวด`
+  }).catch(e=>{
+    const el=document.querySelector("#billCacheStatus");
+    if(el)el.textContent="โหลดฐานสินค้าไม่สำเร็จ: "+e.message
+  });
 }
 function ensureBillingNav(){const nav=document.querySelector("aside nav");if(!nav||nav.querySelector('[data-view="billing"]'))return;const btn=document.createElement("button");btn.className="nav";btn.dataset.view="billing";btn.textContent="เปิดบิล";const products=nav.querySelector('[data-view="products"]');const stores=nav.querySelector('[data-view="stores"]');if(stores)nav.insertBefore(btn,stores);else if(products?.nextSibling)nav.insertBefore(btn,products.nextSibling);else nav.appendChild(btn);btn.onclick=()=>render("billing")}
 document.addEventListener("mousedown",e=>{if(!e.target.closest(".bill-customer-wrap"))document.querySelector("#billCustomerSuggestions")?.classList.add("hidden")});

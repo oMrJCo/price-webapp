@@ -1739,13 +1739,56 @@ function money(n){return Number(n||0).toLocaleString("th-TH",{minimumFractionDig
 function billBlankItem(){return {source:"EXTERNAL",name:"",brand:"",category:"",qty:1,unit_price:0,product_key:""}}
 function billTotals(){const subtotal=billDraft.items.reduce((n,x)=>n+(Number(x.qty||0)*Number(x.unit_price||0)),0);const discount=Math.max(0,Number(billDraft.discount||0));const shipping=Math.max(0,Number(billDraft.shipping||0));return {subtotal,discount,shipping,total:Math.max(0,subtotal-discount+shipping)}}
 async function billApi(action,payload={}){const write=["adminBillSave"].includes(action);if(write){const r=await fetch(SHEET_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,adminCode:ADMIN_CODE,...payload}),cache:"no-store"});const j=await r.json();if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);return j}const q=new URLSearchParams({action,adminCode:ADMIN_CODE,...payload,t:String(Date.now())});const r=await fetch(`${SHEET_API}?${q}`,{cache:"no-store"});const j=await r.json();if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);return j}
-function billNorm(v){return String(v||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9ก-๙]+/g," ").trim()}
-function billCompact(v){return billNorm(v).replace(/\s+/g,"")}
-function billSearchScore(r,q){const nq=billNorm(q),cq=billCompact(q);if(!nq)return -1;const tokens=nq.split(/\s+/).filter(Boolean);const model=billNorm(r.model),brand=billNorm(r.brand),cat=billNorm(r.category_sheet_tab),cm=billCompact(r.model),cb=billCompact(r.brand),cc=billCompact(r.category_sheet_tab),all=`${model} ${brand} ${cat}`,compact=`${cm} ${cb} ${cc}`;if(!tokens.every(t=>all.includes(t)||compact.includes(t.replace(/\s/g,""))))return -1;let score=0;if(cm===cq)score+=1400;if(cm.startsWith(cq))score+=900;if(cm.includes(cq))score+=600;if(model===nq)score+=500;if(model.startsWith(nq))score+=350;if(brand.startsWith(nq))score+=100;for(const t of tokens){const ct=t.replace(/\s/g,"");if(cm===ct)score+=180;else if(cm.startsWith(ct))score+=140;else if(cm.includes(ct))score+=100;if(cb.includes(ct))score+=25;if(cc.includes(ct))score+=15}return score}
-function billSearchProducts(q){return billProductCache.map(r=>({r,score:billSearchScore(r,q)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||String(a.r.model||"").localeCompare(String(b.r.model||""),"th")).slice(0,12).map(x=>x.r)}
-async function preloadBillProducts(force=false){if(billProductCache.length&&!force)return billProductCache;if(billProductCachePromise&&!force)return billProductCachePromise;billProductCachePromise=(async()=>{let rows=[];try{const q=new URLSearchParams({category:"",q:"",status:"IN_STOCK",limit:"5000"});const j=await productDbRequest("?"+q.toString());rows=Array.isArray(j.rows)?j.rows:[]}catch(_){}if(!rows.length){await loadProductDbCategories();const cats=productDbCategories.map(c=>c.sheet_tab).filter(Boolean);const packs=await Promise.all(cats.map(async category=>{try{const q=new URLSearchParams({category,q:"",status:"IN_STOCK",limit:"1500"});const j=await productDbRequest("?"+q.toString());return Array.isArray(j.rows)?j.rows:[]}catch(_){return []}}));rows=packs.flat()}const seen=new Set();billProductCache=rows.filter(r=>{const k=`${r.category_sheet_tab}|${r.brand}|${r.model}`;if(seen.has(k))return false;seen.add(k);return true});return billProductCache})().finally(()=>billProductCachePromise=null);return billProductCachePromise}
-function billSuggestionHtml(rows,q){return `${rows.map((r,i)=>`<button type="button" class="bill-suggest" data-pick="${i}"><span><b>${esc(r.model||"-")}</b><small>${esc(r.brand||"")} · ${esc(r.category_sheet_tab||"")}</small></span><span><b>ปลีก ${money(r.retail_price)} ฿</b><small>Dealer ${money(r.dealer_price)} ฿</small></span></button>`).join("")}<button type="button" class="bill-suggest external" data-external="1"><span><b>ใช้ “${esc(q)}” เป็นสินค้านอกระบบ</b><small>กรอกราคาเองได้ทันที</small></span></button>`}
-function billItemHtml(x,i){return `<div class="bill-line" data-i="${i}"><div class="bill-name-wrap"><input class="bill-name" value="${esc(x.name||"")}" placeholder="พิมพ์รุ่น / ชื่อสินค้า / หมวด"><small>${x.source==="SYSTEM"?`${esc(x.brand||"")} · ${esc(x.category||"")}`:"สินค้านอกระบบ"}</small><div class="bill-suggestions hidden"></div></div><input class="bill-qty" type="number" min="0.001" step="1" value="${esc(x.qty||1)}"><input class="bill-price" type="number" min="0" step="0.01" value="${esc(x.unit_price||0)}"><b class="bill-item-total">${money(Number(x.qty||0)*Number(x.unit_price||0))}</b><button type="button" class="bill-remove">×</button></div>`}
+function billSearchCompact(v){
+  const raw=String(v||"").toLowerCase().trim();
+  if(!raw)return "";
+  if(raw.startsWith("ip")&&!raw.startsWith("iphone")){
+    const rest=raw.slice(2);
+    return ("iphone"+rest).replace(/[^a-z0-9]+/g,"");
+  }
+  return raw.replace(/[^a-z0-9]+/g,"");
+}
+function billSearchTokens(v){return String(v||"").toLowerCase().trim().split(/\s+/).filter(Boolean)}
+function billSearchProducts(q){
+  const qCompact=billSearchCompact(q);
+  const qTokens=billSearchTokens(q);
+  if(!qCompact&&!qTokens.length)return [];
+  return billProductCache.filter(r=>{
+    if(String(r.stock_status||"").toUpperCase()==="HIDDEN")return false;
+    const hay=`${r.brand||""} ${r.model||""} ${r.category_sheet_tab||""}`.toLowerCase();
+    const hayCompact=billSearchCompact(hay);
+    if(qCompact&&hayCompact.includes(qCompact))return true;
+    if(qTokens.length&&qTokens.every(t=>hay.includes(t)))return true;
+    return false;
+  }).slice(0,30);
+}
+async function preloadBillProducts(force=false){
+  if(billProductCache.length&&!force)return billProductCache;
+  if(billProductCachePromise&&!force)return billProductCachePromise;
+  billProductCachePromise=(async()=>{
+    await loadProductDbCategories();
+    const cats=productDbCategories.map(c=>c.sheet_tab).filter(Boolean);
+    const packs=await Promise.all(cats.map(async category=>{
+      try{
+        const q=new URLSearchParams({category,q:"",status:"ALL",limit:"5000"});
+        const j=await productDbRequest("?"+q.toString());
+        return Array.isArray(j.rows)?j.rows:[];
+      }catch(_){return []}
+    }));
+    const seen=new Set();
+    billProductCache=packs.flat().filter(r=>{
+      if(String(r.stock_status||"").toUpperCase()==="HIDDEN")return false;
+      const k=`${r.category_sheet_tab||""}|${r.brand||""}|${r.model||""}`;
+      if(seen.has(k))return false;
+      seen.add(k);
+      return true;
+    });
+    return billProductCache;
+  })().finally(()=>billProductCachePromise=null);
+  return billProductCachePromise;
+}
+function billSuggestionHtml(rows,q){return `${rows.map((r,i)=>`<button type="button" class="bill-suggest" data-pick="${i}"><span><b>${esc(r.model||"-")}</b><small>${esc(r.brand||"")} · ${esc(r.category_sheet_tab||"")} · ${String(r.stock_status||"IN_STOCK").toUpperCase()==="OUT_OF_STOCK"?"สินค้าหมด":"มีสินค้า"}</small></span><span><b>ปลีก ${money(r.retail_price)} ฿</b><small>Dealer ${money(r.dealer_price)} ฿</small></span></button>`).join("")}<button type="button" class="bill-suggest external" data-external="1"><span><b>ใช้ “${esc(q)}” เป็นสินค้านอกระบบ</b><small>กรอกราคาเองได้ทันที</small></span></button>`}
+function billItemHtml(x,i){return `<div class="bill-line" data-i="${i}"><div class="bill-product-cell bill-name-wrap"><input class="bill-name" value="${esc(x.name||"")}" placeholder="พิมพ์รุ่น / ชื่อสินค้า / หมวด"><small>${x.source==="SYSTEM"?`${esc(x.brand||"")} · ${esc(x.category||"")}`:"สินค้านอกระบบ"}</small><div class="bill-suggestions hidden"></div></div><input class="bill-qty" type="number" min="0.001" step="1" value="${esc(x.qty||1)}"><input class="bill-price" type="number" min="0" step="0.01" value="${esc(x.unit_price||0)}"><b class="bill-item-total">${money(Number(x.qty||0)*Number(x.unit_price||0))}</b><button type="button" class="bill-remove">×</button></div>`}
 function closeBillSuggestions(except=null){document.querySelectorAll(".bill-suggestions").forEach(x=>{if(x!==except)x.classList.add("hidden")})}
 function renderBillItems(focusIndex=-1){const box=document.querySelector("#billItems");if(!box)return;if(!billDraft.items.length)billDraft.items.push(billBlankItem());box.innerHTML=`<div class="bill-line-head"><span>สินค้า / รุ่น</span><span>จำนวน</span><span>ราคา/หน่วย</span><span>รวม</span><span></span></div>`+billDraft.items.map(billItemHtml).join("")+`<button type="button" class="bill-add-row" id="billAddRow">+ เพิ่มแถว</button>`;box.querySelectorAll(".bill-line").forEach(row=>{const i=Number(row.dataset.i),name=row.querySelector(".bill-name"),suggest=row.querySelector(".bill-suggestions");const show=()=>{const q=name.value.trim();closeBillSuggestions(suggest);if(!q){suggest.classList.add("hidden");return}const rows=billSearchProducts(q);suggest.innerHTML=billSuggestionHtml(rows,q);suggest.classList.remove("hidden");suggest.querySelectorAll("[data-pick]").forEach(b=>b.onmousedown=e=>{e.preventDefault();const r=rows[Number(b.dataset.pick)];const price=billDraft.price_type==="DEALER"?r.dealer_price:r.retail_price;billDraft.items[i]={source:"SYSTEM",name:r.model||"-",brand:r.brand||"",category:r.category_sheet_tab||"",qty:Number(billDraft.items[i].qty||1),unit_price:Number(String(price||0).replace(/,/g,""))||0,product_key:r.id||`${r.category_sheet_tab||""}|${r.brand||""}|${r.model||""}`};suggest.classList.add("hidden");renderBillItems();renderBillSummary();setTimeout(()=>document.querySelector(`.bill-line[data-i="${i}"] .bill-qty`)?.focus(),0)});suggest.querySelector("[data-external]")?.addEventListener("mousedown",e=>{e.preventDefault();billDraft.items[i].source="EXTERNAL";billDraft.items[i].name=q;billDraft.items[i].brand="";billDraft.items[i].category="";billDraft.items[i].product_key="";suggest.classList.add("hidden");setTimeout(()=>row.querySelector(".bill-price")?.focus(),0)})};name.onfocus=show;name.oninput=()=>{billDraft.items[i].name=name.value;billDraft.items[i].source="EXTERNAL";billDraft.items[i].brand="";billDraft.items[i].category="";billDraft.items[i].product_key="";show()};name.onkeydown=e=>{if(e.key==="Escape"){suggest.classList.add("hidden");name.blur()}if(e.key==="Enter"){e.preventDefault();const first=suggest.querySelector("[data-pick]");if(first)first.dispatchEvent(new MouseEvent("mousedown",{bubbles:true}));else row.querySelector(".bill-price")?.focus()}};row.querySelector(".bill-qty").oninput=e=>{billDraft.items[i].qty=Math.max(.001,Number(e.target.value||1));row.querySelector(".bill-item-total").textContent=money(billDraft.items[i].qty*billDraft.items[i].unit_price);renderBillSummary()};row.querySelector(".bill-price").oninput=e=>{billDraft.items[i].unit_price=Math.max(0,Number(e.target.value||0));row.querySelector(".bill-item-total").textContent=money(billDraft.items[i].qty*billDraft.items[i].unit_price);renderBillSummary()};row.querySelector(".bill-price").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addBillRow()}};row.querySelector(".bill-remove").onclick=()=>{billDraft.items.splice(i,1);renderBillItems();renderBillSummary()}});document.querySelector("#billAddRow").onclick=()=>addBillRow();if(focusIndex>=0)setTimeout(()=>box.querySelector(`.bill-line[data-i="${focusIndex}"] .bill-name`)?.focus(),0)}
 function addBillRow(){billDraft.items.push(billBlankItem());renderBillItems(billDraft.items.length-1);renderBillSummary()}

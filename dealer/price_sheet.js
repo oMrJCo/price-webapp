@@ -89,7 +89,7 @@ function prettySlugFromTab_(tab) {
 }
 
 function prettySlugFromLocation_() {
-  const m = String(location.pathname || "").match(/^\/price\/([^/?#]+)\/?$/i);
+  const m = String(location.pathname || "").match(/^\/dealer\/price\/([^/?#]+)\/?$/i);
   return m ? decodeURIComponent(m[1]) : "";
 }
 
@@ -97,7 +97,7 @@ function setPrettyPriceUrl_(tab) {
   try {
     const slug = prettySlugFromTab_(tab);
     if (!slug) return;
-    const target = `/price/${encodeURIComponent(slug)}`;
+    const target = `/dealer/price/${encodeURIComponent(slug)}`;
     if (location.pathname !== target) history.replaceState(null, "", target);
   } catch (_) {}
 }

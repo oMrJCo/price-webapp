@@ -1180,7 +1180,22 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   }
 }
 
+function ensureDealerStockStyles() {
+  if (document.getElementById("leeplusDealerStockStyle")) return;
+  const st = document.createElement("style");
+  st.id = "leeplusDealerStockStyle";
+  st.textContent = `
+    .stockOutRow td{opacity:.78}
+    .stockOutRow .model{opacity:.9}
+    .stockOutRow .priceValue{opacity:.78}
+    .dealerStockBadge{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;padding:3px 7px;border-radius:999px;background:#3b1014;border:1px solid #9f2936;color:#ff6675;font-size:9px;font-weight:950;line-height:1.2;vertical-align:middle;white-space:nowrap}
+    @media(max-width:600px){.dealerStockBadge{margin-left:6px;padding:3px 6px;font-size:8px}}
+  `;
+  document.head.appendChild(st);
+}
+
 function renderTable(rows, brandImageMap) {
+  ensureDealerStockStyles();
   const tbody = el("tbody");
   if (!tbody) return;
 

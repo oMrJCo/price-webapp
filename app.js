@@ -341,11 +341,9 @@ function setupPromotionPopup(data, audience){
         if (results[1].status === "rejected") console.warn("Categories API unavailable", results[1].reason);
         if (!categories.length) throw new Error("Categories API unavailable and no last-known-good cache exists");
       } else {
-        // Existing visitor: do not wait for Apps Script. Refresh quietly for the next page load.
-        Promise.allSettled([loadMeta(), loadCategories()]).then(function(results){
-          if (results[0].status === "rejected") console.warn("Background meta refresh failed", results[0].reason);
-          if (results[1].status === "rejected") console.warn("Background categories refresh failed", results[1].reason);
-        });
+        // Existing visitor: render immediately from last-known-good cache.
+        // Do not refresh Apps Script on every home load: its redirected response can intermittently
+        // expire/404 and must never interfere with the Dealer entry gate.
       }
 
       const siteMeta = meta.site || meta || {};

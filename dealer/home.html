@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ราคาสินค้า LEEPLUS</title>
+  <title>LEEPLUS ราคาตัวแทนจำหน่าย</title>
   <meta name="description" content="ศูนย์รวมอะไหล่มือถือ แบตเตอรี่ หน้าจอ ฟิล์ม และอุปกรณ์มือถือ ราคาส่ง อัปเดตตลอด">
   <meta property="og:title" content="LEEPLUS ราคาสินค้า">
   <meta property="og:description" content="เช็คราคา เช็คสต็อก แอดไลน์ได้ทันที">
@@ -792,7 +792,8 @@
 }
 
 </style>
-<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}document.addEventListener("DOMContentLoaded",()=>document.getElementById("dealerLogoutBtn")?.addEventListener("click",()=>{sessionStorage.removeItem("leeplus_dealer_auth");location.href="/";}));</script></head>
+<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"||!sessionStorage.getItem("leeplus_dealer_token")){sessionStorage.removeItem("leeplus_dealer_auth");sessionStorage.removeItem("leeplus_dealer_token");location.replace("/");}document.addEventListener("DOMContentLoaded",()=>document.getElementById("dealerLogoutBtn")?.addEventListener("click",()=>{sessionStorage.removeItem("leeplus_dealer_auth");sessionStorage.removeItem("leeplus_dealer_token");location.href="/";}));</script>
+</head>
 
 <body>
   <div class="wrap">
@@ -845,7 +846,11 @@
 
 <div id="categoriesGrid" class="grid"></div>
 
-<script src="app.js?v=20260821-5b" defer></script>
+
+
+<script src="store_access.js?v=20260905-053" defer></script>
+<script src="analytics.js?v=20260905-05" defer></script>
+<script src="app.js" defer></script>
 
   <!-- Sticky LINE CTA (Mobile) -->
   <a id="lineSticky"
@@ -856,6 +861,5 @@
      aria-label="แอดไลน์เพื่อเช็คราคาและเช็คสต็อก">
      💬 แอดไลน์เช็คราคา / เช็คสต็อกทันที
   </a>
-  <script src="../analytics.js?v=20260904-08" defer></script>
 </body>
 </html>

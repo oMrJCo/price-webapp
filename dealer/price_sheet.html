@@ -873,9 +873,9 @@ tbody tr td:last-child{text-align:right!important}
 }
 
 </style>
-<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}</script>
+<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"||!sessionStorage.getItem("leeplus_dealer_token")){sessionStorage.removeItem("leeplus_dealer_auth");sessionStorage.removeItem("leeplus_dealer_token");location.replace("/");}</script>
 </head>
-<body class="dealer-mode">
+<body class="dealer-mode" class="retail-mode">
   <div class="wrap">
 <div class="smart-rail" aria-hidden="true">
   <div class="smart-rail-left">
@@ -891,7 +891,7 @@ tbody tr td:last-child{text-align:right!important}
     <div class="card header">
       <div class="headerInner">
         <div class="leftGroup">
-          <a class="backBtn" href="./home.html">
+          <a class="backBtn" href="/index.html">
             <span aria-hidden="true">‹</span>
             <span>กลับหน้าหมวด</span>
           </a>
@@ -900,7 +900,7 @@ tbody tr td:last-child{text-align:right!important}
             <img id="catThumbImg" alt="category" />
           </div>
 
-          <div class="titleBlock"><div class="crumb">LEEPLUS · DEALER PRICE</div>
+          <div class="titleBlock"><div class="crumb">LEEPLUS · PRICE LIST</div>
             
             <h1 class="h1" id="pageTitle">...</h1>
             <div class="updated" id="updateText">อัปเดต: -</div>
@@ -956,7 +956,6 @@ tbody tr td:last-child{text-align:right!important}
     </div>
   </div>
 
-  <script src="./price_sheet.js"></script>
-  <script src="../analytics.js?v=20260904-08" defer></script>
+  <script src="/dealer/price_sheet.js?v=20261007-parity1"></script>
 </body>
 </html>

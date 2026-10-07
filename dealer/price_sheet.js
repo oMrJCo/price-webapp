@@ -46,17 +46,21 @@
   document.head.appendChild(st);
 })();
 
-/* DEALER PRICE SHEET VERSION: 2026-05-15a
-   - Dealer zone
-   - Read categories/pdf from Google Sheet API
-   - Read meta category/brand images from API
-   - Use dealer_price first, fallback to price
+/* GVIZ_JSON_VERSION: 2026-05-15a (LEEPLUS)
+   - Read category/brand images from meta API first
+   - Fallback to old __META__ / __BRAND_IMAGE__
+   - Keep existing logic: tabs, grouping, search, pdf button, NEW badge, modal
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
+const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
+const GH_BASE = "/price-webapp/";
 const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
-const GH_BASE = "/dealer/";
-const IS_DEALER_ZONE = true;
+const SUPABASE_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/dealer-catalog-api-v2";
+const SUPABASE_DATA_CACHE_PREFIX = "leeplus_supabase_catalog_v2:";
+const CATALOG_GRANT_CACHE_KEY = "leeplus_catalog_grant_v1";
+let GATED_PDF_URL = "";
+let PRICE_LOCKED = false;
 
 const ALL_BRAND_KEY = "__ALL__";
 const ALL_BRAND_LABEL = "All";
@@ -65,65 +69,73 @@ function el(id) { return document.getElementById(id); }
 function getParam(name) { return new URL(window.location.href).searchParams.get(name) || ""; }
 const DEBUG = getParam("debug") === "1";
 
+const PRETTY_TAB_SLUG_OVERRIDES = {
+  "lens camera film model list": "lens-camera-film"
+};
 
-const SPEED_CACHE_TTL = 5 * 60 * 1000;
-const speedMemoryCache = new Map();
-const speedRequestCache = new Map();
+function prettySlugFromTab_(tab) {
+  const raw = String(tab || "").trim();
+  const key = raw.toLowerCase();
+  if (PRETTY_TAB_SLUG_OVERRIDES[key]) return PRETTY_TAB_SLUG_OVERRIDES[key];
 
-function speedCacheRead(key) {
-  const now = Date.now();
-  const mem = speedMemoryCache.get(key);
-  if (mem && now - mem.ts < SPEED_CACHE_TTL) return mem.value;
-
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || now - Number(parsed.ts || 0) >= SPEED_CACHE_TTL) return null;
-    speedMemoryCache.set(key, parsed);
-    return parsed.value;
-  } catch {
-    return null;
-  }
+  return raw
+    .toLowerCase()
+    .replace(/\bmodel\s+list\b/g, "")
+    .replace(/\blist\b/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
 }
 
-function speedCacheWrite(key, value) {
-  const entry = { ts: Date.now(), value };
-  speedMemoryCache.set(key, entry);
-  try { localStorage.setItem(key, JSON.stringify(entry)); } catch {}
+function prettySlugFromLocation_() {
+  const m = String(location.pathname || "").match(/^\/price\/([^/?#]+)\/?$/i);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
+function setPrettyPriceUrl_(tab) {
+  try {
+    const slug = prettySlugFromTab_(tab);
+    if (!slug) return;
+    const target = `/price/${encodeURIComponent(slug)}`;
+    if (location.pathname !== target) history.replaceState(null, "", target);
+  } catch (_) {}
+}
+
+
+/* ===== SPEED FIX 2026-09-08 =====
+   Short session cache smooths transient Apps Script latency without persisting
+   gated prices across browser sessions. Auth tokens are part of catalog keys. */
+const SPEED_CACHE = { meta: 300000, categories: 300000, catalog: 60000 };
+function speedCacheGet_(key, ttl) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const box = JSON.parse(raw);
+    if (!box || !box.at || (Date.now() - box.at) > ttl) return null;
+    return box.value;
+  } catch (_) { return null; }
+}
+function speedCacheSet_(key, value) {
+  try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), value })); } catch (_) {}
   return value;
 }
-
-function speedBackground(task) {
-  try {
-    const p = task();
-    if (p && typeof p.catch === "function") p.catch(() => {});
-  } catch {}
+function speedTokenKey_() {
+  let storeToken = "", dealerToken = "";
+  try { storeToken = localStorage.getItem("leeplus_store_access_token") || ""; } catch (_) {}
+  try { dealerToken = sessionStorage.getItem("leeplus_dealer_token") || ""; } catch (_) {}
+  return `${storeToken}|${dealerToken}`;
 }
-
-async function speedSharedRequest(key, loader) {
-  if (speedRequestCache.has(key)) return speedRequestCache.get(key);
-  const p = Promise.resolve().then(loader).finally(() => speedRequestCache.delete(key));
-  speedRequestCache.set(key, p);
-  return p;
-}
-
 
 function escapeHTML(s) {
   return String(s ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
-
-function isHttpUrl(url) {
-  return typeof url === "string" && /^https?:\/\//i.test(url.trim());
-}
+function isHttpUrl(url) { return typeof url === "string" && /^https?:\/\//i.test(url.trim()); }
 
 function normalizeImageUrl(url) {
-  const s = String(url || "").trim();
+  const s = (url || "").trim();
   if (!s) return "";
   if (isHttpUrl(s)) return s;
   if (s.startsWith("/")) return `https://omrjco.github.io${s}`;
@@ -149,75 +161,22 @@ function tryGetTabFromPriceUrl(priceUrl) {
   }
 }
 
-async function fetchMetaConfigFresh() {
-  const res = await fetch(`${API_URL}?action=meta`);
-  if (!res.ok) throw new Error("Meta API failed");
-  const json = await res.json();
-  if (!json.success) throw new Error("Meta API success false");
-  return json.data || {};
-}
-
-async function loadMetaConfig() {
-  const key = "leeplus_dealer_meta_cache_v2";
-  const cached = speedCacheRead(key);
-
-  if (cached) {
-    speedBackground(async () => {
-      const fresh = await speedSharedRequest("dealer:meta", fetchMetaConfigFresh);
-      speedCacheWrite(key, fresh);
-    });
-    return cached;
-  }
-
-  try {
-    const fresh = await speedSharedRequest("dealer:meta", fetchMetaConfigFresh);
-    return speedCacheWrite(key, fresh);
-  } catch (e) {
-    console.warn("loadMetaConfig failed:", e);
-    return { site: {}, category: {}, brand: {} };
-  }
-}
-
-async function setupPdfDownloadButton(tabName, cats = []) {
+async function setupPdfDownloadButton() {
   const btn = el("openPdfBtn");
   const hint = el("pdfHint");
   if (!btn) return;
-
   btn.style.display = "none";
   if (hint) hint.style.display = "none";
-
-  try {
-    const tab = String(tabName || "").trim();
-    if (!tab) return;
-
-    const tabLower = tab.toLowerCase();
-    const match = cats.find((c) => {
-      const st = String(c.sheetTab || "").trim();
-      if (st && st.toLowerCase() === tabLower) return true;
-
-      const purl = String(c.price_url || "").trim();
-      const t = tryGetTabFromPriceUrl(purl);
-      if (t && String(t).trim().toLowerCase() === tabLower) return true;
-      return false;
-    });
-
-    if (!match) return;
-
-    const pdf = match.dealer_pdf_url || match.dealer_pdf || match.dealerPdf || "";
-    const pdfUrl = normalizeMaybeRelativeUrl(pdf);
-    if (!pdfUrl) return;
-
-    btn.href = pdfUrl;
-    btn.textContent = "เปิด PDF";
-    btn.title = "เปิดไฟล์ PDF";
-    btn.target = "_blank";
-    btn.rel = "noopener";
-    btn.removeAttribute("download");
-    btn.style.display = "inline-flex";
-    if (hint) hint.style.display = "inline-flex";
-  } catch (e) {
-    console.warn("setupPdfDownloadButton from API failed:", e);
-  }
+  const pdfUrl = normalizeMaybeRelativeUrl(GATED_PDF_URL || "");
+  if (!pdfUrl) return;
+  btn.href = pdfUrl;
+  btn.textContent = "เปิด PDF";
+  btn.title = "เปิดไฟล์ PDF";
+  btn.target = "_blank";
+  btn.rel = "noopener";
+  btn.removeAttribute("download");
+  btn.style.display = "inline-flex";
+  if (hint) hint.style.display = "inline-flex";
 }
 
 /* ===== helpers ===== */
@@ -226,10 +185,7 @@ function uniq(arr) {
   const out = [];
   for (const x of arr) {
     const k = String(x);
-    if (!set.has(k)) {
-      set.add(k);
-      out.push(x);
-    }
+    if (!set.has(k)) { set.add(k); out.push(x); }
   }
   return out;
 }
@@ -237,16 +193,11 @@ function uniq(arr) {
 function groupByBrandPreserveSheetOrder(rows) {
   const brandOrder = [];
   const map = new Map();
-
   for (const r of rows) {
     const b = (r.brand || "").trim() || "Unknown";
-    if (!map.has(b)) {
-      map.set(b, []);
-      brandOrder.push(b);
-    }
+    if (!map.has(b)) { map.set(b, []); brandOrder.push(b); }
     map.get(b).push(r);
   }
-
   const out = [];
   for (const b of brandOrder) {
     out.push({ __type: "brandHeader", brand: b });
@@ -296,7 +247,6 @@ function setupImageModal() {
     modal?.setAttribute("aria-hidden", "true");
     if (img) img.src = "";
   }
-
   function show(src, t) {
     if (title) title.textContent = t || "รูปสินค้า";
     if (img) img.src = src;
@@ -305,13 +255,8 @@ function setupImageModal() {
   }
 
   close?.addEventListener("click", hide);
-  modal?.addEventListener("click", (e) => {
-    if (e.target === modal) hide();
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") hide();
-  });
+  modal?.addEventListener("click", (e) => { if (e.target === modal) hide(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
 
   document.addEventListener("click", (e) => {
     const t = e.target.closest(".thumb");
@@ -332,7 +277,28 @@ function setupImageModal() {
   });
 }
 
-/* ===== old META row helpers ===== */
+/* ===== META API ===== */
+async function loadMetaConfig() {
+  const cacheKey = "leeplus_speed_meta_v1";
+  const cached = speedCacheGet_(cacheKey, SPEED_CACHE.meta);
+  if (cached) return cached;
+  try {
+    const res = await fetch(`${API_URL}?action=meta`);
+    if (!res.ok) throw new Error("Meta API failed");
+    const json = await res.json();
+    if (!json.success) throw new Error("Meta API success false");
+    return speedCacheSet_(cacheKey, json.data || {});
+  } catch (e) {
+    console.warn("loadMetaConfig failed:", e);
+    return {
+      site: {},
+      category: {},
+      brand: {}
+    };
+  }
+}
+
+/* ===== META OLD ROW HELPERS ===== */
 function metaKey(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -340,7 +306,6 @@ function metaKey(s) {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, "");
 }
-
 function extractFirstUrlFromRow(values) {
   for (const v of values) {
     const s = String(v || "").trim();
@@ -349,13 +314,11 @@ function extractFirstUrlFromRow(values) {
   }
   return "";
 }
-
 function isProbablyNumber(s) {
   const t = String(s || "").trim();
   if (!t) return false;
   return /^-?\d+(\.\d+)?$/.test(t);
 }
-
 function pickBrandNameFromRow(values) {
   const candidates = [];
   for (const v of values) {
@@ -367,81 +330,45 @@ function pickBrandNameFromRow(values) {
     if (isProbablyNumber(s)) continue;
     candidates.push(s);
   }
-
   if (!candidates.length) return "";
-
-  candidates.sort((a, b) =>
-    (a.length + (a.match(/\s/g)?.length || 0) * 5) -
-    (b.length + (b.match(/\s/g)?.length || 0) * 5)
-  );
-
+  candidates.sort((a,b) => (a.length + (a.match(/\s/g)?.length||0)*5) - (b.length + (b.match(/\s/g)?.length||0)*5));
   return candidates[0].trim();
 }
 
 /* ===== GViz ===== */
 function gvizJsonUrl(sheetName) {
-  const base = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq`;
-
-  // IMPORTANT:
-  // Force Google GViz to treat exactly the first row as the header.
-  // Without headers=1, GViz guesses the header count and can incorrectly
-  // consume the first many Compatibility rows (e.g. MATTE/PRIVACY).
+  const storeToken = (()=>{try{return localStorage.getItem("leeplus_store_access_token")||""}catch(_){return ""}})();
+  const dealerToken = (()=>{try{return sessionStorage.getItem("leeplus_dealer_token")||""}catch(_){return ""}})();
   const params = new URLSearchParams({
-    tqx: "out:json",
-    sheet: sheetName,
-    headers: "1"
+    action:"catalogGviz",
+    tab:sheetName,
+    audience:"RETAIL",
+    storeToken,
+    dealerToken
   });
-
-  return `${base}?${params.toString()}`;
+  return `${API_URL}?${params.toString()}`;
 }
-
 function parseGvizResponse(text) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
-  if (start < 0 || end < 0 || end <= start) {
-    throw new Error("Invalid GViz response");
+  if (start < 0 || end < 0 || end <= start) throw new Error("Invalid catalog response");
+  const json = JSON.parse(text.slice(start, end + 1));
+  if (json && json.success === false) {
+    const err = new Error(json.message || "Catalog access denied");
+    err.code = json.code || "CATALOG_ERROR";
+    throw err;
   }
-  return JSON.parse(text.slice(start, end + 1));
+  GATED_PDF_URL = String(json?.pdfUrl || "");
+  PRICE_LOCKED = Boolean(json?.priceLocked);
+  return json;
 }
-
-async function fetchGvizTextFresh(tab) {
-  const res = await fetch(gvizJsonUrl(tab));
-  if (!res.ok) throw new Error("Failed to fetch GViz JSON");
-  return res.text();
-}
-
-function gvizCacheKey(tab) {
-  return `leeplus_dealer_gviz_cache_v2:${String(tab || "").trim()}`;
-}
-
-async function loadGvizTextCached(tab) {
-  const key = gvizCacheKey(tab);
-  const cached = speedCacheRead(key);
-
-  if (cached) {
-    speedBackground(async () => {
-      const fresh = await speedSharedRequest(`dealer:gviz:${tab}`, () => fetchGvizTextFresh(tab));
-      speedCacheWrite(key, fresh);
-    });
-    return cached;
-  }
-
-  const fresh = await speedSharedRequest(`dealer:gviz:${tab}`, () => fetchGvizTextFresh(tab));
-  return speedCacheWrite(key, fresh);
-}
-
-
-function colLabel(c) {
-  return String(c.label || c.id || "").trim();
-}
-
+function colLabel(c) { return String(c.label || c.id || "").trim(); }
 function cellValue(v) {
   if (!v) return "";
   if (typeof v.f === "string" && v.f.trim() !== "") return v.f;
   if (v.v == null) return "";
   return String(v.v);
 }
-
 function normColName(s) {
   return String(s || "")
     .replace(/\u00A0/g, " ")
@@ -449,7 +376,6 @@ function normColName(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "");
 }
-
 function pickIndex(cols, candidates) {
   const names = cols.map(c => normColName(colLabel(c)));
   for (const cand of candidates) {
@@ -459,8 +385,149 @@ function pickIndex(cols, candidates) {
   return -1;
 }
 
-async function loadSheetWithMeta(tab) {
-  const text = await loadGvizTextCached(tab);
+async function fetchCatalogText_(tab) {
+  const authKey = speedTokenKey_();
+  const cacheKey = `leeplus_speed_catalog_v1:${String(tab).toLowerCase()}:${authKey}`;
+  const cached = speedCacheGet_(cacheKey, SPEED_CACHE.catalog);
+  if (typeof cached === "string" && cached) return cached;
+
+  const res = await fetch(gvizJsonUrl(tab));
+  if (!res.ok) throw new Error("Failed to fetch catalog JSON");
+  const text = await res.text();
+  // Cache only successful, parseable responses. Session storage avoids long-lived price copies.
+  parseGvizResponse(text);
+  speedCacheSet_(cacheKey, text);
+  return text;
+}
+
+async function getCatalogGrant_() {
+  let storeToken = "";
+  try { storeToken = localStorage.getItem("leeplus_store_access_token") || ""; } catch (_) {}
+  if (!storeToken) return "";
+
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(CATALOG_GRANT_CACHE_KEY) || "null");
+    const now = Math.floor(Date.now() / 1000);
+    if (cached && cached.token && Number(cached.exp) > now + 45) return String(cached.token);
+  } catch (_) {}
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "catalogGrant", token: storeToken })
+    });
+    if (!res.ok) return "";
+    const data = await res.json();
+    if (!data?.success || !data?.authorized || !data?.catalogGrant) return "";
+    try {
+      sessionStorage.setItem(CATALOG_GRANT_CACHE_KEY, JSON.stringify({
+        token: String(data.catalogGrant),
+        exp: Number(data.catalogGrantExp || 0)
+      }));
+    } catch (_) {}
+    return String(data.catalogGrant);
+  } catch (_) {
+    return "";
+  }
+}
+
+function clearSupabaseCatalogDataCache_(tab) {
+  // DATA recovery only. Never touch leeplus_store_access_token or other auth state.
+  const prefix = `${SUPABASE_DATA_CACHE_PREFIX}${String(tab || "").toLowerCase()}:`;
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const key = sessionStorage.key(i) || "";
+      if (key.startsWith(prefix)) sessionStorage.removeItem(key);
+    }
+  } catch (_) {}
+}
+
+async function fetchSupabaseCatalog_(tab, forceFresh = false) {
+  const token = (()=>{try{return sessionStorage.getItem("leeplus_dealer_token")||""}catch(_){return ""}})();
+  if (!token) throw new Error("DEALER_SESSION_MISSING");
+  const cacheKey = `${SUPABASE_DATA_CACHE_PREFIX}dealer:${tab}:${token.slice(-12)}`;
+  if (!forceFresh) {
+    const cached = speedCacheGet_(cacheKey, SPEED_CACHE.catalog);
+    if (cached && cached.success && Array.isArray(cached.rows)) return cached;
+  }
+  const res = await fetch(`${SUPABASE_CATALOG_API}?category=${encodeURIComponent(tab)}`, {
+    headers: { "Authorization": `Bearer ${token}` }, cache: "no-store"
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem("leeplus_dealer_auth"); sessionStorage.removeItem("leeplus_dealer_token");
+    location.replace("/"); throw new Error("DEALER_UNAUTHORIZED");
+  }
+  if (!res.ok) throw new Error(`Dealer catalog ${res.status}`);
+  const j = await res.json();
+  const data = {
+    success: !!j?.success, access: "DEALER", price_locked: false,
+    rows: (j?.rows || []).map(r => ({...r, retail_price:r.price})),
+    category: j?.category || null
+  };
+  if (!data.success || !Array.isArray(data.rows)) throw new Error("Invalid Dealer catalog response");
+  speedCacheSet_(cacheKey, data); return data;
+}
+
+async function fetchSupabaseCategoryPdf_() {
+  return new Map();
+}
+
+async function loadSupabasePriceSheetWithMeta_(tab) {
+  let data;
+  try {
+    data = await fetchSupabaseCatalog_(tab, false);
+  } catch (firstError) {
+    clearSupabaseCatalogDataCache_(tab);
+    data = await fetchSupabaseCatalog_(tab, true); // one clean DATA retry; auth is preserved
+  }
+
+  PRICE_LOCKED = Boolean(data.price_locked);
+
+  GATED_PDF_URL = String(data?.category?.dealer_pdf_url || "");
+
+  const raw = (data.rows || []).map(r => ({
+    brand: String(r?.brand ?? "").trim(),
+    model: String(r?.model ?? "").trim(),
+    price: String(r?.retail_price ?? "").trim(),
+    image_url: String(r?.image_url ?? "").trim(),
+    updated: String(r?.updated_text ?? "").trim(),
+    stock_status: String(r?.stock_status ?? "IN_STOCK").trim().toUpperCase(),
+    __all: [r?.brand, r?.model, r?.retail_price, r?.image_url, r?.updated_text]
+      .map(v => String(v ?? "").trim())
+  }));
+
+  let categoryImageUrl = "";
+  const brandImageMap = new Map();
+  for (const r of raw) {
+    const rowKeys = r.__all.map(metaKey);
+    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    const url = normalizeImageUrl(r.image_url) || extractFirstUrlFromRow(r.__all);
+    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) categoryImageUrl = url;
+    if (hasBRAND && url) {
+      const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand)
+        ? r.brand : pickBrandNameFromRow(r.__all);
+      if (b) brandImageMap.set(b, url);
+    }
+  }
+
+  const products = raw.filter(r => {
+    const rowKeys = r.__all.map(metaKey);
+    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    const isBlankRow = !r.brand && !r.model;
+    return !isBlankRow && !((hasMETA && hasCATEGORY) || hasBRAND);
+  }).map(({ __all, ...rest }) => rest);
+
+  if (DEBUG) console.log("[LEEPLUS] PRICE source: Supabase Edge", { tab, access: data.access, count: products.length });
+  return { rows: products, categoryImageUrl, brandImageMap };
+}
+
+async function loadLegacySheetWithMeta_(tab) {
+  const text = await fetchCatalogText_(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
   const cols = Array.isArray(table?.cols) ? table.cols : [];
@@ -470,106 +537,50 @@ async function loadSheetWithMeta(tab) {
     brand: pickIndex(cols, ["brand", "Brand"]),
     model: pickIndex(cols, ["model", "Model"]),
     price: pickIndex(cols, ["price", "Price"]),
-    dealer_price: pickIndex(cols, ["dealer_price", "dealer price", "price_dealer", "dealerPrice", "Dealer Price"]),
     image_url: pickIndex(cols, ["image_url", "image url", "imageurl", "img", "imgurl"]),
     updated: pickIndex(cols, ["updated", "update", "lastupdate", "last updated"]),
   };
-
-  if (
-    idx.brand === -1 ||
-    idx.model === -1 ||
-    idx.price === -1 ||
-    idx.image_url === -1 ||
-    idx.updated === -1
-  ) {
-    idx = {
-      brand: 0,
-      model: 1,
-      price: 2,
-      dealer_price: 3,
-      image_url: 4,
-      updated: 5
-    };
-  }
+  if (Object.values(idx).some(v => v === -1)) idx = { brand: 0, model: 1, price: 2, image_url: 3, updated: 4 };
 
   const raw = rows.map(r => {
     const c = Array.isArray(r.c) ? r.c : [];
     const allValues = c.map(cellValue).map(s => String(s || "").trim());
-
-    const dealerPrice =
-      idx.dealer_price >= 0 ? String(cellValue(c[idx.dealer_price]) || "").trim() : "";
-
-    const normalPrice =
-      idx.price >= 0 ? String(cellValue(c[idx.price]) || "").trim() : "";
-
     return {
-      brand: String(cellValue(c[idx.brand]) || "").trim(),
-      model: String(cellValue(c[idx.model]) || "").trim(),
-      price: dealerPrice || normalPrice,
-      image_url: String(cellValue(c[idx.image_url]) || "").trim(),
-      updated: String(cellValue(c[idx.updated]) || "").trim(),
-      __all: allValues
+      brand: String(cellValue(c[idx.brand]) || "").trim(), model: String(cellValue(c[idx.model]) || "").trim(),
+      price: String(cellValue(c[idx.price]) || "").trim(), image_url: String(cellValue(c[idx.image_url]) || "").trim(),
+      updated: String(cellValue(c[idx.updated]) || "").trim(), __all: allValues
     };
   });
-
-  let categoryImageUrl = "";
-  const brandImageMap = new Map();
-
+  let categoryImageUrl = ""; const brandImageMap = new Map();
   for (const r of raw) {
-    const rowKeys = r.__all.map(metaKey);
-
-    const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const rowKeys = r.__all.map(metaKey); const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
     const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
-    const hasBRAND =
-      rowKeys.includes("BRANDIMAGE") ||
-      metaKey(r.model) === "BRANDIMAGE" ||
-      metaKey(r.brand) === "BRANDIMAGE";
-
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
     const url = normalizeImageUrl(r.image_url) || extractFirstUrlFromRow(r.__all);
-
-    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) {
-      categoryImageUrl = url;
-    }
-
-    if (hasBRAND && url) {
-      const b =
-        metaKey(r.brand) !== "BRANDIMAGE" &&
-        metaKey(r.brand) !== "META" &&
-        r.brand
-          ? r.brand
-          : pickBrandNameFromRow(r.__all);
-
-      if (b) brandImageMap.set(b, url);
-    }
+    if (!categoryImageUrl && hasMETA && hasCATEGORY && url) categoryImageUrl = url;
+    if (hasBRAND && url) { const b = (metaKey(r.brand) !== "BRANDIMAGE" && metaKey(r.brand) !== "META" && r.brand) ? r.brand : pickBrandNameFromRow(r.__all); if (b) brandImageMap.set(b, url); }
   }
-
-  const products = raw
-    .filter(r => {
-      const rowKeys = r.__all.map(metaKey);
-
-      const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
-      const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
-      const hasBRAND =
-        rowKeys.includes("BRANDIMAGE") ||
-        metaKey(r.model) === "BRANDIMAGE" ||
-        metaKey(r.brand) === "BRANDIMAGE";
-
-      return !((hasMETA && hasCATEGORY) || hasBRAND);
-    })
-    .map(({ __all, ...rest }) => rest);
-
-  if (DEBUG) {
-    console.log("[DEALER DEBUG] idx:", idx);
-    console.log("[DEALER DEBUG] old categoryImageUrl:", categoryImageUrl);
-    console.log("[DEALER DEBUG] old brandImageMap:", Array.from(brandImageMap.entries()));
-  }
-
+  const products = raw.filter(r => {
+    const rowKeys = r.__all.map(metaKey); const hasMETA = rowKeys.includes("META") || metaKey(r.brand) === "META";
+    const hasCATEGORY = rowKeys.includes("CATEGORYIMAGE") || metaKey(r.model) === "CATEGORYIMAGE";
+    const hasBRAND = rowKeys.includes("BRANDIMAGE") || metaKey(r.model) === "BRANDIMAGE" || metaKey(r.brand) === "BRANDIMAGE";
+    return (r.brand || r.model) && !((hasMETA && hasCATEGORY) || hasBRAND);
+  }).map(({ __all, ...rest }) => rest);
   return { rows: products, categoryImageUrl, brandImageMap };
 }
 
+async function loadSheetWithMeta(tab) {
+  // Parallel migration: PRICE prefers Supabase. Legacy Apps Script is rollback/fallback only.
+  try {
+    return await loadSupabasePriceSheetWithMeta_(tab);
+  } catch (error) {
+    console.warn("Supabase PRICE failed; using legacy catalog fallback:", error);
+    return await loadLegacySheetWithMeta_(tab);
+  }
+}
 
 async function loadCompatibilitySheet(tab) {
-  const text = await loadGvizTextCached(tab);
+  const text = await fetchCatalogText_(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
   const cols = Array.isArray(table?.cols) ? table.cols : [];
@@ -777,7 +788,8 @@ function filterCompatibilityRows(all, query) {
 
 
 async function loadVisualCatalogSheet(tab) {
-  const json = parseGvizResponse(await loadGvizTextCached(tab));
+  const text = await fetchCatalogText_(tab);
+  const json = parseGvizResponse(text);
   const table=json?.table||{}, cols=Array.isArray(table.cols)?table.cols:[], rows=Array.isArray(table.rows)?table.rows:[];
 
   const findCol=(names,fallback)=>{
@@ -1097,7 +1109,6 @@ function formatModelWithAutoBadge(model) {
 function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   const root = el("tabs");
   if (!root) return;
-
   root.innerHTML = "";
 
   for (const b of brands) {
@@ -1132,10 +1143,24 @@ function renderTabs(brands, activeKey, onSelect, brandImageMap) {
   }
 }
 
+function ensureStockFrontendStyles_() {
+  if (document.getElementById("leeplusStockFrontendStyle")) return;
+  const st = document.createElement("style");
+  st.id = "leeplusStockFrontendStyle";
+  st.textContent = `
+    .stockOutRow td{opacity:.78}
+    .stockOutRow .model{opacity:.9}
+    .stockOutRow .priceValue{opacity:.78}
+    .retailStockBadge{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;padding:3px 7px;border-radius:999px;background:#3b1014;border:1px solid #9f2936;color:#ff6675;font-size:9px;font-weight:950;line-height:1.2;vertical-align:middle;white-space:nowrap}
+    @media(max-width:600px){.retailStockBadge{margin-left:6px;padding:3px 6px;font-size:8px}}
+  `;
+  document.head.appendChild(st);
+}
+
 function renderTable(rows, brandImageMap) {
+  ensureStockFrontendStyles_();
   const tbody = el("tbody");
   if (!tbody) return;
-
   tbody.innerHTML = "";
 
   if (!rows.length) {
@@ -1145,7 +1170,6 @@ function renderTable(rows, brandImageMap) {
     }
     return;
   }
-
   if (el("empty")) el("empty").style.display = "none";
 
   for (const r of rows) {
@@ -1172,57 +1196,107 @@ function renderTable(rows, brandImageMap) {
               data-full="${escapeHTML(productImg)}" data-title="${escapeHTML(r.model)}">
             <img src="${escapeHTML(productImg)}" alt="${escapeHTML(r.model)}" loading="lazy" />
          </div>`
-      : "";
+      : ``;
 
     const tr = document.createElement("tr");
+    const isOutOfStock = String(r.stock_status || "IN_STOCK").toUpperCase() === "OUT_OF_STOCK";
+    if (isOutOfStock) tr.classList.add("stockOutRow");
+    const stockBadge = isOutOfStock ? `<span class="retailStockBadge">สินค้าหมด</span>` : "";
     tr.innerHTML = `
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px; min-width:0;">
           ${thumbHtml}
-          <div class="model">${formatModelWithAutoBadge(r.model)}</div>
+          <div class="model">${formatModelWithAutoBadge(r.model)}${stockBadge}</div>
         </div>
       </td>
-      <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
+      <td class="price">${
+        PRICE_LOCKED
+          ? `<a href="/?access=1" class="priceUnlockBtn" title="ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา">ลงทะเบียนร้านค้า / เปิดสิทธิ์ดูราคา</a>`
+          : `<span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span>`
+      }</td>
     `;
-
     tbody.appendChild(tr);
   }
 }
 
 
-async function fetchCategoriesFresh() {
-  const r = await fetch(`${API_URL}?action=categories`);
-  if (!r.ok) throw new Error(`categories api ${r.status}`);
-  const j = await r.json();
-  return Array.isArray(j.data) ? j.data : [];
+async function loadCategoriesCached_() {
+  const cacheKey = "leeplus_dealer_categories_parity_v1";
+  let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
+  if (Array.isArray(items)) return items;
+  try {
+    const r = await fetch("https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/catalog-api", { cache: "no-store" });
+    if (!r.ok) throw new Error(`Retail category metadata ${r.status}`);
+    const j = await r.json();
+    if (!j?.success || !Array.isArray(j?.categories)) throw new Error("Invalid category metadata");
+    items = j.categories.map(c => ({
+      id:c.id, sheetTab:String(c.sheet_tab||""), sheet_tab:String(c.sheet_tab||""),
+      titleTH:String(c.title_th||""), titleEN:String(c.title_en||""),
+      categoryType:String(c.category_type||"PRICE"), category_type:String(c.category_type||"PRICE"),
+      dealerEnabled:Boolean(c.dealer_enabled), sort:Number(c.sort_order||0),
+      image:String(c.image_url||""), image_url:String(c.image_url||""),
+      pdf_url:"", price_url:String(c.price_url||"")
+    }));
+    return speedCacheSet_(cacheKey,items);
+  } catch (edgeError) {
+    const r = await fetch(`${API_URL}?action=categories`);
+    if (!r.ok) throw edgeError;
+    const j = await r.json(); items = Array.isArray(j.data) ? j.data : [];
+    return speedCacheSet_(cacheKey,items);
+  }
 }
 
-async function loadCategoriesCached() {
-  const key = "leeplus_dealer_categories_cache_v1";
-  const cached = speedCacheRead(key);
-
-  if (cached) {
-    speedBackground(async () => {
-      const fresh = await speedSharedRequest("dealer:categories", fetchCategoriesFresh);
-      speedCacheWrite(key, fresh);
-    });
-    return cached;
+async function loadCategoryByTab(tab) {
+  try {
+    const items = await loadCategoriesCached_();
+    const target = String(tab || "").trim().toLowerCase();
+    return items.find(item =>
+      String(item.sheetTab || item.sheet_tab || "").trim().toLowerCase() === target
+    ) || null;
+  } catch (err) {
+    if (DEBUG) console.warn("loadCategoryByTab failed", err);
+    return null;
   }
+}
+
+async function resolvePrettyPriceRoute_() {
+  const queryTab = getParam("tab");
+  const slug = getParam("slug") || prettySlugFromLocation_();
+
+  if (queryTab) return { tab: queryTab, slug: prettySlugFromTab_(queryTab) };
+  if (!slug) return { tab: "Battery", slug: "battery" };
 
   try {
-    const fresh = await speedSharedRequest("dealer:categories", fetchCategoriesFresh);
-    return speedCacheWrite(key, fresh);
+    const items = await loadCategoriesCached_();
+    const wanted = String(slug).trim().toLowerCase();
+    const found = items.find(item => {
+      const sheetTab = String(item.sheetTab || item.sheet_tab || "").trim();
+      return prettySlugFromTab_(sheetTab) === wanted;
+    });
+    if (found) {
+      const tab = String(found.sheetTab || found.sheet_tab || "").trim();
+      return { tab, slug: prettySlugFromTab_(tab) };
+    }
   } catch (err) {
-    if (DEBUG) console.warn("loadCategoriesCached failed", err);
-    return [];
+    if (DEBUG) console.warn("resolvePrettyPriceRoute failed", err);
   }
+
+  // Safe fallback for simple sheet names such as Battery -> battery.
+  return { tab: String(slug).replace(/-/g, " "), slug: String(slug) };
 }
 
-function loadCategoryByTab(tab, items = []) {
-  const target = String(tab || "").trim().toLowerCase();
-  return items.find(item =>
-    String(item.sheetTab || item.sheet_tab || "").trim().toLowerCase() === target
-  ) || null;
+function renderCatalogLocked(code) {
+  const content = document.querySelector(".content");
+  const pdf = el("openPdfBtn"); if(pdf)pdf.style.display="none";
+  if (!content) return;
+  const dealer = "RETAIL" === "DEALER";
+  content.innerHTML = `
+    <div style="padding:28px 18px;border:1px solid rgba(243,201,0,.22);border-radius:18px;background:#0d1118;text-align:center">
+      <div style="font-size:30px;margin-bottom:8px">🔒</div>
+      <h2 style="margin:0 0 7px;font-size:18px">ยังไม่มีสิทธิ์ดูราคา</h2>
+      <p style="margin:0 auto 16px;color:#8993a2;font-size:11px;line-height:1.6;max-width:420px">${dealer ? "กรุณาเข้าสู่ระบบร้านค้าและใส่รหัสตัวแทนอีกครั้ง" : "ราคาสินค้า LEEPLUS แสดงเฉพาะร้านค้าที่ได้รับการอนุมัติ"}</p>
+      <a href="/?access=1" style="display:inline-flex;min-height:42px;padding:0 17px;align-items:center;justify-content:center;border-radius:11px;background:#f3c900;color:#090b10;text-decoration:none;font-weight:950;font-size:12px">${dealer ? "กลับไปยืนยันสิทธิ์" : "เข้าสู่ระบบ / ลงทะเบียนร้านค้า"}</a>
+    </div>`;
 }
 
 /* ===== category thumb ===== */
@@ -1245,25 +1319,23 @@ function applyCategoryThumb(categoryImageUrl) {
   ensureSmartModelStyles();
   setupImageModal();
 
-  const tab = getParam("tab") || "Battery";
+  const route = await resolvePrettyPriceRoute_();
+  const tab = route.tab || "Battery";
+  setPrettyPriceUrl_(tab);
+  el("crumb") && (el("crumb").textContent = `Sheet › ${tab}`);
+  el("pageTitle") && (el("pageTitle").textContent = tab);
 
-  if (el("crumb")) el("crumb").textContent = `Sheet › ${tab}`;
-  if (el("pageTitle")) el("pageTitle").textContent = tab;
 
-  // Start the heaviest request immediately while Meta/Categories load in parallel.
-  loadGvizTextCached(tab).catch(() => {});
-
-  const [meta, categories] = await Promise.all([
-    loadMetaConfig(),
-    loadCategoriesCached()
-  ]);
-
-  setupPdfDownloadButton(tab, categories);
-  const categoryRecord = loadCategoryByTab(tab, categories);
+  // Category metadata now comes from Supabase. PRICE images/brand metadata are
+  // already carried in the synced category/catalog snapshot, so Apps Script meta
+  // is no longer on the normal page-load critical path.
+  const categoryRecord = await loadCategoryByTab(tab);
+  const meta = { category: {}, brand: {} };
   const categoryType = String(categoryRecord?.categoryType || "PRICE").trim().toUpperCase();
 
   if (categoryType === "VISUAL_CATALOG") {
     const all = await loadVisualCatalogSheet(tab);
+    await setupPdfDownloadButton();
     applyCategoryThumb(normalizeImageUrl(categoryRecord?.image || categoryRecord?.image_url || ""));
     const upd = all.find(r => r.updated)?.updated || "-";
     el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
@@ -1278,6 +1350,7 @@ function applyCategoryThumb(categoryImageUrl) {
 
   if (categoryType === "COMPATIBILITY") {
     const all = await loadCompatibilitySheet(tab);
+    await setupPdfDownloadButton();
     applyCategoryThumb(normalizeImageUrl(categoryRecord?.image || categoryRecord?.image_url || ""));
     const upd = all.find(r => r.updated)?.updated || "-";
     el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
@@ -1297,11 +1370,18 @@ function applyCategoryThumb(categoryImageUrl) {
     return;
   }
 
+  let pricePayload;
+  try {
+    pricePayload = await loadSheetWithMeta(tab);
+  } catch (e) {
+    throw e;
+  }
   const {
     rows: all,
     categoryImageUrl: oldCategoryImageUrl,
     brandImageMap: oldBrandImageMap
-  } = await loadSheetWithMeta(tab);
+  } = pricePayload;
+  await setupPdfDownloadButton();
 
   const categoryImageUrl =
     normalizeImageUrl(
@@ -1326,15 +1406,15 @@ function applyCategoryThumb(categoryImageUrl) {
   });
 
   if (DEBUG) {
-    console.log("[DEALER DEBUG] meta:", meta);
-    console.log("[DEALER DEBUG] final categoryImageUrl:", categoryImageUrl);
-    console.log("[DEALER DEBUG] final brandImageMap:", Array.from(brandImageMap.entries()));
+    console.log("[DEBUG] meta:", meta);
+    console.log("[DEBUG] final categoryImageUrl:", categoryImageUrl);
+    console.log("[DEBUG] final brandImageMap:", Array.from(brandImageMap.entries()));
   }
 
   applyCategoryThumb(categoryImageUrl);
 
   const upd = all.find(r => (r.updated || "").trim())?.updated || "-";
-  if (el("updateText")) el("updateText").textContent = `อัปเดต: ${upd}`;
+  el("updateText") && (el("updateText").textContent = `อัปเดต: ${upd}`);
 
   const brandNames = uniq(all.map(r => (r.brand || "").trim())).filter(Boolean);
   const brands = [
@@ -1356,13 +1436,10 @@ function applyCategoryThumb(categoryImageUrl) {
       rows = all.filter(r => {
         const hay = `${r.brand || ""} ${r.model || ""}`.toLowerCase();
         const hayCompact = normalizeSearchCompact(hay);
-
         if (qCompact && hayCompact.includes(qCompact)) return true;
         if (qTokens.length) return qTokens.every(t => hay.includes(t));
-
         return false;
       });
-
       renderTable(rows, brandImageMap);
       return;
     }

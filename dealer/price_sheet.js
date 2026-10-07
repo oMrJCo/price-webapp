@@ -55,6 +55,7 @@
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
+const DEALER_CATALOG_API_V2 = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/dealer-catalog-api-v2";
 const GH_BASE = "/dealer/";
 const IS_DEALER_ZONE = true;
 
@@ -459,7 +460,41 @@ function pickIndex(cols, candidates) {
   return -1;
 }
 
+async function loadDealerPriceFromApiV2(tab) {
+  const token = sessionStorage.getItem("leeplus_dealer_token") || "";
+  if (!token) throw new Error("DEALER_SESSION_MISSING");
+  const r = await fetch(`${DEALER_CATALOG_API_V2}?category=${encodeURIComponent(tab)}`, {
+    cache: "no-store",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (r.status === 401) {
+    sessionStorage.removeItem("leeplus_dealer_auth");
+    sessionStorage.removeItem("leeplus_dealer_token");
+    location.replace("/");
+    throw new Error("DEALER_UNAUTHORIZED");
+  }
+  if (!r.ok) throw new Error(`dealer catalog api ${r.status}`);
+  const j = await r.json();
+  if (!j?.success || !Array.isArray(j.rows)) throw new Error("DEALER_CATALOG_INVALID");
+  return {
+    rows: j.rows.map(x => ({
+      brand: String(x.brand || "").trim(),
+      model: String(x.model || "").trim(),
+      price: String(x.price ?? "").trim(),
+      image_url: String(x.image_url || "").trim(),
+      updated: String(x.updated || "").trim(),
+      stock_status: String(x.stock_status || "IN_STOCK").toUpperCase()
+    })),
+    categoryImageUrl: normalizeImageUrl(j.category?.image_url || ""),
+    brandImageMap: new Map()
+  };
+}
+
 async function loadSheetWithMeta(tab) {
+  return loadDealerPriceFromApiV2(tab);
+}
+
+async function loadSheetWithMetaLegacy(tab) {
   const text = await loadGvizTextCached(tab);
   const json = parseGvizResponse(text);
   const table = json?.table;
@@ -1175,6 +1210,8 @@ function renderTable(rows, brandImageMap) {
       : "";
 
     const tr = document.createElement("tr");
+    const isOut = String(r.stock_status || "IN_STOCK").toUpperCase() === "OUT_OF_STOCK";
+    if (isOut) tr.classList.add("stockOutRow");
     tr.innerHTML = `
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px; min-width:0;">
@@ -1182,7 +1219,7 @@ function renderTable(rows, brandImageMap) {
           <div class="model">${formatModelWithAutoBadge(r.model)}</div>
         </div>
       </td>
-      <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
+      <td class="price">${isOut ? '<span class="stockOutBadge">สินค้าหมด</span> ' : ""}<span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
     `;
 
     tbody.appendChild(tr);
@@ -1249,9 +1286,6 @@ function applyCategoryThumb(categoryImageUrl) {
 
   if (el("crumb")) el("crumb").textContent = `Sheet › ${tab}`;
   if (el("pageTitle")) el("pageTitle").textContent = tab;
-
-  // Start the heaviest request immediately while Meta/Categories load in parallel.
-  loadGvizTextCached(tab).catch(() => {});
 
   const [meta, categories] = await Promise.all([
     loadMetaConfig(),

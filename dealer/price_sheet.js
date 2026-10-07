@@ -54,7 +54,7 @@
 */
 
 const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
-const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";\nconst DEALER_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/dealer-catalog-api";
 const GH_BASE = "/dealer/";
 const IS_DEALER_ZONE = true;
 
@@ -457,6 +457,54 @@ function pickIndex(cols, candidates) {
     if (i !== -1) return i;
   }
   return -1;
+}
+
+async function loadDealerSupabasePriceSheet(tab) {
+  let dealerCode = "";
+  try { dealerCode = sessionStorage.getItem("leeplus_dealer_code") || ""; } catch (_) {}
+  if (!dealerCode) throw new Error("DEALER_SESSION_MISSING");
+
+  const cacheKey = `leeplus_dealer_supabase_catalog_v1:${String(tab || "").trim().toLowerCase()}`;
+  const cached = speedCacheRead(cacheKey);
+  if (cached && cached.success && Array.isArray(cached.rows)) return cached;
+
+  const res = await fetch(`${DEALER_CATALOG_API}?category=${encodeURIComponent(tab)}`, {
+    headers: { "X-Dealer-Code": dealerCode },
+    cache: "no-store"
+  });
+  if (res.status === 401) {
+    try {
+      sessionStorage.removeItem("leeplus_dealer_auth");
+      sessionStorage.removeItem("leeplus_dealer_code");
+    } catch (_) {}
+    location.replace("/");
+    throw new Error("DEALER_UNAUTHORIZED");
+  }
+  if (!res.ok) throw new Error(`Dealer catalog ${res.status}`);
+  const data = await res.json();
+  if (!data?.success || data?.access !== "DEALER" || !Array.isArray(data?.rows)) {
+    throw new Error("Invalid Dealer catalog response");
+  }
+  speedCacheWrite(cacheKey, data);
+  return data;
+}
+
+async function loadDealerPriceSheetWithMeta(tab) {
+  const data = await loadDealerSupabasePriceSheet(tab);
+  const products = (data.rows || []).map(r => ({
+    brand: String(r?.brand ?? "").trim(),
+    model: String(r?.model ?? "").trim(),
+    price: String(r?.dealer_price ?? "").trim(),
+    image_url: String(r?.image_url ?? "").trim(),
+    updated: String(r?.updated_text ?? "").trim(),
+    stock_status: String(r?.stock_status ?? "IN_STOCK").trim().toUpperCase()
+  }));
+  return {
+    rows: products,
+    categoryImageUrl: "",
+    brandImageMap: new Map(),
+    dealerPdfUrl: String(data?.category?.dealer_pdf_url || "")
+  };
 }
 
 async function loadSheetWithMeta(tab) {
@@ -1175,11 +1223,14 @@ function renderTable(rows, brandImageMap) {
       : "";
 
     const tr = document.createElement("tr");
+    const isOutOfStock = String(r.stock_status || "IN_STOCK").toUpperCase() === "OUT_OF_STOCK";
+    if (isOutOfStock) tr.classList.add("stockOutRow");
+    const stockBadge = isOutOfStock ? `<span class="dealerStockBadge">สินค้าหมด</span>` : "";
     tr.innerHTML = `
       <td>
         <div style="display:flex; align-items:flex-start; gap:10px; min-width:0;">
           ${thumbHtml}
-          <div class="model">${formatModelWithAutoBadge(r.model)}</div>
+          <div class="model">${formatModelWithAutoBadge(r.model)}${stockBadge}</div>
         </div>
       </td>
       <td class="price"><span class="priceValue">${escapeHTML(r.price)}</span> <span class="priceUnit">บาท</span></td>
@@ -1300,8 +1351,19 @@ function applyCategoryThumb(categoryImageUrl) {
   const {
     rows: all,
     categoryImageUrl: oldCategoryImageUrl,
-    brandImageMap: oldBrandImageMap
-  } = await loadSheetWithMeta(tab);
+    brandImageMap: oldBrandImageMap,
+    dealerPdfUrl
+  } = await loadDealerPriceSheetWithMeta(tab);
+
+  if (dealerPdfUrl) {
+    const btn = el("openPdfBtn");
+    const hint = el("pdfHint");
+    if (btn) {
+      btn.href = normalizeMaybeRelativeUrl(dealerPdfUrl);
+      btn.style.display = "inline-flex";
+      if (hint) hint.style.display = "inline-flex";
+    }
+  }
 
   const categoryImageUrl =
     normalizeImageUrl(

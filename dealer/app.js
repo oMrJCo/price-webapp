@@ -27,6 +27,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 
   const GH_BASE = "/dealer/";
+  const DEALER_HOME_META_CACHE = "leeplus_dealer_home_meta_v1";
+  const DEALER_HOME_CATEGORIES_CACHE = "leeplus_dealer_home_categories_v1";
+
+  function dealerCacheRead(key){try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null}catch(_){return null}}
+  function dealerCacheWrite(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(_){}return value}
 
   function buildPriceSheetUrlFromTab(tabName) {
     return `${GH_BASE}price_sheet.html?tab=${encodeURIComponent(tabName)}`;
@@ -63,35 +68,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function loadMeta() {
-    const res = await fetch(`${API_URL}?action=meta&t=${Date.now()}`, {
-      cache: "no-store",
-    });
-
+    const cached=dealerCacheRead(DEALER_HOME_META_CACHE);if(cached)return cached;
+    const res = await fetch(`${API_URL}?action=meta`, { cache: "default" });
     if (!res.ok) throw new Error("Meta API load failed");
-
     const json = await res.json();
-
-    if (!json.success) {
-      throw new Error(json.message || "Meta API success false");
-    }
-
-    return json.data || {};
+    if (!json.success) throw new Error(json.message || "Meta API success false");
+    return dealerCacheWrite(DEALER_HOME_META_CACHE,json.data || {});
   }
 
   async function loadCategories() {
-    const res = await fetch(`${API_URL}?action=categories&t=${Date.now()}`, {
-      cache: "no-store",
-    });
-
+    const cached=dealerCacheRead(DEALER_HOME_CATEGORIES_CACHE);if(Array.isArray(cached)&&cached.length)return cached.map(normalizeCategory);
+    const res = await fetch(`${API_URL}?action=categories`, { cache: "default" });
     if (!res.ok) throw new Error("Categories API load failed");
-
     const json = await res.json();
-
-    if (!json.success) {
-      throw new Error(json.message || "Categories API success false");
-    }
-
-    return (json.data || []).map(normalizeCategory);
+    if (!json.success) throw new Error(json.message || "Categories API success false");
+    return dealerCacheWrite(DEALER_HOME_CATEGORIES_CACHE,(json.data || []).map(normalizeCategory));
   }
 
   async function loadFallbackJson() {

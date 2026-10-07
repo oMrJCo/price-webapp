@@ -792,7 +792,7 @@
 }
 
 </style>
-<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"){location.replace("/");}document.addEventListener("DOMContentLoaded",()=>document.getElementById("dealerLogoutBtn")?.addEventListener("click",()=>{sessionStorage.removeItem("leeplus_dealer_auth");location.href="/";}));</script></head>
+<script>if(sessionStorage.getItem("leeplus_dealer_auth")!=="1"||!sessionStorage.getItem("leeplus_dealer_token")){sessionStorage.removeItem("leeplus_dealer_auth");sessionStorage.removeItem("leeplus_dealer_token");location.replace("/");}document.addEventListener("DOMContentLoaded",()=>document.getElementById("dealerLogoutBtn")?.addEventListener("click",()=>{sessionStorage.removeItem("leeplus_dealer_auth");sessionStorage.removeItem("leeplus_dealer_token");location.href="/";}));</script></head>
 
 <body>
   <div class="wrap">

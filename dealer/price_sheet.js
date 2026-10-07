@@ -1221,45 +1221,28 @@ function renderTable(rows, brandImageMap) {
 
 
 async function loadCategoriesCached_() {
-  // Supabase-first category metadata. Apps Script remains rollback only.
-  const cacheKey = "leeplus_supabase_categories_v2";
+  const cacheKey = "leeplus_dealer_categories_parity_v1";
   let items = speedCacheGet_(cacheKey, SPEED_CACHE.categories);
   if (Array.isArray(items)) return items;
-
   try {
-    const grant = await getCatalogGrant_();
-    const headers = grant ? { "X-Catalog-Grant": grant } : {};
-    const r = await fetch(SUPABASE_CATALOG_API, { headers, cache: "no-store" });
-    if (!r.ok) throw new Error(`Supabase categories ${r.status}`);
+    const r = await fetch("https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/catalog-api", { cache: "no-store" });
+    if (!r.ok) throw new Error(`Retail category metadata ${r.status}`);
     const j = await r.json();
-    if (!j?.success || !Array.isArray(j?.categories)) throw new Error("Invalid Supabase categories response");
-
+    if (!j?.success || !Array.isArray(j?.categories)) throw new Error("Invalid category metadata");
     items = j.categories.map(c => ({
-      id: c.id,
-      sheetTab: String(c.sheet_tab || ""),
-      sheet_tab: String(c.sheet_tab || ""),
-      titleTH: String(c.title_th || ""),
-      titleEN: String(c.title_en || ""),
-      categoryType: String(c.category_type || "PRICE"),
-      category_type: String(c.category_type || "PRICE"),
-      dealerEnabled: Boolean(c.dealer_enabled),
-      sort: Number(c.sort_order || 0),
-      image: String(c.image_url || ""),
-      image_url: String(c.image_url || ""),
-      pdf_url: String(c.pdf_url || ""),
-      price_url: String(c.price_url || "")
+      id:c.id, sheetTab:String(c.sheet_tab||""), sheet_tab:String(c.sheet_tab||""),
+      titleTH:String(c.title_th||""), titleEN:String(c.title_en||""),
+      categoryType:String(c.category_type||"PRICE"), category_type:String(c.category_type||"PRICE"),
+      dealerEnabled:Boolean(c.dealer_enabled), sort:Number(c.sort_order||0),
+      image:String(c.image_url||""), image_url:String(c.image_url||""),
+      pdf_url:"", price_url:String(c.price_url||"")
     }));
-    return speedCacheSet_(cacheKey, items);
+    return speedCacheSet_(cacheKey,items);
   } catch (edgeError) {
-    console.warn("Supabase categories failed; using legacy categories fallback:", edgeError);
-    const legacyKey = "leeplus_speed_categories_v1";
-    const legacyCached = speedCacheGet_(legacyKey, SPEED_CACHE.categories);
-    if (Array.isArray(legacyCached)) return legacyCached;
     const r = await fetch(`${API_URL}?action=categories`);
-    if (!r.ok) throw new Error(`categories api ${r.status}`);
-    const j = await r.json();
-    items = Array.isArray(j.data) ? j.data : [];
-    return speedCacheSet_(legacyKey, items);
+    if (!r.ok) throw edgeError;
+    const j = await r.json(); items = Array.isArray(j.data) ? j.data : [];
+    return speedCacheSet_(cacheKey,items);
   }
 }
 

@@ -11,6 +11,7 @@
 
   <!-- Auto redirect สำหรับ Netlify Identity recovery -->
   <script>
+    if (location.pathname === "/index.html") history.replaceState(null, "", "/" + location.search + location.hash);
     (function () {
       const hash = window.location.hash || "";
       if (hash.startsWith("#recovery_token=")) {

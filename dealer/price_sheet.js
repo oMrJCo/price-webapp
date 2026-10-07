@@ -56,7 +56,7 @@ const SPREADSHEET_ID = "1g_j4Jym6hvqm2xvHRiM3_RJHshzGgOtAkTQXh3xHOkU";
 const CATEGORIES_URL = "https://raw.githubusercontent.com/omrjco/price-webapp/main/categories.json";
 const GH_BASE = "/price-webapp/";
 const API_URL = "https://script.google.com/macros/s/AKfycbxqUpwXOo05dZ1iv9BP29pVR273Qj1d8fXwYZnn29A9cpNfrAtE0IKL7uqO-DXopIgUYA/exec";
-const SUPABASE_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/dealer-catalog-api-v2";
+const SUPABASE_CATALOG_API = "https://dxlngxkuggbgdzmithzx.supabase.co/functions/v1/dealer-catalog-api";
 const SUPABASE_DATA_CACHE_PREFIX = "leeplus_supabase_catalog_v2:";
 const CATALOG_GRANT_CACHE_KEY = "leeplus_catalog_grant_v1";
 let GATED_PDF_URL = "";
@@ -444,25 +444,25 @@ function clearSupabaseCatalogDataCache_(tab) {
 }
 
 async function fetchSupabaseCatalog_(tab, forceFresh = false) {
-  const token = (()=>{try{return sessionStorage.getItem("leeplus_dealer_token")||""}catch(_){return ""}})();
-  if (!token) throw new Error("DEALER_SESSION_MISSING");
-  const cacheKey = `${SUPABASE_DATA_CACHE_PREFIX}dealer:${tab}:${token.slice(-12)}`;
+  const code = (()=>{try{return sessionStorage.getItem("leeplus_dealer_code")||""}catch(_){return ""}})();
+  if (!code) throw new Error("DEALER_SESSION_MISSING");
+  const cacheKey = `${SUPABASE_DATA_CACHE_PREFIX}dealer:${tab}`;
   if (!forceFresh) {
     const cached = speedCacheGet_(cacheKey, SPEED_CACHE.catalog);
     if (cached && cached.success && Array.isArray(cached.rows)) return cached;
   }
   const res = await fetch(`${SUPABASE_CATALOG_API}?category=${encodeURIComponent(tab)}`, {
-    headers: { "Authorization": `Bearer ${token}` }, cache: "no-store"
+    headers: { "X-Dealer-Code": code }, cache: "no-store"
   });
   if (res.status === 401) {
-    sessionStorage.removeItem("leeplus_dealer_auth"); sessionStorage.removeItem("leeplus_dealer_token");
+    sessionStorage.removeItem("leeplus_dealer_auth"); sessionStorage.removeItem("leeplus_dealer_code");
     location.replace("/"); throw new Error("DEALER_UNAUTHORIZED");
   }
   if (!res.ok) throw new Error(`Dealer catalog ${res.status}`);
   const j = await res.json();
   const data = {
     success: !!j?.success, access: "DEALER", price_locked: false,
-    rows: (j?.rows || []).map(r => ({...r, retail_price:r.price})),
+    rows: (j?.rows || []).map(r => ({...r, retail_price:r.dealer_price})),
     category: j?.category || null
   };
   if (!data.success || !Array.isArray(data.rows)) throw new Error("Invalid Dealer catalog response");

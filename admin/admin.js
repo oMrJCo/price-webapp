@@ -1737,6 +1737,7 @@ let billProductCache=[];
 let billProductCachePromise=null;
 let billLastSaved=null;
 function money(n){return Number(n||0).toLocaleString("th-TH",{minimumFractionDigits:0,maximumFractionDigits:2})}
+function billNorm(v){return String(v??"").toLowerCase().trim()}
 function billBlankItem(){return {source:"EXTERNAL",name:"",brand:"",category:"",qty:1,unit_price:0,product_key:""}}
 function billTotals(){const subtotal=billDraft.items.reduce((n,x)=>n+(Number(x.qty||0)*Number(x.unit_price||0)),0);const discount=Math.max(0,Number(billDraft.discount||0));const shipping=Math.max(0,Number(billDraft.shipping||0));return {subtotal,discount,shipping,total:Math.max(0,subtotal-discount+shipping)}}
 async function billApi(action,payload={}){const write=["adminBillSave","adminBillUpdateDates"].includes(action);if(write){const r=await fetch(SHEET_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,adminCode:ADMIN_CODE,...payload}),cache:"no-store"});const j=await r.json();if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);return j}const q=new URLSearchParams({action,adminCode:ADMIN_CODE,...payload,t:String(Date.now())});const r=await fetch(`${SHEET_API}?${q}`,{cache:"no-store"});const j=await r.json();if(!r.ok||j?.success===false)throw new Error(j?.message||j?.error||`HTTP ${r.status}`);return j}

@@ -1731,7 +1731,8 @@ function ensureProductDbNav(){
 // BILLING 1.7 — old billing flow restored + inline fast rows
 // =========================================================
 let billDraft={customer_name:"",customer_phone:"",price_type:"RETAIL",bill_date:billTodayLocal(),due_date:"",items:[],discount:0,shipping:0,note:""};
-function billTodayLocal(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}\nlet billHistory=[];
+function billTodayLocal(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+let billHistory=[];
 let billProductCache=[];
 let billProductCachePromise=null;
 let billLastSaved=null;

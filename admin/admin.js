@@ -1881,7 +1881,8 @@ function printBillData(b){
   const discount=Number(b.discount||0),shipping=Number(b.shipping||0);
   const total=Number(b.total??Math.max(0,subtotal-discount+shipping));
   const dt=b.bill_date?new Date(b.bill_date+"T12:00:00"):(b.created_at?new Date(b.created_at):new Date());
-  const dateText=b.bill_date?dt.toLocaleDateString("th-TH",{dateStyle:"medium"}):dt.toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"});\n  const dueText=b.due_date?new Date(b.due_date+"T12:00:00").toLocaleDateString("th-TH",{dateStyle:"medium"}):"";
+  const dateText=b.bill_date?dt.toLocaleDateString("th-TH",{dateStyle:"medium"}):dt.toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"});
+  const dueText=b.due_date?new Date(b.due_date+"T12:00:00").toLocaleDateString("th-TH",{dateStyle:"medium"}):"";
   const billNo=b.bill_no||billLastSaved?.bill_no||"ยังไม่บันทึก";
   const priceText=(b.price_type||billDraft.price_type)==="DEALER"?"Dealer":"ราคาส่ง";
   const customer=[b.customer_name||"ลูกค้าทั่วไป",b.customer_phone||"",priceText].filter(Boolean).join("  •  ");

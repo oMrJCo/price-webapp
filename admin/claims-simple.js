@@ -2,21 +2,32 @@
 (function(){
 "use strict";
 const BASE="https://dxlngxkuggbgdzmithzx.supabase.co",KEY="sb_publishable_sqAwuko-g-Kgzp51YyMT3g_gIAwtEan";
-let token="",userId="",products=[],items=[],history=[];
+let token="local",userId="local",products=[],items=[],history=[];
 const $=s=>document.querySelector(s),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
+const STORE="leeplus_claims_notebook_v1";
+function read(){try{return JSON.parse(localStorage.getItem(STORE))||[]}catch(e){return []}}
+function write(data){localStorage.setItem(STORE,JSON.stringify(data))}
 async function api(path,method="GET",body){
-const r=await fetch(BASE+"/rest/v1/"+path,{method,headers:{apikey:KEY,Authorization:"Bearer "+token,"Content-Type":"application/json",Prefer:"return=representation"},body:body===undefined?undefined:JSON.stringify(body)});
-if(!r.ok)throw Error((await r.text()).slice(0,200));return r.status===204?[]:r.json()}
+ let data=read();
+ if(path.startsWith("lp_claims?")&&method==="GET")return data.sort((a,b)=>b.created_at.localeCompare(a.created_at));
+ if(path==="lp_claims"&&method==="POST"){const row={...body,id:Date.now(),created_at:new Date().toISOString(),lp_claim_items:[]};data.push(row);write(data);return [row]}
+ if(path==="lp_claim_items"&&method==="POST"){for(const x of body){const c=data.find(z=>z.id===x.claim_id);if(!c)throw Error("ไม่พบใบเคลม");c.lp_claim_items.push({...x,id:Date.now()+Math.floor(Math.random()*100000)})}write(data);return body}
+ if(path.startsWith("lp_claims?id=eq.")&&method==="DELETE"){write(data.filter(x=>x.id!==Number(path.split("eq.")[1])));return []}
+ if(path.startsWith("lp_claim_items?id=eq.")&&method==="PATCH"){const id=Number(path.split("eq.")[1]);for(const c of data){const x=c.lp_claim_items.find(x=>x.id===id);if(x)Object.assign(x,body)}write(data);return []}
+ throw Error("คำสั่งไม่รองรับ");
+}
 function msg(s){const x=$("#claimMsg");if(x)x.textContent=s}
 function view(){
 $("#title").textContent="บันทึกของเคลม";$("#subtitle").textContent="ค้นหาสินค้า · ใส่จำนวน · ติ๊กเคลมแล้ว";
-if(!token){$("#content").innerHTML='<div class="panel"><h2>เข้าสู่ระบบเคลม</h2><form id="clLogin" class="claims-login"><input id="clEmail" type="email" required placeholder="อีเมล Billing"><input id="clPass" type="password" required placeholder="รหัสผ่าน Billing"><button class="primary">เข้าสู่ระบบ</button></form><p id="claimMsg"></p></div>';$("#clLogin").onsubmit=login;return}
-$("#content").innerHTML='<div class="panel claims-panel"><div class="claims-toolbar"><h2>บันทึกเคลม</h2><button class="secondary" id="clLogout">ออกจากระบบเคลม</button></div><div class="claims-fields"><label>วันที่รับ<input id="clDate" type="date" value="'+today()+'"></label><label>ชื่อร้านค้า<input id="clShop" placeholder="ชื่อร้านค้า"></label><label>หมายเหตุ<input id="clNote" placeholder="ไม่บังคับ"></label></div><div class="claims-search"><input id="clSearch" placeholder="ค้นหาชื่อสินค้า / รุ่น"><button class="secondary" id="clManual">+ พิมพ์สินค้าเอง</button></div><div id="clMatches"></div><div id="clLines"></div><button class="primary" id="clSave">บันทึก</button><p id="claimMsg"></p></div><div class="panel claims-panel"><div class="claims-toolbar"><h2>ประวัติเคลม</h2><button class="secondary" id="clRefresh">รีเฟรช</button></div><div class="claims-fields"><label>ค้นหา<input id="clFilter" placeholder="ร้านค้า / สินค้า"></label><label>สถานะ<select id="clStatus"><option value="all">ทั้งหมด</option><option value="pending">ค้างเคลม</option><option value="done">เคลมแล้ว</option></select></label></div><div id="clStats"></div><div id="clHistory"></div></div>';
-$("#clLogout").onclick=()=>{token="";userId="";items=[];view()};
+if(false){$("#content").innerHTML='<div class="panel"><h2>เข้าสู่ระบบเคลม</h2><form id="clLogin" class="claims-login"><input id="clEmail" type="email" required placeholder="อีเมล Billing"><input id="clPass" type="password" required placeholder="รหัสผ่าน Billing"><button class="primary">เข้าสู่ระบบ</button></form><p id="claimMsg"></p></div>';$("#clLogin").onsubmit=login;return}
+$("#content").innerHTML='<div class="panel claims-panel"><div class="claims-toolbar"><h2>บันทึกเคลม</h2><button class="secondary" id="clExport">สำรองข้อมูล</button><button class="secondary" id="clImport">นำเข้าข้อมูล</button><input id="clImportFile" type="file" accept=".json,application/json" hidden></div><div class="claims-fields"><label>วันที่รับ<input id="clDate" type="date" value="'+today()+'"></label><label>ชื่อร้านค้า<input id="clShop" placeholder="ชื่อร้านค้า"></label><label>หมายเหตุ<input id="clNote" placeholder="ไม่บังคับ"></label></div><div class="claims-search"><input id="clSearch" placeholder="ค้นหาชื่อสินค้า / รุ่น"><button class="secondary" id="clManual">+ พิมพ์สินค้าเอง</button></div><div id="clMatches"></div><div id="clLines"></div><button class="primary" id="clSave">บันทึก</button><p id="claimMsg"></p></div><div class="panel claims-panel"><div class="claims-toolbar"><h2>ประวัติเคลม</h2><button class="secondary" id="clRefresh">รีเฟรช</button></div><div class="claims-fields"><label>ค้นหา<input id="clFilter" placeholder="ร้านค้า / สินค้า"></label><label>สถานะ<select id="clStatus"><option value="all">ทั้งหมด</option><option value="pending">ค้างเคลม</option><option value="done">เคลมแล้ว</option></select></label></div><p class="muted">ข้อมูลบันทึกในเบราว์เซอร์เครื่องนี้ กรุณากดสำรองข้อมูลเป็นระยะ หากเปลี่ยนเครื่องให้นำเข้าไฟล์สำรอง</p><div id="clStats"></div><div id="clHistory"></div></div>';
+$("#clExport").onclick=()=>{const blob=new Blob([JSON.stringify(read(),null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="leeplus-claims-"+today()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$("#clImport").onclick=()=>$("#clImportFile").click();
+$("#clImportFile").onchange=async e=>{try{const data=JSON.parse(await e.target.files[0].text());if(!Array.isArray(data)||data.some(x=>!x.shop_name||!Array.isArray(x.lp_claim_items)))throw Error("ไฟล์ไม่ถูกต้อง");if(!confirm("นำเข้าข้อมูลจะทับรายการเดิมในเบราว์เซอร์นี้ ยืนยันหรือไม่?"))return;write(data);await loadHistory();msg("นำเข้าข้อมูลแล้ว")}catch(err){msg("นำเข้าไม่สำเร็จ: "+err.message)}};
 $("#clSearch").oninput=search;$("#clManual").onclick=()=>{items.push({product_name:$("#clSearch").value.trim(),product_key:"",qty_received:1,qty_replaced:0,issue:""});lines()};
 $("#clSave").onclick=save;$("#clRefresh").onclick=loadHistory;$("#clFilter").oninput=showHistory;$("#clStatus").onchange=showHistory;
-lines();loadHistory();if(!products.length&&typeof preloadBillProducts==="function")preloadBillProducts().then(x=>products=x).catch(e=>msg(e.message));
+lines();loadHistory();if(!products.length&&typeof preloadBillProducts==="function")preloadBillProducts().then(x=>products=Array.isArray(x)?x:[]).catch(e=>msg(e.message));
 }
 async function login(e){e.preventDefault();try{
 const r=await fetch(BASE+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({email:$("#clEmail").value,password:$("#clPass").value})});
